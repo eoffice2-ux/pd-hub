@@ -11,18 +11,19 @@
 export async function sendEmail(env, { to, subject, html, text, attachments = [], logContext = "Email" }) {
   const fromEmail = String(env.OTP_FROM_EMAIL || env.MAIL_FROM_EMAIL || "").trim();
   const fromName  = String(env.OTP_FROM_NAME  || env.MAIL_FROM_NAME  || "PD Hub").trim();
-  const secret    = String(env.EMAIL_CENTER_SECRET || "").trim();
-  const provider  = String(env.OTP_EMAIL_PROVIDER || "brevo").trim().toLowerCase();
+  const gas1Secret = String(env.EMAIL_CENTER_SECRET || "").trim();
+  const gas2Secret = String(env.EMAIL_CENTER_SECRET_2 || env.EMAIL_CENTER_SECRET || "").trim();
+  const provider   = String(env.OTP_EMAIL_PROVIDER || "brevo").trim().toLowerCase();
 
   const gas1Url   = String(env.EMAIL_CENTER_URL   || "").trim();
   const gas2Url   = String(env.EMAIL_CENTER_URL_2 || "").trim();
   const slot      = emailSlot(to);
 
-  const [primaryUrl, primaryLabel, fallbackUrl, fallbackLabel] = slot === 0
-    ? [gas1Url, "gas1", gas2Url, "gas2"]
-    : [gas2Url, "gas2", gas1Url, "gas1"];
+  const [primaryUrl, primarySecret, primaryLabel, fallbackUrl, fallbackSecret, fallbackLabel] = slot === 0
+    ? [gas1Url, gas1Secret, "gas1", gas2Url, gas2Secret, "gas2"]
+    : [gas2Url, gas2Secret, "gas2", gas1Url, gas1Secret, "gas1"];
 
-  async function tryGas(url, label) {
+  async function tryGas(url, secret, label) {
     if (!url) return null;
     const ctrl = new AbortController();
     const tid  = setTimeout(() => ctrl.abort(), 15000);
@@ -54,7 +55,7 @@ export async function sendEmail(env, { to, subject, html, text, attachments = []
   }
 
   // 1. Primary GAS for this user slot
-  const r1 = await tryGas(primaryUrl, primaryLabel);
+  const r1 = await tryGas(primaryUrl, primarySecret, primaryLabel);
   if (r1) return r1;
 
   // 2. Brevo
@@ -78,7 +79,7 @@ export async function sendEmail(env, { to, subject, html, text, attachments = []
   }
 
   // 4. Fallback GAS (last resort)
-  const r4 = await tryGas(fallbackUrl, fallbackLabel);
+  const r4 = await tryGas(fallbackUrl, fallbackSecret, fallbackLabel);
   if (r4) return r4;
 
   throw new Error(`[${logContext}] All email providers exhausted (slot=${slot}, to=${to}).`);
