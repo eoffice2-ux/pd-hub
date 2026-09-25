@@ -684,7 +684,7 @@ export async function getTraineeActiveSectionsFromSheet(env, traineeEmail, optio
 
     const courseId = sCourseIdx !== -1 ? String(row[sCourseIdx] || "").trim() : "";
     const sectionName = sNameIdx !== -1 ? String(row[sNameIdx] || "").trim() : "";
-    const courseName = courseDictionary[courseId] || sectionName || courseId || sectionId;
+    const courseName = sectionName || courseDictionary[courseId] || courseId || sectionId;
     const date = sDateIdx !== -1 ? String(row[sDateIdx] || "N/A").replace(/\n/g, "<br>") : "N/A";
 
     activeSections.push({

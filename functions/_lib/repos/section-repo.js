@@ -138,7 +138,7 @@ export async function getTraineeActiveSectionsPsql(env, email, options = {}) {
     const courseId = s["course id"] || s["course_id"] || "";
     const sectionName = s["section name en"] || s["name_en"] || "";
     
-    let courseName = sectionName || courseId || sectionId;
+    let courseName = courseId || sectionId;
     if (courseId) {
       const course = await getCourseHelper(env, courseId);
       if (course) {
@@ -148,7 +148,7 @@ export async function getTraineeActiveSectionsPsql(env, email, options = {}) {
     
     activeSections.push({
       sectionId,
-      courseName,
+      courseName: sectionName || courseName || sectionId,
       status: s["section status"] || s["status"] || "Unknown",
       date: String(s["section date"] || s["date"] || "N/A").replace(/\n/g, "<br>")
     });

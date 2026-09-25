@@ -2329,8 +2329,20 @@
           .updateTraineeProfile(userEmail, formData);
       };
 
+      function parseDateString(dateStr) {
+        if (!dateStr) return 0;
+        const match = String(dateStr).match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+        if (match) {
+          return new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1])).getTime();
+        }
+        return 0;
+      }
+
       // --- CATALOG RENDER ---
       function renderCatalog(data) {
+        if (Array.isArray(data)) {
+          data.sort((a, b) => parseDateString(b.date) - parseDateString(a.date));
+        }
         let h = "";
 
         data.forEach((s) => {
@@ -2660,6 +2672,9 @@
       function loadHistory() {
         api.run
           .withSuccessHandler((data) => {
+            if (Array.isArray(data)) {
+              data.sort((a, b) => parseDateString(b.sectionDate || b.registeredAt) - parseDateString(a.sectionDate || a.registeredAt));
+            }
             cachedHistory = data; // Save to our new global variable!
 
             let h = "";
@@ -2783,6 +2798,9 @@
         const container = document.getElementById("activeList");
 
         const render = (sections) => {
+          if (Array.isArray(sections)) {
+            sections.sort((a, b) => parseDateString(b.date) - parseDateString(a.date));
+          }
           let html = "";
           sections.forEach((s) => {
             html += `

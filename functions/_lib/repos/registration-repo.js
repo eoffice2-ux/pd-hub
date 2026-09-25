@@ -180,7 +180,7 @@ export async function getTraineeHistoryPsql(env, email, options = {}) {
     
     const { section, course } = details;
     const courseName = course ? (course["course name en"] || course["course name"] || "") : "";
-    const sectionNameEn = courseName || section["section name en"] || sectionId;
+    const sectionNameEn = section["section name en"] || section["section name"] || courseName || sectionId;
     
     const plans = await listCheckinPlansForSectionPsql(env, sectionId);
     const logs = await listCheckinLogsForTraineePsql(env, clean, sectionId);
