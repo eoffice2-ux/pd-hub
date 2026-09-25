@@ -19,6 +19,7 @@ OTP_TTL_SECONDS = "600"
 TAB_OTP_GSHEET = "temp_otp"
 TAB_APP_LOG_GSHEET = "pdc_app_logs"
 EMAIL_CENTER_URL_2 = "https://script.google.com/macros/s/AKfycby7Gl7ixtILz7bLV2DtqJV9qiz5Y0uz1JnnZIWipbwPG14hqE1tODpyJYHLZyYQM4coPw/exec"
+EMAIL_CENTER_SECRET_2 = "abcd#1234!EIUsecret"
 KEEPALIVE_TO = "eoffice2@eiu.edu.vn"
 KEEPALIVE_TOKEN = "pdc_ka_48f9a2b7190d45ca93f5be1c6e0388d7"
 
