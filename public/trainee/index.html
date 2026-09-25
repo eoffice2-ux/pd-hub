@@ -2709,7 +2709,11 @@
         api.run
           .withSuccessHandler((data) => {
             if (Array.isArray(data)) {
-              data.sort((a, b) => parseDateString(b.sectionDate || b.registeredAt) - parseDateString(a.sectionDate || a.registeredAt));
+              data.sort((a, b) => {
+                const aVal = Number(a.checkinEndTimestamp) || parseDateString(a.dateStart || a.sectionDate || a.registeredAt);
+                const bVal = Number(b.checkinEndTimestamp) || parseDateString(b.dateStart || b.sectionDate || b.registeredAt);
+                return bVal - aVal;
+              });
             }
             cachedHistory = data; // Save to our new global variable!
 

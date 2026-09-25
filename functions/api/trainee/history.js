@@ -21,7 +21,7 @@ export async function onRequestGet(context) {
         authenticatedEmail: auth.session.email,
         requestedEmail: emailCheck.email,
         count: 1,
-        data: [{ sectionId: "SEC-DEMO-HIS-001", sectionNameEn: "Completed Demo Course", status: "Completed", sectionDate: "01/05/2026", registeredAt: "20/04/2026 09:00", checkin: "2 / 2 (100%)", assessment: "100%", feedback: "1 / 1 (100%)", certIssued: "" }]
+        data: [{ sectionId: "SEC-DEMO-HIS-001", sectionNameEn: "Completed Demo Course", status: "Completed", sectionDate: "01/05/2026", dateStart: "01/05/2026", checkinEndTimestamp: 1777651199000, registeredAt: "20/04/2026 09:00", checkin: "2 / 2 (100%)", assessment: "100%", feedback: "1 / 1 (100%)", certIssued: "" }]
       });
     }
 

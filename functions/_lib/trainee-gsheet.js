@@ -327,6 +327,31 @@ function buildCheckinTimeWindow(slotRow, headers) {
   };
 }
 
+function calculateSlotEndTimestamp(dateValue, toValue) {
+  if (!dateValue && !toValue) return 0;
+  const fullToParts = parseVietnamDateParts(toValue);
+  if (fullToParts) {
+    const toTimeMatch = String(toValue).match(/\s+(\d{1,2}:\d{1,2}(?::\d{1,2})?(?:\s*[AP]M)?)/i);
+    const toTime = toTimeMatch ? parseTimeParts(toTimeMatch[1], true) : { hour: 23, minute: 59, second: 59 };
+    return vietnamLocalToUtcMs({ ...fullToParts, ...(toTime || { hour: 23, minute: 59, second: 59 }) });
+  }
+
+  const dateParts = parseVietnamDateParts(dateValue);
+  if (!dateParts) return 0;
+
+  let toParts = parseTimeParts(toValue, false);
+  if (!toParts) {
+    const timeMatch = String(dateValue).match(/\s+(\d{1,2}:\d{1,2}(?::\d{1,2})?(?:\s*[AP]M)?)/i);
+    if (timeMatch) {
+      toParts = parseTimeParts(timeMatch[1], true);
+    }
+  }
+  if (!toParts) {
+    toParts = { hour: 23, minute: 59, second: 59 };
+  }
+  return vietnamLocalToUtcMs({ ...dateParts, ...toParts });
+}
+
 export const TBL_SECTION = "pdc_section management";
 export const TBL_ATTENDEE = "pdc_section attendee management";
 export const TBL_COURSE = "pdc_course master list";
@@ -1234,10 +1259,13 @@ export async function getTraineeHistoryFromSheet(env, traineeEmail, options = {}
   const sSecIdx = headerIndex(sHeaders, ["section id"]);
   const sNameIdx = headerIndex(sHeaders, ["section name en", "section name"]);
   const sDateIdx = headerIndex(sHeaders, ["section date"]);
+  const sDateStartIdx = headerIndex(sHeaders, ["date start", "start date", "date start section"]);
   const sStatusIdx = headerIndex(sHeaders, ["section status", "status"]);
   if (sSecIdx === -1) throw new Error("Missing section id in section management sheet.");
 
   const pSecIdx = headerIndex(pHeaders, ["section id"]);
+  const pDateIdx = headerIndex(pHeaders, ["checkin date", "check-in date", "date", "dateid"]);
+  const pToIdx = headerIndex(pHeaders, ["checkin valid to", "valid to", "to", "end time", "checkin end time"]);
   const lSecIdx = headerIndex(lHeaders, ["section id"]);
   const lEmailIdx = headerIndex(lHeaders, ["trainee id", "trainee email"]);
 
@@ -1248,7 +1276,16 @@ export async function getTraineeHistoryFromSheet(env, traineeEmail, options = {}
     if (!sectionId) continue;
     const section = sRows.find(row => String(row[sSecIdx] || "").trim() === sectionId) || [];
 
-    const totalSlots = pSecIdx !== -1 ? pRows.filter(row => String(row[pSecIdx] || "").trim() === sectionId).length : 0;
+    const sectionPlans = pSecIdx !== -1 ? pRows.filter(row => String(row[pSecIdx] || "").trim() === sectionId) : [];
+    const totalSlots = sectionPlans.length;
+    let maxCheckinEndTs = 0;
+    for (const plan of sectionPlans) {
+      const dateVal = pDateIdx !== -1 ? String(plan[pDateIdx] || "") : "";
+      const toVal = pToIdx !== -1 ? String(plan[pToIdx] || "") : "";
+      const ts = calculateSlotEndTimestamp(dateVal, toVal);
+      if (ts > maxCheckinEndTs) maxCheckinEndTs = ts;
+    }
+
     const userCheckins = (lSecIdx !== -1 && lEmailIdx !== -1) ? lRows.filter(row => String(row[lSecIdx] || "").trim() === sectionId && normalizeEmail(row[lEmailIdx]) === cleanEmail).length : 0;
     const checkin = totalSlots > 0 ? `${userCheckins} / ${totalSlots} (${Math.round((userCheckins / totalSlots) * 100)}%)` : "0%";
 
@@ -1260,6 +1297,8 @@ export async function getTraineeHistoryFromSheet(env, traineeEmail, options = {}
       sectionNameEn: sNameIdx !== -1 ? String(section[sNameIdx] || "Unknown") : "Unknown",
       status: sStatusIdx !== -1 ? String(section[sStatusIdx] || "Unknown") : "Unknown",
       sectionDate: sDateIdx !== -1 ? String(section[sDateIdx] || "N/A").replace(/\n/g, "<br>") : "N/A",
+      dateStart: sDateStartIdx !== -1 ? String(section[sDateStartIdx] || "") : "",
+      checkinEndTimestamp: maxCheckinEndTs,
       registeredAt: String(valueByHeaders(reg, aHeaders, ["registered at", "registration datetime", "created at"], "N/A") || "N/A"),
       checkin,
       assessment: formatPercentageCell(valueByHeaders(reg, aHeaders, ["assessment completion"], "")),

@@ -1,5 +1,5 @@
 import { psqlFindOne, psqlInsertRow, psqlSelectRows } from "../psql-adapter.js";
-import { cleanEmail, formatVietnamDateTime, nowVietnamLocal, parsePsqlVietnamDate } from "./repo-utils.js";
+import { cleanEmail, formatVietnamDateTime, nowVietnamLocal, parsePsqlVietnamDate, calculateSlotEndTimestamp } from "./repo-utils.js";
 import { getSectionPsql, getSectionDetailsPsql } from "./section-repo.js";
 import { getUserType } from "../trainee-gsheet.js";
 import { listCheckinPlansForSectionPsql, listCheckinLogsForTraineePsql } from "./checkin-repo.js";
@@ -184,6 +184,13 @@ export async function getTraineeHistoryPsql(env, email, options = {}) {
     const sectionNameEn = section["section name en"] || section["section name"] || courseName || sectionId;
     
     const plans = await listCheckinPlansForSectionPsql(env, sectionId);
+    let maxCheckinEndTs = 0;
+    for (const plan of plans) {
+      const dateVal = plan["checkin date"] || plan["checkin_date"] || plan["date"] || "";
+      const toVal = plan["checkin valid to"] || plan["checkin_valid_to"] || plan["valid to"] || plan["to"] || "";
+      const ts = calculateSlotEndTimestamp(dateVal, toVal);
+      if (ts > maxCheckinEndTs) maxCheckinEndTs = ts;
+    }
     const logs = await listCheckinLogsForTraineePsql(env, clean, sectionId);
     const checkinText = `${logs.length} / ${plans.length} (${plans.length > 0 ? Math.round((logs.length / plans.length) * 100) : 0}%)`;
     
@@ -210,6 +217,8 @@ export async function getTraineeHistoryPsql(env, email, options = {}) {
       sectionNameEn,
       status: section["section status"] || section["status"] || "Unknown",
       sectionDate: section["section date"] || section["date"] || "N/A",
+      dateStart: section["date start"] || section["date start section"] || section["start date"] || section["start_date"] || "",
+      checkinEndTimestamp: maxCheckinEndTs,
       registeredAt,
       checkin: checkinText,
       assessment: "N/A",
