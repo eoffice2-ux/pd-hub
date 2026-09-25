@@ -1,5 +1,5 @@
-import { jsonResponse } from "../../../_lib/security.js";
-import { sendViaBrevo, sendViaResend } from "../../../_lib/email-sender.js";
+import { jsonResponse } from "../../_lib/security.js";
+import { sendViaBrevo, sendViaResend } from "../../_lib/email-sender.js";
 
 export async function onRequestPost(context) {
   const { env, request } = context;
