@@ -30,7 +30,8 @@ flowchart TD
 
     subgraph Services["External Integrations"]
         BREVO["✉️ Brevo API v3\n(Transactional OTP)"]
-        GAS["🔄 Google Apps Script\n(Calendar Proxy)"]
+        GAS1["🔄 Google Apps Script 1\n(Calendar & Mail Proxy)"]
+        GAS2["🔄 Google Apps Script 2\n(Calendar & Mail Proxy)"]
     end
 
     TP --> CDN
@@ -45,7 +46,8 @@ flowchart TD
     AS --> FUN
 
     FUN --> BREVO
-    FUN --> GAS
+    FUN --> GAS1
+    FUN --> GAS2
     FUN --> CACHE
     CACHE -.-> GSHEET
     FUN --> GSHEET
@@ -140,3 +142,27 @@ sequenceDiagram
     GAS->>Mail: Deliver Invite (.ics modifies personal calendar)
     Worker-->>Bot: 200 OK { success: true }
 ```
+
+---
+
+## 5. Dual-GAS Email Load Balancing & Smart Fallback
+
+To mitigate daily quota limits imposed by Google Apps Script and ensure uninterrupted transactional email delivery, the outbound email pipeline employs a deterministic 50/50 round-robin rotation and a multi-tier fallback cascade.
+
+### 5.1. Deterministic Load Balancing
+Outbound emails (OTP codes, registration confirmations, cancellation notices, and schedule updates) are dispatched via `functions/_lib/email-sender.js`:
+- A deterministic `djb2` hash is computed from the recipient's normalized email address.
+- Hash modulo 2 directs the email to either **GAS 1** (Slot 0) or **GAS 2** (Slot 1).
+- This ensures an even 50/50 traffic split without requiring distributed state storage.
+
+### 5.2. Multi-Tier Fallback Cascade
+If an attempt to dispatch through the assigned service encounters an error (network failure, rate limit, quota exhaustion):
+1. **Primary**: Assigned Google Apps Script (GAS 1 or GAS 2).
+2. **First Fallback**: **Brevo API v3** (Direct transactional email with ICS attachments supported).
+3. **Second Fallback**: Alternate Google Apps Script (e.g. if GAS 1 was primary, GAS 2 is attempted).
+
+### 5.3. Service Keep-Alive Automation
+To prevent Brevo API credentials from being marked inactive or dormant during low-traffic periods:
+- An administrative endpoint `POST /api/admin/email-keepalive` is protected by `KEEPALIVE_TOKEN`.
+- A scheduled GitHub Actions workflow (`.github/workflows/email-keepalive.yml`) pings this endpoint quarterly (~every 80 days), triggering a small heartbeat test email to `eoffice2@eiu.edu.vn`.
+

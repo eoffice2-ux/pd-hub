@@ -27,6 +27,10 @@ To stay comfortably under the 64-variable limit, `functions/_lib/data-source.js`
 | `GOOGLE_SHEET_ID_CORE` | `1eQ...` | Spreadsheet ID for Core business tabs (trainees, sections, registrations). |
 | `GOOGLE_SHEET_ID_FEEDBACK`| `1fG...` | Spreadsheet ID for Feedback and survey responses. |
 | `ADMIN_EMAILS` | `["admin@eiu.edu.vn"]` | Fallback comma-separated or JSON list of authorized system admins. |
+| `EMAIL_CENTER_URL_2` | `https://script.google.com/...` | Google Apps Script (GAS 2) primary Web App URL for load balancing. |
+| `EMAIL_CENTER_SECRET_2` | `abcd#1234...` | Secret token for GAS 2 authentication. |
+| `KEEPALIVE_TOKEN` | `cron_secret_...` | Token used by GitHub Actions to authenticate the quarterly keep-alive ping. |
+| `KEEPALIVE_TO` | `eoffice2@eiu.edu.vn` | Destination email address for the quarterly keep-alive ping. |
 
 ### Per-Table Source Overrides (Optional)
 If a specific table needs to run on Google Sheets while `DB_MODE="psql"`, specify:
@@ -47,6 +51,8 @@ Never commit secrets to Git. Configure these in **Cloudflare Pages &rarr; Settin
 | `GOOGLE_SERVICE_ACCOUNT_KEY` | JSON String | Google Cloud Service Account Private Key JSON with Sheets API permissions. |
 | `BREVO_API_KEY` | API Key | Brevo v3 xkeysib API key for sending transactional OTP emails. |
 | `BREVO_SENDER_EMAIL` | Email | Authorized sender email address (e.g. `oce@eiu.edu.vn`). |
+| `EMAIL_CENTER_URL` | Web App URL | Original Google Apps Script (GAS 1) Web App URL. |
+| `EMAIL_CENTER_SECRET` | Token | Secret token for GAS 1 authentication. |
 | `APPSHEET_WEBHOOK_SECRET` | Token | Shared secret header validated on AppSheet webhooks. |
 | `DEBUG_TOKEN` | Token | Emergency operational bypass token. |
 

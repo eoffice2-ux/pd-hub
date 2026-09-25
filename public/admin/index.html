@@ -1660,6 +1660,7 @@
       }
       function render(data) {
         const summary = data.summary || {};
+        const c = data.components || {};
         document.getElementById("summary").innerHTML = [
           metric(
             "Overall",
@@ -1670,6 +1671,26 @@
             "OTP",
             summary.otp || "unknown",
             summary.otp === "email" ? "ok" : "warn",
+          ),
+          metric(
+            "GAS 1 Active",
+            c.otp?.gas1Present ? "Yes" : "No",
+            c.otp?.gas1Present ? "ok" : "warn",
+          ),
+          metric(
+            "GAS 2 Active",
+            c.otp?.gas2Present ? "Yes" : "No",
+            c.otp?.gas2Present ? "ok" : "warn",
+          ),
+          metric(
+            "Brevo Active",
+            c.otp?.brevoApiKeyPresent ? "Yes" : "No",
+            c.otp?.brevoApiKeyPresent ? "ok" : "warn",
+          ),
+          metric(
+            "API Keep-Alive",
+            c.otp?.keepaliveConfigured ? "Yes" : "No",
+            c.otp?.keepaliveConfigured ? "ok" : "warn",
           ),
           metric(
             "PostgreSQL tables",
@@ -1696,7 +1717,6 @@
           metric("Generated", new Date(data.generatedAt).toLocaleString(), ""),
         ].join("");
 
-        const c = data.components || {};
         document.getElementById("details").innerHTML = [
           component("Google Sheets", c.googleSheets),
           component("OTP Email", c.otp),
