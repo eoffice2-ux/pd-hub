@@ -70,7 +70,6 @@ export async function onRequestGet(context) {
         realOtpEnabled: isRealOtpEnabled(env),
         provider: getEmailProvider(env),
         fromEmailPresent: Boolean(env.OTP_FROM_EMAIL || env.MAIL_FROM_EMAIL),
-        resendApiKeyPresent: Boolean(env.RESEND_API_KEY),
         brevoApiKeyPresent: Boolean(env.BREVO_API_KEY),
         gas1Present: Boolean(env.EMAIL_CENTER_URL),
         gas2Present: Boolean(env.EMAIL_CENTER_URL_2),

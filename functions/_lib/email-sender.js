@@ -5,15 +5,14 @@
  *   hash(email) % 2 === 0  →  GAS1 primary, GAS2 fallback
  *   hash(email) % 2 === 1  →  GAS2 primary, GAS1 fallback
  *
- * Failure chain (slot 0): GAS1 → Brevo → Resend → GAS2
- * Failure chain (slot 1): GAS2 → Brevo → Resend → GAS1
+ * Failure chain (slot 0): GAS1 → Brevo → GAS2
+ * Failure chain (slot 1): GAS2 → Brevo → GAS1
  */
 export async function sendEmail(env, { to, subject, html, text, attachments = [], logContext = "Email" }) {
   const fromEmail = String(env.OTP_FROM_EMAIL || env.MAIL_FROM_EMAIL || "").trim();
   const fromName  = String(env.OTP_FROM_NAME  || env.MAIL_FROM_NAME  || "PD Hub").trim();
   const gas1Secret = String(env.EMAIL_CENTER_SECRET || "").trim();
   const gas2Secret = String(env.EMAIL_CENTER_SECRET_2 || env.EMAIL_CENTER_SECRET || "").trim();
-  const provider   = String(env.OTP_EMAIL_PROVIDER || "brevo").trim().toLowerCase();
 
   const gas1Url   = String(env.EMAIL_CENTER_URL   || "").trim();
   const gas2Url   = String(env.EMAIL_CENTER_URL_2 || "").trim();
@@ -58,8 +57,8 @@ export async function sendEmail(env, { to, subject, html, text, attachments = []
   const r1 = await tryGas(primaryUrl, primarySecret, primaryLabel);
   if (r1) return r1;
 
-  // 2. Brevo
-  if (fromEmail && (provider === "brevo" || env.BREVO_API_KEY)) {
+  // 2. Brevo (Fallback)
+  if (fromEmail && env.BREVO_API_KEY) {
     try {
       const r = await sendViaBrevo(env, { to, fromEmail, fromName, subject, html, text, attachments, logContext });
       if (r) return r;
@@ -68,19 +67,9 @@ export async function sendEmail(env, { to, subject, html, text, attachments = []
     }
   }
 
-  // 3. Resend
-  if (fromEmail && env.RESEND_API_KEY) {
-    try {
-      const r = await sendViaResend(env, { to, fromEmail, fromName, subject, html, text, attachments, logContext });
-      if (r) return r;
-    } catch (e) {
-      console.warn(`[${logContext}] Resend failed: ${e.message}`);
-    }
-  }
-
-  // 4. Fallback GAS (last resort)
-  const r4 = await tryGas(fallbackUrl, fallbackSecret, fallbackLabel);
-  if (r4) return r4;
+  // 3. Fallback GAS (last resort)
+  const r3 = await tryGas(fallbackUrl, fallbackSecret, fallbackLabel);
+  if (r3) return r3;
 
   throw new Error(`[${logContext}] All email providers exhausted (slot=${slot}, to=${to}).`);
 }
@@ -107,30 +96,6 @@ export async function sendViaBrevo(env, { to, fromEmail, fromName, subject, html
   if (!res.ok) throw new Error(json?.message || `Brevo HTTP ${res.status}`);
   console.log(`[${logContext}] ✅ Sent via Brevo`);
   return { provider: "brevo", id: json?.messageId || json?.messageIds?.[0] || "" };
-}
-
-export async function sendViaResend(env, { to, fromEmail, fromName, subject, html, text, attachments = [], logContext = "Email" }) {
-  const key = String(env.RESEND_API_KEY || "").trim();
-  if (!key) throw new Error("Missing RESEND_API_KEY");
-  const body = {
-    from: `${fromName || "PD Hub"} <${fromEmail}>`,
-    to: [to],
-    subject,
-    html,
-    text
-  };
-  if (attachments.length) {
-    body.attachments = attachments.map(a => ({ filename: a.filename, content: a.content }));
-  }
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { authorization: `Bearer ${key}`, "content-type": "application/json" },
-    body: JSON.stringify(body)
-  });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(json?.message || json?.error || `Resend HTTP ${res.status}`);
-  console.log(`[${logContext}] ✅ Sent via Resend`);
-  return { provider: "resend", id: json?.id || "" };
 }
 
 export function emailSlot(email) {

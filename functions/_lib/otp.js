@@ -152,7 +152,7 @@ export async function sendOtpEmail(env, { to, otp, scope = "client" }) {
 }
 
 export function getEmailProvider(env = {}) {
-  return String(env.OTP_EMAIL_PROVIDER || env.EMAIL_PROVIDER || "resend").trim().toLowerCase();
+  return String(env.OTP_EMAIL_PROVIDER || env.EMAIL_PROVIDER || "brevo").trim().toLowerCase();
 }
 
 async function ensureOtpHeader(env, spreadsheetId, sheetName) {

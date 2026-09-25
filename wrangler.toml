@@ -9,7 +9,7 @@ id = "00903e250777488ea8244ef828ddd17e"
 
 [vars]
 
-# OTP email mode for go-live. Secrets RESEND_API_KEY/BREVO_API_KEY stay in Cloudflare Secrets.
+# OTP email mode for go-live. Secret BREVO_API_KEY stays in Cloudflare Secrets.
 OTP_MODE = "email"
 OTP_EMAIL_PROVIDER = "brevo"
 OTP_FROM_EMAIL = "eoffice2@eiu.edu.vn"
