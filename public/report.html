@@ -1,0 +1,2350 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Báo cáo Lớp học - PD Hub</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600;1,700;1,800&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="/oce-theme.css" />
+
+    <style>
+      /* PD Hub — Report Dashboard · Page-specific overrides on top of oce-theme.css */
+      body {
+        letter-spacing: 0.005em;
+        background:
+          radial-gradient(
+            circle at top left,
+            rgba(79, 70, 229, 0.05),
+            transparent 34%
+          ),
+          radial-gradient(
+            circle at bottom right,
+            rgba(22, 163, 199, 0.04),
+            transparent 36%
+          ),
+          var(--pd-bg) !important;
+        color: var(--pd-text);
+        min-height: 100vh;
+        margin: 0;
+      }
+
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6,
+      .navbar-brand,
+      .brand-title,
+      .intro-title,
+      .card-title,
+      .section-title {
+        font-weight: 700 !important;
+        letter-spacing: -0.01em;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 28px;
+      }
+      .subtitle {
+        margin-top: 6px;
+        opacity: 0.9;
+        font-size: 14px;
+      }
+
+      .btn {
+        border-radius: 12px !important;
+        font-weight: 700;
+        box-shadow: 0 6px 14px rgba(49, 46, 129, 0.1);
+        transition: all 0.2s ease;
+        border: 0;
+      }
+      .btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 18px rgba(0, 26, 78, 0.18);
+      }
+      .btn-light {
+        background: #f0f4ff;
+        color: var(--c-navy);
+      }
+      .btn-secondary {
+        background: #344054;
+        color: white;
+      }
+      /* .btn-primary inherits gold brand color from oce-theme.css */
+
+      main {
+        padding: 30px 0 50px;
+      }
+
+      .card {
+        border: 1px solid var(--pd-card-line) !important;
+        background: linear-gradient(
+          180deg,
+          #ffffff 0%,
+          var(--pd-card-tint) 100%
+        ) !important;
+        box-shadow:
+          0 4px 20px rgba(15, 23, 42, 0.03),
+          0 10px 30px rgba(49, 46, 129, 0.06) !important;
+        border-radius: 20px !important;
+        padding: 20px;
+        margin-bottom: 20px;
+        transition:
+          transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+          box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+      }
+
+      .class-card {
+        cursor: pointer;
+        border-top: 4px solid var(--pd-indigo) !important;
+        position: relative;
+        overflow: hidden;
+        height: 100%;
+      }
+
+      .class-card:hover {
+        transform: translateY(-4px) scale(1.01) !important;
+        box-shadow:
+          0 12px 28px rgba(15, 23, 42, 0.06),
+          0 18px 45px rgba(49, 46, 129, 0.12) !important;
+      }
+
+      .class-card::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 70px;
+        height: 70px;
+        background: radial-gradient(
+          circle,
+          rgba(79, 70, 229, 0.1),
+          transparent 65%
+        );
+        pointer-events: none;
+      }
+
+      .class-title {
+        font-size: 1.25rem;
+        color: var(--pd-indigo);
+        margin-bottom: 12px;
+        font-weight: 700;
+        line-height: 1.35;
+      }
+
+      .class-info-item {
+        font-size: 13.5px;
+        color: var(--pd-muted);
+        margin-bottom: 6px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .class-info-item i {
+        color: var(--c-navy);
+        width: 16px;
+        text-align: center;
+      }
+
+      .badge {
+        border-radius: 20px !important;
+        padding: 6px 12px !important;
+        font-size: 11px !important;
+        font-weight: 700 !important;
+        letter-spacing: 0.02em;
+      }
+
+      .badge-open {
+        background-color: #ecfdf5 !important;
+        color: #047857 !important;
+        border: 1px solid rgba(16, 185, 129, 0.15) !important;
+      }
+      .badge-closed {
+        background-color: #fff1f2 !important;
+        color: #be123c !important;
+        border: 1px solid rgba(244, 63, 94, 0.15) !important;
+      }
+
+      .rate-section {
+        margin-top: 16px;
+        padding-top: 14px;
+        border-top: 1px dashed rgba(0, 48, 135, 0.1);
+      }
+
+      .rate-label {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--pd-text);
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 5px;
+      }
+
+      .progress {
+        height: 6px !important;
+        border-radius: 10px !important;
+        background-color: rgba(0, 48, 135, 0.08) !important;
+        margin-bottom: 12px;
+      }
+
+      .progress-bar-checkin {
+        background: linear-gradient(
+          90deg,
+          var(--c-deep-navy),
+          var(--c-navy)
+        ) !important;
+      }
+
+      .progress-bar-feedback {
+        background: linear-gradient(90deg, var(--pd-cyan), #0284c7) !important;
+      }
+
+      .login-shell {
+        max-width: 520px;
+        margin: 50px auto 0;
+        border-top: 5px solid var(--c-navy) !important;
+        background: #ffffff !important;
+      }
+
+      input {
+        width: 100%;
+        padding: 12px 14px;
+        border: 1px solid #dbe3ee;
+        border-radius: 12px;
+        font-size: 14px;
+        transition:
+          border-color 0.2s ease,
+          box-shadow 0.2s ease !important;
+      }
+
+      input:focus {
+        border-color: rgba(79, 70, 229, 0.55) !important;
+        box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.15) !important;
+        outline: none;
+      }
+
+      .empty {
+        border: 1px dashed #cbd5e1;
+        border-radius: 14px;
+        padding: 16px;
+        color: var(--pd-muted);
+        background: #fff;
+        margin-bottom: 16px;
+        text-align: center;
+        font-size: 14px;
+      }
+      .empty.ok {
+        color: #047857;
+        background: #ecfdf5;
+        border-color: rgba(16, 185, 129, 0.3);
+      }
+      .empty.warn {
+        color: #b45309;
+        background: #fffbeb;
+        border-color: rgba(245, 158, 11, 0.3);
+      }
+      .empty.bad {
+        color: #be123c;
+        background: #fff1f2;
+        border-color: rgba(244, 63, 94, 0.3);
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      .modal-content {
+        border-radius: 24px !important;
+        border: 0 !important;
+        box-shadow: 0 24px 70px rgba(15, 23, 42, 0.18) !important;
+        overflow: hidden;
+      }
+
+      .modal-header {
+        background: linear-gradient(
+          135deg,
+          var(--pd-navy),
+          var(--pd-indigo)
+        ) !important;
+        color: white;
+        border-bottom: 0 !important;
+        padding: 22px 26px !important;
+      }
+
+      .modal-title {
+        font-size: 20px;
+        font-weight: 700;
+      }
+
+      .modal-body {
+        padding: 26px !important;
+        background: #fbfbfc;
+      }
+
+      .nav-tabs {
+        border-bottom: 1px solid rgba(55, 48, 163, 0.12) !important;
+        margin-bottom: 20px;
+      }
+
+      .nav-tabs .nav-link {
+        border: 0 !important;
+        color: var(--pd-muted);
+        font-weight: 700;
+        padding: 10px 16px;
+        border-radius: 0 !important;
+        border-bottom: 3px solid transparent !important;
+        transition: all 0.2s ease;
+      }
+
+      .nav-tabs .nav-link:hover {
+        color: var(--pd-indigo);
+      }
+
+      .nav-tabs .nav-link.active {
+        color: var(--pd-indigo) !important;
+        background: transparent !important;
+        border-bottom-color: var(--pd-indigo) !important;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+
+      th,
+      td {
+        padding: 12px 14px !important;
+        border-bottom: 1px solid rgba(55, 48, 163, 0.06) !important;
+        text-align: left;
+        vertical-align: middle;
+      }
+
+      th {
+        color: var(--pd-indigo) !important;
+        font-weight: 700 !important;
+        background: rgba(79, 70, 229, 0.03) !important;
+        border-bottom: 2px solid rgba(55, 48, 163, 0.1) !important;
+      }
+
+      tr:hover td {
+        background-color: rgba(79, 70, 229, 0.015) !important;
+      }
+
+      .star-indicator {
+        display: inline-flex;
+        gap: 4px;
+        align-items: center;
+      }
+
+      .star-indicator i {
+        font-size: 14px;
+        transition: transform 0.2s ease;
+      }
+      .star-indicator i:hover {
+        transform: scale(1.2);
+      }
+
+      .text-success {
+        color: #10b981 !important;
+      }
+      .text-danger {
+        color: #f43f5e !important;
+      }
+      .text-muted {
+        color: #cbd5e1 !important;
+      }
+
+      .filters-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+      }
+
+      .filter-btn-group {
+        display: flex;
+        gap: 6px;
+        background: rgba(55, 48, 163, 0.05);
+        padding: 5px;
+        border-radius: 14px;
+      }
+
+      .filter-btn {
+        border: 0;
+        background: transparent;
+        padding: 8px 16px;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--pd-muted);
+        border-radius: 10px;
+        transition: all 0.2s ease;
+      }
+
+      .filter-btn.active {
+        background: white;
+        color: var(--pd-indigo);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+      }
+
+      .loading-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(4px);
+        z-index: 1090;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        color: var(--pd-indigo);
+        gap: 10px;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      .spinner {
+        width: 24px;
+        height: 24px;
+        border: 3px solid rgba(0, 48, 135, 0.2);
+        border-top-color: var(--c-navy);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+
+      /* Responsive Login & Navigation */
+      @media (max-width: 576px) {
+        #loginCard {
+          min-height: auto !important;
+        }
+        #loginCard .row {
+          align-items: flex-start;
+          gap: 1rem !important;
+        }
+        #loginCard .col-lg-6:first-child {
+          margin-top: 12px;
+        }
+        #loginCard .col-lg-6:first-child > div {
+          padding: 14px !important;
+          border-radius: 16px !important;
+          box-shadow: 0 8px 20px rgba(15, 23, 42, 0.055) !important;
+          background: rgba(255, 255, 255, 0.92) !important;
+        }
+        #loginCard .col-lg-6:first-child h3 {
+          font-size: 1.18rem !important;
+          line-height: 1.28 !important;
+          margin-bottom: 0.5rem !important;
+        }
+        #loginCard .card {
+          margin-top: 8px;
+          padding: 1.25rem !important;
+          max-width: 100% !important;
+          border-radius: 18px !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="pd-oce-header">
+      <div class="pd-oce-header-inner">
+        <a href="/" class="pd-oce-logo-link">
+          <img
+            src="https://i.postimg.cc/hPBGsySC/Logo-white-021.png"
+            alt="EIU Logo"
+            class="pd-oce-logo"
+          />
+        </a>
+        <div class="pd-oce-dept">OCE · Phòng Kết Nối Cộng Đồng</div>
+      </div>
+    </nav>
+
+    <nav class="pd-local-tabs">
+      <div
+        class="container pd-app-nav-inner"
+        style="
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          width: 100%;
+        "
+      >
+        <div class="pd-page-title me-auto">
+          <h2 style="margin: 0; color: var(--c-deep-navy)">
+            <i class="fas fa-chart-line me-2"></i>Report Dashboard
+          </h2>
+          <span class="text-muted small"
+            >Thống kê chỉ số đăng ký, điểm danh (check-in) và khảo sát.</span
+          >
+        </div>
+        <div class="pd-app-tabs">
+          <a class="nav-link fw-bold" href="/"
+            ><i class="fas fa-home me-2"></i>Home</a
+          >
+          <a
+            id="profileBtn"
+            class="nav-link fw-bold hidden"
+            style="cursor: pointer"
+            onclick="toggleReportProfile()"
+            ><i class="fas fa-user-cog me-2"></i>Profile</a
+          >
+          <a
+            id="logoutBtn"
+            class="nav-link text-danger fw-bold hidden"
+            style="cursor: pointer"
+            onclick="logoutReport()"
+            ><i class="fas fa-sign-out-alt me-2"></i>Logout</a
+          >
+        </div>
+      </div>
+    </nav>
+
+    <main class="container">
+      <!-- LOGIN VIEW -->
+      <section id="loginCard" class="pd-oce-hero" style="min-height: 80vh">
+        <div class="container" style="margin-top: 40px">
+          <div class="row align-items-center justify-content-center g-5">
+            <div class="col-lg-6 col-md-12">
+              <div class="pe-lg-4">
+                <h3 class="fw-bold text-primary mb-2">
+                  Trung Tâm Báo Cáo & Thống Kê
+                </h3>
+                <h6 class="text-light-muted mb-4" style="font-style: italic">
+                  PD Hub Report & Monitoring Dashboard
+                </h6>
+
+                <p class="mb-5" style="line-height: 1.6">
+                  Hệ thống báo cáo tổng quan dành cho quản trị viên và điều phối
+                  viên đào tạo. Theo dõi chỉ số đăng ký, tỷ lệ điểm danh thực tế
+                  (check-in) và kết quả khảo sát đánh giá chất lượng các lớp học
+                  theo thời gian thực.
+                  <br /><br />
+                  <span class="text-muted small" style="font-style: italic">
+                    Real-time analytics and monitoring dashboard for
+                    administrators and training coordinators. Track enrollment
+                    rates, check-in attendance, and course satisfaction surveys
+                    across all training programs.
+                  </span>
+                </p>
+
+                <div class="d-flex mb-4">
+                  <div class="text-primary me-3 mt-1">
+                    <i class="fas fa-chart-pie fa-2x"></i>
+                  </div>
+                  <div>
+                    <h6 class="fw-bold mb-1">
+                      1. Chỉ số đăng ký / Registrations
+                    </h6>
+                    <p class="small text-muted mb-0">
+                      Theo dõi số lượng học viên đăng ký theo từng chuyên đề và
+                      ngày đào tạo.
+                    </p>
+                  </div>
+                </div>
+
+                <div class="d-flex mb-4">
+                  <div class="text-primary me-3 mt-1">
+                    <i class="fas fa-user-check fa-2x"></i>
+                  </div>
+                  <div>
+                    <h6 class="fw-bold mb-1">
+                      2. Điểm danh thực tế / Check-in Rate
+                    </h6>
+                    <p class="small text-muted mb-0">
+                      Thống kê tỷ lệ học viên có mặt thực tế và đối soát danh
+                      sách tham dự.
+                    </p>
+                  </div>
+                </div>
+
+                <div class="d-flex">
+                  <div class="text-primary me-3 mt-1">
+                    <i class="fas fa-poll-h fa-2x"></i>
+                  </div>
+                  <div>
+                    <h6 class="fw-bold mb-1">
+                      3. Khảo sát & Đánh giá / Feedback & CSAT
+                    </h6>
+                    <p class="small text-muted mb-0">
+                      Tổng hợp ý kiến phản hồi và mức độ hài lòng về giảng viên
+                      và nội dung.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-lg-5 col-md-12">
+              <div
+                class="card p-4 mx-auto shadow"
+                style="
+                  border-radius: 18px;
+                  border: 1px solid var(--pd-card-line);
+                  background: #ffffff !important;
+                  max-width: 470px;
+                  border-top: 5px solid var(--c-navy) !important;
+                "
+              >
+                <div class="text-center mb-4">
+                  <div
+                    class="bg-light text-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                    style="width: 65px; height: 65px"
+                  >
+                    <i class="fas fa-chart-line fa-2x"></i>
+                  </div>
+                  <h4 class="fw-bold mb-1" style="color: var(--pd-indigo)">
+                    Admin Authentication
+                  </h4>
+                  <small class="text-muted italic"
+                    >Secure Report Portal Access</small
+                  >
+                </div>
+
+                <div id="stepEmail">
+                  <label class="small text-muted mb-2"
+                    ><b>Email Admin</b></label
+                  >
+                  <input
+                    id="adminEmail"
+                    type="email"
+                    placeholder="eoffice2@eiu.edu.vn"
+                    autocomplete="email"
+                    class="form-control mb-3"
+                  />
+                  <div class="d-flex gap-2 mt-4">
+                    <button
+                      class="btn btn-primary w-100 py-2 fw-bold"
+                      onclick="sendOtp(this)"
+                    >
+                      Continue <i class="fas fa-arrow-right ms-2"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <div id="stepChoice" class="hidden">
+                  <p class="small text-muted text-center mb-3">
+                    Vui lòng chọn phương thức đăng nhập / <i>Choose a method</i>
+                  </p>
+                  <div class="d-flex flex-column gap-2 mt-4">
+                    <button
+                      class="btn btn-outline-primary w-100 py-2 fw-bold"
+                      onclick="showReportPinEntry()"
+                      style="border-radius: 8px"
+                    >
+                      <i class="fas fa-key me-2"></i> Use Personal PIN
+                    </button>
+                    <button
+                      class="btn btn-light w-100 py-2 text-secondary fw-bold"
+                      onclick="requestReportOtp()"
+                      style="border-radius: 8px; border: 1px solid #dee2e6"
+                    >
+                      <i class="fas fa-envelope me-2"></i> Receive Email OTP
+                    </button>
+                    <div class="text-center mt-3">
+                      <button
+                        type="button"
+                        class="btn btn-link text-decoration-none small text-muted fw-bold"
+                        onclick="backToEmail()"
+                      >
+                        Back
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div id="stepPin" class="hidden">
+                  <label class="small text-muted mb-2"
+                    ><b
+                      >Mã PIN 4 số của bạn / <i>Enter 4-digit PIN</i></b
+                    ></label
+                  >
+                  <input
+                    id="reportPin"
+                    type="password"
+                    maxlength="4"
+                    class="form-control form-control-lg text-center pin-box mb-4"
+                    placeholder="••••"
+                    style="
+                      letter-spacing: 15px;
+                      font-size: 1.5rem;
+                      background-color: #f8f9fa;
+                    "
+                  />
+                  <button
+                    class="btn btn-primary w-100 py-2 fw-bold"
+                    onclick="submitReportPin(this)"
+                  >
+                    Verify PIN
+                  </button>
+                  <div class="text-center mt-3">
+                    <button
+                      type="button"
+                      class="btn btn-link text-decoration-none small text-muted fw-bold"
+                      onclick="backToChoice()"
+                    >
+                      Back
+                    </button>
+                  </div>
+                </div>
+
+                <div id="stepOtp" class="hidden">
+                  <label class="small text-muted mb-2"
+                    ><b>OTP Code (6 digits)</b></label
+                  >
+                  <input
+                    id="otpCode"
+                    type="text"
+                    maxlength="6"
+                    inputmode="numeric"
+                    placeholder="000000"
+                    class="form-control form-control-lg text-center mb-4"
+                    style="letter-spacing: 5px; font-size: 1.25rem"
+                  />
+                  <button
+                    class="btn btn-primary w-100 py-2 fw-bold mb-3"
+                    onclick="verifyOtp(this)"
+                  >
+                    Verify & Open Report
+                  </button>
+                  <div class="text-center">
+                    <button
+                      id="reportResendOtpBtn"
+                      class="btn btn-link text-decoration-none small text-muted fw-bold"
+                      onclick="resendReportOtp()"
+                      disabled
+                    >
+                      Resend OTP in 60s
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-link text-decoration-none small text-muted fw-bold ms-2"
+                      onclick="backToChoice()"
+                    >
+                      Back
+                    </button>
+                  </div>
+                </div>
+
+                <details
+                  style="
+                    margin-top: 20px;
+                    border-top: 1px solid #eee;
+                    padding-top: 15px;
+                  "
+                >
+                  <summary class="small text-muted cursor-pointer">
+                    <b>Đăng nhập khẩn cấp bằng DEBUG_TOKEN</b>
+                  </summary>
+                  <div class="mt-3">
+                    <input
+                      id="debugToken"
+                      type="password"
+                      placeholder="Nhập DEBUG_TOKEN"
+                      autocomplete="off"
+                      class="form-control mb-2"
+                    />
+                    <button
+                      class="btn btn-secondary w-100 py-2 fw-bold"
+                      onclick="loginWithDebugToken()"
+                    >
+                      Verify Token
+                    </button>
+                  </div>
+                </details>
+
+                <div id="loginMessage" class="empty mt-4">
+                  Nhập email admin của bạn để bắt đầu.
+                </div>
+                <div class="text-center mt-3 login-back-home">
+                  <a
+                    href="/"
+                    class="btn btn-link text-decoration-none small text-muted fw-bold"
+                    ><i class="fas fa-arrow-left me-1"></i>Back to home</a
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- REPORT VIEW -->
+      <section id="reportApp" class="hidden">
+        <!-- Filters and Summary -->
+        <div class="filters-bar">
+          <div class="d-flex flex-wrap gap-3 align-items-center">
+            <div class="filter-btn-group">
+              <button
+                class="filter-btn active"
+                id="btnFilterAll"
+                onclick="filterSections('all')"
+              >
+                All
+              </button>
+              <button
+                class="filter-btn"
+                id="btnFilterOpen"
+                onclick="filterSections('open')"
+              >
+                Open
+              </button>
+              <button
+                class="filter-btn"
+                id="btnFilterClosed"
+                onclick="filterSections('closed')"
+              >
+                Closed
+              </button>
+            </div>
+            <div class="d-flex gap-2 align-items-center">
+              <input
+                type="text"
+                id="filterCourseName"
+                class="form-control"
+                style="width: 200px; padding: 8px 12px; border-radius: 10px"
+                placeholder="Tên khóa học..."
+                oninput="renderCards()"
+              />
+              <input
+                type="date"
+                id="filterDateFrom"
+                class="form-control"
+                style="width: 130px; padding: 8px 12px; border-radius: 10px"
+                onchange="renderCards()"
+                title="Từ ngày"
+              />
+              <span class="text-muted fw-bold">-</span>
+              <input
+                type="date"
+                id="filterDateTo"
+                class="form-control"
+                style="width: 130px; padding: 8px 12px; border-radius: 10px"
+                onchange="renderCards()"
+                title="Đến ngày"
+              />
+            </div>
+          </div>
+          <div class="small text-muted" id="totalClassesLabel">
+            Đang tải danh sách...
+          </div>
+        </div>
+
+        <!-- Cards Grid -->
+        <div class="row g-4" id="cardsGrid">
+          <!-- Rendered via JS -->
+        </div>
+      </section>
+
+      <!-- PROFILE VIEW -->
+      <section id="reportProfile" class="hidden">
+        <div
+          class="card p-5 mx-auto shadow"
+          style="max-width: 600px; border-radius: 16px; border: none"
+        >
+          <h4 class="fw-bold text-primary mb-3">
+            <i class="fas fa-user-cog me-2"></i>Admin Profile
+          </h4>
+          <div class="mb-4 border-bottom pb-3">
+            <div class="row g-3">
+              <div class="col-sm-6">
+                <span class="text-muted small d-block">Logged in as:</span>
+                <span id="profileEmail" class="fw-bold text-dark fs-5"></span>
+              </div>
+              <div class="col-sm-6">
+                <span class="text-muted small d-block">Role:</span>
+                <span id="profileRole" class="fw-bold text-dark fs-5"></span>
+              </div>
+            </div>
+          </div>
+
+          <h5 class="fw-bold text-dark mb-3">Change PIN</h5>
+          <p class="small text-muted">Vui lòng nhập mã PIN mới gồm 4 chữ số.</p>
+          <div class="row align-items-center g-3">
+            <div class="col-sm-8 col-12">
+              <input
+                type="password"
+                id="changePinInput"
+                class="form-control text-center pin-box"
+                placeholder="New 4-digit PIN"
+                maxlength="4"
+                style="
+                  letter-spacing: 10px;
+                  font-size: 1.2rem;
+                  background-color: #f8f9fa;
+                "
+              />
+            </div>
+            <div class="col-sm-4 col-12">
+              <button
+                class="btn btn-primary w-100 py-2 fw-bold"
+                onclick="updateReportPin(this)"
+              >
+                Save PIN
+              </button>
+            </div>
+          </div>
+          <div id="changePinMsg" class="small mt-2 hidden"></div>
+        </div>
+      </section>
+    </main>
+
+    <!-- LOADING OVERLAY -->
+    <div id="loadingOverlay" class="loading-overlay hidden">
+      <div class="spinner"></div>
+      <span id="loadingText">Đang xử lý dữ liệu...</span>
+    </div>
+
+    <!-- CLASS DETAIL MODAL -->
+    <div
+      class="modal fade"
+      id="classDetailModal"
+      tabindex="-1"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="modalClassTitle">Class name</h5>
+            <div class="d-flex align-items-center">
+              <button
+                type="button"
+                class="btn btn-sm btn-light text-dark border-0 me-2"
+                onclick="refreshClassDetail()"
+                style="border-radius: 8px; font-weight: bold"
+              >
+                <i class="fas fa-sync-alt me-1"></i>Refresh Data
+              </button>
+              <button
+                type="button"
+                class="btn-close btn-close-white"
+                data-bs-dismiss="modal"
+                aria-label="Close"
+                style="margin: 0"
+              ></button>
+            </div>
+          </div>
+          <div class="modal-body">
+            <!-- Course Info Section -->
+            <div class="row g-3 mb-4 p-3 bg-white border rounded-4 shadow-sm">
+              <div class="col-md-7">
+                <h6 class="fw-bold text-dark text-uppercase small mb-2">
+                  <i class="fas fa-info-circle me-1 text-primary"></i>Mục tiêu
+                  đào tạo / Objectives
+                </h6>
+                <p
+                  class="small text-muted mb-0"
+                  id="modalClassObjectives"
+                  style="white-space: pre-line; line-height: 1.6"
+                >
+                  Nội dung/Mục tiêu chưa được cập nhật.
+                </p>
+              </div>
+              <div class="col-md-5 border-start ps-4">
+                <h6 class="fw-bold text-dark text-uppercase small mb-2">
+                  <i class="fas fa-map-marker-alt me-1 text-primary"></i>Thông
+                  tin lớp
+                </h6>
+                <div class="small text-dark mb-1">
+                  <b>ID Lớp:</b> <span id="modalClassId"></span>
+                </div>
+                <div class="small text-dark mb-1">
+                  <b>Thời gian:</b> <span id="modalClassDate"></span>
+                </div>
+                <div class="small text-dark mb-1">
+                  <b>Địa điểm:</b> <span id="modalClassVenue"></span>
+                </div>
+                <div class="small text-dark mb-1">
+                  <b>Sĩ số:</b> <span id="modalClassRegCount"></span> học viên
+                </div>
+                <div class="small text-dark">
+                  <b>Khảo sát:</b> <span id="modalClassFbCount"></span> lượt
+                </div>
+              </div>
+            </div>
+
+            <!-- Detailed Tabs -->
+            <ul class="nav nav-tabs" id="detailTabs" role="tablist">
+              <li class="nav-item" role="presentation">
+                <button
+                  class="nav-link active"
+                  id="tabReg-tab"
+                  data-bs-toggle="tab"
+                  data-bs-target="#tabReg"
+                  type="button"
+                  role="tab"
+                >
+                  Registered Trainees
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button
+                  class="nav-link"
+                  id="tabCheckin-tab"
+                  data-bs-toggle="tab"
+                  data-bs-target="#tabCheckin"
+                  type="button"
+                  role="tab"
+                >
+                  Attendance Details
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button
+                  class="nav-link"
+                  id="tabFeedback-tab"
+                  data-bs-toggle="tab"
+                  data-bs-target="#tabFeedback"
+                  type="button"
+                  role="tab"
+                >
+                  Feedback Details
+                </button>
+              </li>
+            </ul>
+
+            <div class="tab-content" id="detailTabsContent">
+              <!-- TAB: Registered -->
+              <div
+                class="tab-pane fade show active"
+                id="tabReg"
+                role="tabpanel"
+              >
+                <div class="table-responsive bg-white rounded-4 border">
+                  <table class="table mb-0">
+                    <thead>
+                      <tr id="tableRegHeader">
+                        <th>Học viên / Trainee</th>
+                        <th>Thời gian đăng ký / Registered At</th>
+                      </tr>
+                    </thead>
+                    <tbody id="tableRegBody">
+                      <!-- Rendered via JS -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- TAB: Checkin -->
+              <div class="tab-pane fade" id="tabCheckin" role="tabpanel">
+                <div class="table-responsive bg-white rounded-4 border">
+                  <table class="table mb-0">
+                    <thead id="tableCheckinHeader">
+                      <!-- Rendered via JS -->
+                    </thead>
+                    <tbody id="tableCheckinBody">
+                      <!-- Rendered via JS -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- TAB: Feedback -->
+              <div class="tab-pane fade" id="tabFeedback" role="tabpanel">
+                <div class="table-responsive bg-white rounded-4 border">
+                  <table class="table mb-0">
+                    <thead id="tableFeedbackHeader">
+                      <!-- Rendered via JS -->
+                    </thead>
+                    <tbody id="tableFeedbackBody">
+                      <!-- Rendered via JS -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      const REPORT_TOKEN_KEY = "pdhub_report_token";
+      const REPORT_EXP_KEY = "pdhub_report_exp";
+      const REPORT_EMAIL_KEY = "pdhub_report_email";
+      const REPORT_ROLE_KEY = "pdhub_report_role";
+
+      let allSectionsData = [];
+      let currentFilter = "all";
+      let currentModalSection = null;
+      let detailModal = null;
+
+      function getReportToken() {
+        const token = sessionStorage.getItem(REPORT_TOKEN_KEY) || "";
+        const exp = Date.parse(sessionStorage.getItem(REPORT_EXP_KEY) || "");
+        if (!token || !exp || exp <= Date.now()) {
+          clearReportSession();
+          return "";
+        }
+        return token;
+      }
+
+      function setReportSession(data) {
+        sessionStorage.setItem(REPORT_TOKEN_KEY, data.token || "");
+        sessionStorage.setItem(REPORT_EXP_KEY, data.expiresAt || "");
+        sessionStorage.setItem(REPORT_EMAIL_KEY, data.email || "");
+        sessionStorage.setItem(REPORT_ROLE_KEY, data.role || "report_viewer");
+      }
+
+      function clearReportSession() {
+        sessionStorage.removeItem(REPORT_TOKEN_KEY);
+        sessionStorage.removeItem(REPORT_EXP_KEY);
+        sessionStorage.removeItem(REPORT_EMAIL_KEY);
+        sessionStorage.removeItem(REPORT_ROLE_KEY);
+      }
+
+      function logoutReport() {
+        clearReportSession();
+        document.getElementById("logoutBtn").classList.add("hidden");
+        document.getElementById("profileBtn").classList.add("hidden");
+        location.reload();
+      }
+
+      function showLoader(show, text = "Đang xử lý dữ liệu...") {
+        const overlay = document.getElementById("loadingOverlay");
+        document.getElementById("loadingText").innerText = text;
+        overlay.classList.toggle("hidden", !show);
+      }
+
+      function showLoginMsg(text, cls = "") {
+        const el = document.getElementById("loginMessage");
+        el.className = "empty mt-4 " + cls;
+        el.innerText = text;
+      }
+
+      async function checkAutoLogin() {
+        const token = getReportToken();
+        if (token) {
+          showPane("reportApp");
+          document.getElementById("logoutBtn").classList.remove("hidden");
+          document.getElementById("profileBtn").classList.remove("hidden");
+          await loadReportData();
+        } else {
+          showPane("loginCard");
+        }
+      }
+
+      function showPane(id) {
+        document
+          .getElementById("loginCard")
+          .classList.toggle("hidden", id !== "loginCard");
+        document
+          .getElementById("reportApp")
+          .classList.toggle("hidden", id !== "reportApp");
+        document
+          .getElementById("reportProfile")
+          .classList.toggle("hidden", id !== "reportProfile");
+      }
+
+      // Login steps
+      async function sendOtp(btn) {
+        const email = document
+          .getElementById("adminEmail")
+          .value.trim()
+          .toLowerCase();
+        if (!email) return showLoginMsg("Vui lòng nhập email Admin.", "warn");
+
+        const oldText = btn.innerText;
+        btn.disabled = true;
+        btn.innerText = "Checking...";
+
+        try {
+          const checkRes = await fetch(
+            "/api/auth/access-type?email=" +
+              encodeURIComponent(email) +
+              "&portal=report",
+          );
+          const json = await checkRes.json().catch(() => ({}));
+          if (!checkRes.ok || !json.success)
+            throw new Error(json.error || "Access check failed.");
+
+          if (json.data && json.data.hasPin) {
+            document.getElementById("stepEmail").classList.add("hidden");
+            document.getElementById("stepChoice").classList.remove("hidden");
+            showLoginMsg("Please choose your login method.", "ok");
+          } else {
+            await requestReportOtp(email, btn, oldText);
+          }
+        } catch (err) {
+          showLoginMsg(err.message || "Lỗi kiểm tra quyền truy cập.", "bad");
+        } finally {
+          btn.disabled = false;
+          btn.innerText = oldText;
+        }
+      }
+
+      function showReportPinEntry() {
+        document.getElementById("stepChoice").classList.add("hidden");
+        document.getElementById("stepPin").classList.remove("hidden");
+      }
+
+      async function requestReportOtp(email, btn, originalText) {
+        email =
+          email ||
+          document.getElementById("adminEmail").value.trim().toLowerCase();
+        if (!btn) btn = document.querySelector("#stepChoice button.btn-light");
+        if (!originalText && btn) originalText = btn.innerText;
+
+        if (btn) {
+          btn.disabled = true;
+          btn.innerText = "Sending...";
+        }
+        try {
+          const res = await fetch("/api/admin/auth/send-otp", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ email }),
+          });
+          const json = await res.json().catch(() => ({}));
+          if (!res.ok || !json.success)
+            throw new Error(json.error || "Gửi OTP thất bại.");
+
+          document.getElementById("stepEmail").classList.add("hidden");
+          document.getElementById("stepChoice").classList.add("hidden");
+          document.getElementById("stepOtp").classList.remove("hidden");
+          showLoginMsg("OTP sent to your admin email.", "ok");
+          startReportOtpTimer();
+        } catch (err) {
+          showLoginMsg(err.message || "Lỗi gửi OTP.", "bad");
+        } finally {
+          if (btn) {
+            btn.disabled = false;
+            btn.innerText = originalText;
+          }
+        }
+      }
+
+      async function submitReportPin(btn) {
+        const email = document
+          .getElementById("adminEmail")
+          .value.trim()
+          .toLowerCase();
+        const pin = document.getElementById("reportPin").value.trim();
+        if (!/^\d{4}$/.test(pin))
+          return showLoginMsg("Vui lòng nhập đúng 4 chữ số PIN.", "warn");
+
+        const oldText = btn.innerText;
+        btn.disabled = true;
+        btn.innerText = "Verifying...";
+
+        try {
+          const res = await fetch("/api/auth/verify-pin", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ email, pin, portal: "report" }),
+          });
+          const json = await res.json().catch(() => ({}));
+          if (!res.ok || !json.success || !json.data || !json.data.ok) {
+            throw new Error(json.error || "Mã PIN không chính xác.");
+          }
+
+          setReportSession(json.data || {});
+          document.getElementById("logoutBtn").classList.remove("hidden");
+          document.getElementById("profileBtn").classList.remove("hidden");
+          showPane("reportApp");
+          await loadReportData();
+        } catch (err) {
+          showLoginMsg(err.message || "Lỗi xác thực PIN.", "bad");
+        } finally {
+          btn.disabled = false;
+          btn.innerText = oldText;
+        }
+      }
+
+      async function verifyOtp(btn) {
+        const email = document
+          .getElementById("adminEmail")
+          .value.trim()
+          .toLowerCase();
+        const otp = document.getElementById("otpCode").value.trim();
+        if (!/^\d{6}$/.test(otp))
+          return showLoginMsg("Vui lòng nhập đúng 6 chữ số OTP.", "warn");
+
+        const oldText = btn.innerText;
+        btn.disabled = true;
+        btn.innerText = "Đang xác thực...";
+
+        try {
+          const res = await fetch("/api/admin/auth/verify-otp", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ email, otp }),
+          });
+          const json = await res.json().catch(() => ({}));
+          if (!res.ok || !json.success)
+            throw new Error(
+              json.error || "Mã xác thực không đúng hoặc đã hết hạn.",
+            );
+
+          const data = json.data || {};
+          setReportSession(data);
+
+          if (!data.hasPin) {
+            new bootstrap.Modal(
+              document.getElementById("setupPinModal"),
+            ).show();
+          } else {
+            finalizeReportLogin();
+          }
+        } catch (err) {
+          showLoginMsg(err.message || "Lỗi xác thực.", "bad");
+        } finally {
+          btn.disabled = false;
+          btn.innerText = oldText;
+        }
+      }
+
+      function finalizeReportLogin() {
+        document.getElementById("logoutBtn").classList.remove("hidden");
+        document.getElementById("profileBtn").classList.remove("hidden");
+        showPane("reportApp");
+        document.title = "Báo cáo Lớp học · PD Hub";
+        loadReportData();
+      }
+
+      async function processReportPinFirst(btn) {
+        const pin = document.getElementById("newPinInput").value.trim();
+        const msgEl = document.getElementById("setupPinMsg");
+        if (msgEl) msgEl.classList.add("hidden");
+
+        if (!/^\d{4}$/.test(pin)) {
+          if (msgEl) {
+            msgEl.textContent = "Mã PIN phải gồm đúng 4 chữ số.";
+            msgEl.classList.remove("hidden");
+          }
+          return;
+        }
+        const token = getReportToken();
+        if (!token) {
+          if (msgEl) {
+            msgEl.textContent =
+              "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
+            msgEl.classList.remove("hidden");
+          }
+          return;
+        }
+
+        const oldText = btn.innerText;
+        btn.disabled = true;
+        btn.innerText = "Saving...";
+
+        try {
+          const res = await fetch("/api/auth/set-pin", {
+            method: "POST",
+            headers: {
+              "content-type": "application/json",
+              Authorization: "Bearer " + token,
+            },
+            body: JSON.stringify({ pin }),
+          });
+          const json = await res.json().catch(() => ({}));
+          if (!res.ok || !json.success)
+            throw new Error(json.error || "Set PIN failed.");
+
+          const modalEl = document.getElementById("setupPinModal");
+          const modalInstance = bootstrap.Modal.getInstance(modalEl);
+          if (modalInstance) modalInstance.hide();
+          document.body.classList.remove("modal-open");
+          document.body.style = "";
+          document
+            .querySelectorAll(".modal-backdrop")
+            .forEach((b) => b.remove());
+
+          finalizeReportLogin();
+        } catch (err) {
+          if (msgEl) {
+            msgEl.textContent = "Lỗi tạo PIN: " + err.message;
+            msgEl.classList.remove("hidden");
+          }
+        } finally {
+          btn.disabled = false;
+          btn.innerText = oldText;
+        }
+      }
+
+      async function updateReportPin(btn) {
+        const pin = document.getElementById("changePinInput").value.trim();
+        const msgEl = document.getElementById("changePinMsg");
+        if (msgEl) msgEl.className = "small mt-2 hidden";
+
+        if (!/^\d{4}$/.test(pin)) {
+          if (msgEl) {
+            msgEl.className = "small mt-2 text-danger";
+            msgEl.textContent = "Mã PIN phải gồm đúng 4 chữ số.";
+          }
+          return;
+        }
+        const token = getReportToken();
+        if (!token) {
+          if (msgEl) {
+            msgEl.className = "small mt-2 text-danger";
+            msgEl.textContent =
+              "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
+          }
+          return;
+        }
+
+        const oldText = btn.innerText;
+        btn.disabled = true;
+        btn.innerText = "Saving...";
+
+        try {
+          const res = await fetch("/api/auth/set-pin", {
+            method: "POST",
+            headers: {
+              "content-type": "application/json",
+              Authorization: "Bearer " + token,
+            },
+            body: JSON.stringify({ pin }),
+          });
+          const json = await res.json().catch(() => ({}));
+          if (!res.ok || !json.success)
+            throw new Error(json.error || "Update PIN failed.");
+
+          if (msgEl) {
+            msgEl.className = "small mt-2 text-success fw-bold";
+            msgEl.textContent = "Đổi PIN thành công!";
+          }
+          document.getElementById("changePinInput").value = "";
+        } catch (err) {
+          if (msgEl) {
+            msgEl.className = "small mt-2 text-danger";
+            msgEl.textContent = "Lỗi đổi PIN: " + err.message;
+          }
+        } finally {
+          btn.disabled = false;
+          btn.innerText = oldText;
+        }
+      }
+
+      function toggleReportProfile() {
+        const btn = document.getElementById("profileBtn");
+        const profileVisible = !document
+          .getElementById("reportProfile")
+          .classList.contains("hidden");
+        if (profileVisible) {
+          showPane("reportApp");
+          btn.innerText = "Profile";
+          document.title = "Báo cáo Lớp học · PD Hub";
+        } else {
+          showPane("reportProfile");
+          btn.innerText = "Back to Reports";
+          document.title = "Admin Profile · PD Hub";
+          document.getElementById("profileEmail").innerText =
+            sessionStorage.getItem(REPORT_EMAIL_KEY) || "N/A";
+          document.getElementById("profileRole").innerText =
+            sessionStorage.getItem(REPORT_ROLE_KEY) || "report_viewer";
+        }
+      }
+
+      function backToChoice() {
+        document.getElementById("stepPin").classList.add("hidden");
+        document.getElementById("stepOtp").classList.add("hidden");
+        document.getElementById("stepChoice").classList.remove("hidden");
+      }
+
+      function backToEmail() {
+        document.getElementById("stepChoice").classList.add("hidden");
+        document.getElementById("stepPin").classList.add("hidden");
+        document.getElementById("stepOtp").classList.add("hidden");
+        document.getElementById("stepEmail").classList.remove("hidden");
+        showLoginMsg("Nhập email admin của bạn.");
+      }
+
+      async function loginWithDebugToken() {
+        const token = document.getElementById("debugToken").value.trim();
+        if (!token) return showLoginMsg("Vui lòng nhập DEBUG_TOKEN.", "warn");
+
+        showLoader(true, "Đang xác thực Token...");
+        try {
+          const res = await fetch("/api/admin/status", {
+            headers: { "x-debug-token": token },
+          });
+          const json = await res.json().catch(() => ({}));
+          if (!res.ok || !json.success)
+            throw new Error(json.error || "Token không hợp lệ.");
+
+          // Save mock session exp
+          setReportSession({
+            token: token,
+            email: "debug@pdhub",
+            role: "admin",
+            expiresAt: new Date(Date.now() + 4 * 3600000).toISOString(),
+          });
+          document.getElementById("logoutBtn").classList.remove("hidden");
+          showPane("reportApp");
+          await loadReportData();
+        } catch (err) {
+          showLoginMsg(err.message, "bad");
+        } finally {
+          showLoader(false);
+        }
+      }
+
+      // Load Report Data
+      async function loadReportData() {
+        showLoader(true, "Đang tải danh sách báo cáo lớp học...");
+        const token = getReportToken();
+        if (!token) {
+          showPane("loginCard");
+          return;
+        }
+
+        try {
+          const res = await fetch("/api/report/report-data", {
+            headers: { Authorization: "Bearer " + token },
+          });
+          const json = await res.json().catch(() => ({}));
+          if (!res.ok || !json.success)
+            throw new Error(json.error || "Không thể tải dữ liệu báo cáo.");
+
+          allSectionsData = json.data || [];
+          renderCards();
+        } catch (err) {
+          showLoginMsg("Lỗi dữ liệu: " + err.message, "bad");
+          clearReportSession();
+          document.getElementById("logoutBtn").classList.add("hidden");
+          showPane("loginCard");
+        } finally {
+          showLoader(false);
+        }
+      }
+
+      function renderCards() {
+        const container = document.getElementById("cardsGrid");
+        const label = document.getElementById("totalClassesLabel");
+
+        let filtered = allSectionsData;
+        if (currentFilter === "open") {
+          filtered = filtered.filter((s) => {
+            const st = String(s.status).toLowerCase();
+            return (
+              st.includes("open") ||
+              st.includes("dang m?") ||
+              st.includes("in progress") ||
+              st === "registration closed"
+            );
+          });
+        } else if (currentFilter === "closed") {
+          filtered = filtered.filter((s) => {
+            const st = String(s.status).toLowerCase();
+            return (
+              st.includes("completed") ||
+              st.includes("hoan thanh") ||
+              st === "closed"
+            );
+          });
+        }
+
+        // Advanced Filters
+        const searchName = (
+          document.getElementById("filterCourseName")?.value || ""
+        )
+          .toLowerCase()
+          .trim();
+        const fromDate = document.getElementById("filterDateFrom")?.value;
+        const toDate = document.getElementById("filterDateTo")?.value;
+
+        let fromMs = 0;
+        if (fromDate) fromMs = new Date(fromDate).getTime();
+        let toMs = Infinity;
+        if (toDate) toMs = new Date(toDate).getTime() + 86399999; // include the whole day
+
+        if (searchName || fromDate || toDate) {
+          filtered = filtered.filter((s) => {
+            if (searchName) {
+              const cName = String(s.courseName || "").toLowerCase();
+              if (!cName.includes(searchName)) return false;
+            }
+            if (fromMs > 0 || toMs < Infinity) {
+              const sMs = parseDate(s.dateStart || s.sectionDate || "");
+              if (sMs > 0) {
+                if (sMs < fromMs) return false;
+                if (sMs > toMs) return false;
+              } else if (fromMs > 0) {
+                return false;
+              }
+            }
+            return true;
+          });
+        }
+
+        label.innerText = `Tìm thấy ${filtered.length} lớp học`;
+
+        if (filtered.length === 0) {
+          container.innerHTML = `<div class="col-12"><div class="empty">Không tìm thấy lớp học nào phù hợp.</div></div>`;
+          return;
+        }
+
+        container.innerHTML = filtered
+          .map((sec) => {
+            const checkinPercent = Math.round(sec.checkinRate * 100);
+            const feedbackPercent = Math.round(sec.feedbackRate * 100);
+            const stBadge = String(sec.status).toLowerCase();
+            const isOpen =
+              stBadge.includes("open") ||
+              stBadge.includes("dang m?") ||
+              stBadge.includes("in progress") ||
+              stBadge === "registration closed";
+            const statusClass = isOpen ? "badge-open" : "badge-closed";
+
+            return `
+          <div class="col-lg-4 col-md-6 col-sm-12">
+            <div class="card class-card" onclick="openClassDetail('${sec.sectionId}')">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <span class="badge ${statusClass}">${escapeHTML(sec.status)}</span>
+                <small class="text-muted fw-bold">${escapeHTML(sec.sectionId)}</small>
+              </div>
+              <h5 class="class-title">${escapeHTML(sec.courseName)}</h5>
+              
+              <div class="class-info-item">
+                <i class="far fa-clock"></i>
+                <span>${escapeHTML(sec.sectionDate || "Chưa xếp lịch")}</span>
+              </div>
+              <div class="class-info-item">
+                <i class="fas fa-map-marker-alt"></i>
+                <span>${escapeHTML(sec.venue || "N/A")}</span>
+              </div>
+              
+              <div class="rate-section">
+                <div class="rate-label">
+                  <span>Học viên đăng ký:</span>
+                  <span class="text-dark fw-bold">${sec.registeredCount}</span>
+                </div>
+                <div class="rate-label">
+                  <span>Tỉ lệ điểm danh:</span>
+                  <span class="text-primary fw-bold">${checkinPercent}% (${sec.checkinCount}/${sec.registeredCount})</span>
+                </div>
+                <div class="progress">
+                  <div class="progress-bar progress-bar-checkin" style="width: ${checkinPercent}%"></div>
+                </div>
+                
+                <div class="rate-label">
+                  <span>Tỉ lệ feedback:</span>
+                  <span class="text-info fw-bold">${feedbackPercent}% (${sec.feedbackCount}/${sec.registeredCount})</span>
+                </div>
+                <div class="progress mb-0">
+                  <div class="progress-bar progress-bar-feedback" style="width: ${feedbackPercent}%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+          })
+          .join("");
+      }
+
+      function filterSections(mode) {
+        currentFilter = mode;
+        document
+          .getElementById("btnFilterAll")
+          .classList.toggle("active", mode === "all");
+        document
+          .getElementById("btnFilterOpen")
+          .classList.toggle("active", mode === "open");
+        document
+          .getElementById("btnFilterClosed")
+          .classList.toggle("active", mode === "closed");
+        renderCards();
+      }
+
+      function openClassDetail(sectionId) {
+        const sec = allSectionsData.find((s) => s.sectionId === sectionId);
+        if (!sec) return;
+        currentModalSection = sec;
+
+        document.getElementById("modalClassTitle").innerText = sec.courseName;
+        document.getElementById("modalClassObjectives").innerText =
+          sec.courseObjectives || "Nội dung/Mục tiêu chưa được cập nhật.";
+        document.getElementById("modalClassId").innerText = sec.sectionId;
+        document.getElementById("modalClassDate").innerText =
+          sec.sectionDate || "N/A";
+        document.getElementById("modalClassVenue").innerText =
+          sec.venue || "N/A";
+        document.getElementById("modalClassRegCount").innerText =
+          sec.registeredCount;
+        document.getElementById("modalClassFbCount").innerText =
+          sec.feedbackCount;
+
+        renderModalTrainees(sec);
+
+        // Open modal
+        if (!detailModal) {
+          detailModal = new bootstrap.Modal(
+            document.getElementById("classDetailModal"),
+          );
+        }
+
+        // Default to first tab
+        const firstTab = document.querySelector(
+          "#detailTabs button:first-child",
+        );
+        bootstrap.Tab.getInstance(firstTab)?.show() ||
+          new bootstrap.Tab(firstTab).show();
+
+        detailModal.show();
+      }
+
+      let currentTrainees = [];
+      let currentSlots = [];
+      let currentMappings = [];
+
+      let regSort = { column: "registeredAt", asc: false };
+      let checkinSort = { column: "latestTime", asc: false };
+      let feedbackSort = { column: "latestTime", asc: false };
+
+      const getTraineeDisplayName = (t) => {
+        const name = String(t.name || "").trim();
+        return name.includes("@") || !name ? "Học viên" : name;
+      };
+
+      function getSortIcon(column, sortState) {
+        if (sortState.column !== column) {
+          return `<i class="fas fa-sort ms-1 text-muted" style="font-size: 0.8rem;"></i>`;
+        }
+        return sortState.asc
+          ? `<i class="fas fa-sort-up ms-1 text-primary" style="font-size: 0.8rem;"></i>`
+          : `<i class="fas fa-sort-down ms-1 text-primary" style="font-size: 0.8rem;"></i>`;
+      }
+
+      function sortRegTab(column) {
+        if (regSort.column === column) {
+          regSort.asc = !regSort.asc;
+        } else {
+          regSort.column = column;
+          regSort.asc = column === "name" || column === "index";
+        }
+        renderRegTab();
+      }
+
+      function sortCheckinTab(column) {
+        if (checkinSort.column === column) {
+          checkinSort.asc = !checkinSort.asc;
+        } else {
+          checkinSort.column = column;
+          checkinSort.asc = column === "name" || column === "index";
+        }
+        renderCheckinTab();
+      }
+
+      function sortFeedbackTab(column) {
+        if (feedbackSort.column === column) {
+          feedbackSort.asc = !feedbackSort.asc;
+        } else {
+          feedbackSort.column = column;
+          feedbackSort.asc = column === "name" || column === "index";
+        }
+        renderFeedbackTab();
+      }
+
+      function renderRegTab() {
+        const trainees = [...currentTrainees];
+
+        trainees.sort((a, b) => {
+          let valA, valB;
+          if (regSort.column === "index") {
+            valA = a.originalIndex;
+            valB = b.originalIndex;
+          } else if (regSort.column === "name") {
+            valA = String(a.name || "")
+              .trim()
+              .toLowerCase();
+            valB = String(b.name || "")
+              .trim()
+              .toLowerCase();
+          } else if (regSort.column === "registeredAt") {
+            valA = parseDate(a.registeredAt || "");
+            valB = parseDate(b.registeredAt || "");
+          }
+
+          if (valA < valB) return regSort.asc ? -1 : 1;
+          if (valA > valB) return regSort.asc ? 1 : -1;
+          return 0;
+        });
+
+        const headerHtml = `
+        <th style="width: 70px; cursor: pointer; user-select: none;" onclick="sortRegTab('index')">STT ${getSortIcon("index", regSort)}</th>
+        <th style="cursor: pointer; user-select: none;" onclick="sortRegTab('name')">Học viên / Trainee ${getSortIcon("name", regSort)}</th>
+        <th style="cursor: pointer; user-select: none;" onclick="sortRegTab('registeredAt')">Thời gian đăng ký / Registered At ${getSortIcon("registeredAt", regSort)}</th>
+      `;
+        document.getElementById("tableRegHeader").innerHTML = headerHtml;
+
+        const body = document.getElementById("tableRegBody");
+        if (trainees.length === 0) {
+          body.innerHTML = `<tr><td colspan="3" class="text-center text-muted">Chưa có học viên nào đăng ký.</td></tr>`;
+        } else {
+          body.innerHTML = trainees
+            .map(
+              (t, idx) => `
+          <tr>
+            <td>${idx + 1}</td>
+            <td>
+              <div><b>${escapeHTML(getTraineeDisplayName(t))}</b></div>
+              <small class="text-secondary" style="font-size: 11px;">${escapeHTML(t.email)}</small>
+            </td>
+            <td class="text-secondary">${escapeHTML(formatTimestampDisplay(t.registeredAt))}</td>
+          </tr>
+        `,
+            )
+            .join("");
+        }
+      }
+
+      function renderCheckinTab() {
+        const trainees = [...currentTrainees];
+        const slots = currentSlots;
+
+        trainees.sort((a, b) => {
+          let valA, valB;
+          if (checkinSort.column === "index") {
+            valA = a.originalIndex;
+            valB = b.originalIndex;
+          } else if (checkinSort.column === "name") {
+            valA = String(a.name || "")
+              .trim()
+              .toLowerCase();
+            valB = String(b.name || "")
+              .trim()
+              .toLowerCase();
+          } else if (checkinSort.column === "rate") {
+            valA = a.checkinCompletionRate;
+            valB = b.checkinCompletionRate;
+          } else if (checkinSort.column === "latestTime") {
+            valA = a.latestCheckinMs;
+            valB = b.latestCheckinMs;
+          }
+
+          if (valA < valB) return checkinSort.asc ? -1 : 1;
+          if (valA > valB) return checkinSort.asc ? 1 : -1;
+          return 0;
+        });
+
+        const slotHeaders = slots
+          .map((s, idx) => {
+            const displayDate =
+              formatTimestampDisplay(s.dateStr).split(" ")[0] || "Ca";
+            return `<th class="text-center" style="font-size: 11px; white-space: nowrap;">Ca ${idx + 1}<br><span class="fw-normal text-muted" style="font-size: 10px;">${escapeHTML(displayDate)}</span></th>`;
+          })
+          .join("");
+        const headerHtml = `
+        <th style="width: 70px; cursor: pointer; user-select: none;" onclick="sortCheckinTab('index')">STT ${getSortIcon("index", checkinSort)}</th>
+        <th style="cursor: pointer; user-select: none;" onclick="sortCheckinTab('name')">Họ tên / Email ${getSortIcon("name", checkinSort)}</th>
+        ${slotHeaders}
+        <th class="text-center" style="cursor: pointer; user-select: none;" onclick="sortCheckinTab('latestTime')">Cập nhật lúc ${getSortIcon("latestTime", checkinSort)}</th>
+        <th class="text-center" style="cursor: pointer; user-select: none;" onclick="sortCheckinTab('rate')">Tỉ lệ hoàn thành ${getSortIcon("rate", checkinSort)}</th>
+      `;
+        document.getElementById("tableCheckinHeader").innerHTML = headerHtml;
+
+        const body = document.getElementById("tableCheckinBody");
+        if (slots.length === 0) {
+          document.getElementById("tableCheckinHeader").innerHTML =
+            `<tr><th>STT</th><th>Học viên</th><th class="text-center">Trạng thái</th></tr>`;
+          body.innerHTML = `<tr><td colspan="3" class="text-center text-muted">Lớp học này chưa cấu hình buổi điểm danh.</td></tr>`;
+        } else if (trainees.length === 0) {
+          body.innerHTML = `<tr><td colspan="${slots.length + 4}" class="text-center text-muted">Chưa có học viên nào đăng ký.</td></tr>`;
+        } else {
+          body.innerHTML = trainees
+            .map((t, idx) => {
+              const starCells = t.checkinStatus
+                .map((st) => {
+                  let icon = "";
+                  if (st.status === "checked") {
+                    icon = `<i class="fas fa-star text-success" title="Có mặt lúc: ${escapeHTML(formatTimestampDisplay(st.timestamp))}"></i>`;
+                  } else if (st.status === "absent") {
+                    icon = `<i class="fas fa-star text-danger" title="Vắng mặt"></i>`;
+                  } else {
+                    icon = `<i class="fas fa-star text-muted" title="Chưa diễn ra"></i>`;
+                  }
+                  return `<td class="text-center"><div class="star-indicator">${icon}</div></td>`;
+                })
+                .join("");
+
+              const rate = Math.round(t.checkinCompletionRate * 100);
+              const rateClass =
+                rate === 100
+                  ? "text-success"
+                  : rate > 0
+                    ? "text-primary"
+                    : "text-danger";
+              const doneSlots = t.checkinStatus.filter(
+                (s) => s.status === "checked",
+              ).length;
+
+              return `
+            <tr>
+              <td>${idx + 1}</td>
+              <td>
+                <div><b>${escapeHTML(getTraineeDisplayName(t))}</b></div>
+                <small class="text-secondary" style="font-size: 11px;">${escapeHTML(t.email)}</small>
+              </td>
+              ${starCells}
+              <td class="text-center text-secondary small" style="font-size: 11px;">${escapeHTML(formatTimestampDisplay(t.latestCheckinStr))}</td>
+              <td class="text-center fw-bold ${rateClass}">${rate}% (${doneSlots}/${slots.length})</td>
+            </tr>
+          `;
+            })
+            .join("");
+        }
+      }
+
+      function renderFeedbackTab() {
+        const trainees = [...currentTrainees];
+        const mappings = currentMappings;
+
+        trainees.sort((a, b) => {
+          let valA, valB;
+          if (feedbackSort.column === "index") {
+            valA = a.originalIndex;
+            valB = b.originalIndex;
+          } else if (feedbackSort.column === "name") {
+            valA = String(a.name || "")
+              .trim()
+              .toLowerCase();
+            valB = String(b.name || "")
+              .trim()
+              .toLowerCase();
+          } else if (feedbackSort.column === "rate") {
+            valA = a.feedbackCompletionRate;
+            valB = b.feedbackCompletionRate;
+          } else if (feedbackSort.column === "latestTime") {
+            valA = a.latestFeedbackMs;
+            valB = b.latestFeedbackMs;
+          }
+
+          if (valA < valB) return feedbackSort.asc ? -1 : 1;
+          if (valA > valB) return feedbackSort.asc ? 1 : -1;
+          return 0;
+        });
+
+        const mappingHeaders = mappings
+          .map(
+            (m, idx) =>
+              `<th class="text-center" style="font-size: 11px; white-space: nowrap;">Đợt ${idx + 1}<br><span class="fw-normal text-muted" style="font-size: 10px;" title="${escapeHTML(m.formTitle)}">Khảo sát</span></th>`,
+          )
+          .join("");
+        const headerHtml = `
+        <th style="width: 70px; cursor: pointer; user-select: none;" onclick="sortFeedbackTab('index')">STT ${getSortIcon("index", feedbackSort)}</th>
+        <th style="cursor: pointer; user-select: none;" onclick="sortFeedbackTab('name')">Họ tên / Email ${getSortIcon("name", feedbackSort)}</th>
+        ${mappingHeaders}
+        <th class="text-center" style="cursor: pointer; user-select: none;" onclick="sortFeedbackTab('latestTime')">Cập nhật lúc ${getSortIcon("latestTime", feedbackSort)}</th>
+        <th class="text-center" style="cursor: pointer; user-select: none;" onclick="sortFeedbackTab('rate')">Tỉ lệ hoàn thành ${getSortIcon("rate", feedbackSort)}</th>
+      `;
+        document.getElementById("tableFeedbackHeader").innerHTML = headerHtml;
+
+        const body = document.getElementById("tableFeedbackBody");
+        if (mappings.length === 0) {
+          document.getElementById("tableFeedbackHeader").innerHTML =
+            `<tr><th>STT</th><th>Học viên</th><th class="text-center">Trạng thái</th></tr>`;
+          body.innerHTML = `<tr><td colspan="3" class="text-center text-muted">Lớp học này chưa cấu hình đợt khảo sát.</td></tr>`;
+        } else if (trainees.length === 0) {
+          body.innerHTML = `<tr><td colspan="${mappings.length + 4}" class="text-center text-muted">Chưa có học viên nào đăng ký.</td></tr>`;
+        } else {
+          body.innerHTML = trainees
+            .map((t, idx) => {
+              const starCells = t.feedbackStatus
+                .map((st) => {
+                  let icon = "";
+                  if (st.status === "submitted") {
+                    icon = `<i class="fas fa-star text-success" title="Đã nộp lúc: ${escapeHTML(formatTimestampDisplay(st.timestamp))}"></i>`;
+                  } else if (st.status === "absent") {
+                    icon = `<i class="fas fa-star text-danger" title="Bỏ lỡ"></i>`;
+                  } else {
+                    icon = `<i class="fas fa-star text-muted" title="Chưa mở"></i>`;
+                  }
+                  return `<td class="text-center"><div class="star-indicator">${icon}</div></td>`;
+                })
+                .join("");
+
+              const rate = Math.round(t.feedbackCompletionRate * 100);
+              const rateClass =
+                rate === 100
+                  ? "text-success"
+                  : rate > 0
+                    ? "text-primary"
+                    : "text-danger";
+              const doneFeedbacks = t.feedbackStatus.filter(
+                (s) => s.status === "submitted",
+              ).length;
+
+              return `
+            <tr>
+              <td>${idx + 1}</td>
+              <td>
+                <div><b>${escapeHTML(getTraineeDisplayName(t))}</b></div>
+                <small class="text-secondary" style="font-size: 11px;">${escapeHTML(t.email)}</small>
+              </td>
+              ${starCells}
+              <td class="text-center text-secondary small" style="font-size: 11px;">${escapeHTML(formatTimestampDisplay(t.latestFeedbackStr))}</td>
+              <td class="text-center fw-bold ${rateClass}">${rate}% (${doneFeedbacks}/${mappings.length})</td>
+            </tr>
+          `;
+            })
+            .join("");
+        }
+      }
+
+      function renderModalTrainees(sec) {
+        currentTrainees = (sec.trainees || []).map((t, idx) => {
+          // Pick the latest check-in timestamp across all checked slots.
+          // Even if parseDate can't parse it (returns 0), still prefer the last found.
+          let latestCheckinMs = -1;
+          let latestCheckinStr = "";
+          (t.checkinStatus || []).forEach((st) => {
+            if (st.status === "checked") {
+              const raw = st.timestamp || "";
+              const ms = parseDate(raw);
+              if (ms > latestCheckinMs) {
+                latestCheckinMs = ms;
+                latestCheckinStr = raw;
+              } else if (latestCheckinMs === -1) {
+                // Unparseable but still a real check-in — show whatever string we have
+                latestCheckinStr = raw;
+              }
+            }
+          });
+          if (latestCheckinMs < 0) latestCheckinMs = 0;
+          if (!latestCheckinStr) latestCheckinStr = "N/A";
+
+          let latestFeedbackMs = -1;
+          let latestFeedbackStr = "";
+          (t.feedbackStatus || []).forEach((st) => {
+            if (st.status === "submitted") {
+              const raw = st.timestamp || "";
+              const ms = parseDate(raw);
+              if (ms > latestFeedbackMs) {
+                latestFeedbackMs = ms;
+                latestFeedbackStr = raw;
+              } else if (latestFeedbackMs === -1) {
+                latestFeedbackStr = raw;
+              }
+            }
+          });
+          if (latestFeedbackMs < 0) latestFeedbackMs = 0;
+          if (!latestFeedbackStr) latestFeedbackStr = "N/A";
+
+          return {
+            ...t,
+            originalIndex: idx,
+            latestCheckinMs,
+            latestCheckinStr,
+            latestFeedbackMs,
+            latestFeedbackStr,
+          };
+        });
+        currentSlots = sec.slots || [];
+        currentMappings = sec.mappings || [];
+
+        // Default sort on load
+        regSort = { column: "registeredAt", asc: false };
+        checkinSort = { column: "latestTime", asc: false };
+        feedbackSort = { column: "latestTime", asc: false };
+
+        renderRegTab();
+        renderCheckinTab();
+        renderFeedbackTab();
+      }
+
+      function parseDate(dateStr) {
+        if (!dateStr) return 0;
+        // Try direct parse (ISO, etc.)
+        let ms = Date.parse(dateStr);
+        if (Number.isFinite(ms) && ms > 0) return ms;
+
+        // Try DD/MM/YYYY [hh:mm[:ss]]
+        const match = String(dateStr).match(
+          /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/,
+        );
+        if (match) {
+          const d = parseInt(match[1], 10);
+          const m = parseInt(match[2], 10) - 1;
+          const y = parseInt(match[3], 10);
+          const timeMatch = String(dateStr).match(
+            /(\d{1,2}):(\d{2}):?(\d{2})?/,
+          );
+          if (timeMatch) {
+            const hh = parseInt(timeMatch[1], 10);
+            const mm = parseInt(timeMatch[2], 10);
+            const ss = timeMatch[3] ? parseInt(timeMatch[3], 10) : 0;
+            return new Date(y, m, d, hh, mm, ss).getTime();
+          }
+          return new Date(y, m, d).getTime();
+        }
+        return 0;
+      }
+
+      function formatTimestampDisplay(raw) {
+        if (!raw || raw === "N/A") return raw || "";
+        const ms = parseDate(raw);
+        if (ms > 0) {
+          const d = new Date(ms);
+          const yyyy = d.getFullYear();
+          const mm = String(d.getMonth() + 1).padStart(2, "0");
+          const dd = String(d.getDate()).padStart(2, "0");
+          const hh = String(d.getHours()).padStart(2, "0");
+          const min = String(d.getMinutes()).padStart(2, "0");
+          const ss = String(d.getSeconds()).padStart(2, "0");
+          return `${yyyy}/${mm}/${dd} ${hh}:${min}:${ss}`;
+        }
+        return String(raw);
+      }
+
+      function escapeHTML(str) {
+        return String(str ?? "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+      }
+
+      // Resend OTP with countdown for Report login
+      let reportOtpTimer;
+      function startReportOtpTimer(sec = 60) {
+        const btn = document.getElementById("reportResendOtpBtn");
+        if (!btn) return;
+        clearInterval(reportOtpTimer);
+        btn.disabled = true;
+        let t = sec;
+        btn.innerText = `Resend OTP in ${t}s`;
+        reportOtpTimer = setInterval(() => {
+          t--;
+          if (t <= 0) {
+            clearInterval(reportOtpTimer);
+            btn.disabled = false;
+            btn.innerText = "Resend OTP";
+          } else {
+            btn.innerText = `Resend OTP in ${t}s`;
+          }
+        }, 1000);
+      }
+      async function resendReportOtp() {
+        const email = document
+          .getElementById("adminEmail")
+          .value.trim()
+          .toLowerCase();
+        if (!email) return showLoginMsg("Please enter admin email.", "warn");
+        const btn = document.getElementById("reportResendOtpBtn");
+        btn.disabled = true;
+        btn.innerText = "Sending...";
+        try {
+          const res = await fetch("/api/admin/auth/send-otp", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ email }),
+          });
+          const json = await res.json().catch(() => ({}));
+          if (!res.ok || !json.success)
+            throw new Error(json.error || "Failed to resend OTP.");
+          showLoginMsg("OTP resent. Check your email.", "ok");
+          startReportOtpTimer();
+        } catch (err) {
+          showLoginMsg(err.message || "Failed to resend OTP.", "bad");
+          btn.disabled = false;
+          btn.innerText = "Resend OTP";
+        }
+      }
+
+      // Refresh Data button for class detail modal
+      async function refreshClassDetail() {
+        if (!currentModalSection) return;
+        const sectionId = currentModalSection.sectionId;
+        const btn = event ? event.currentTarget : null;
+        const originalText = btn ? btn.innerHTML : "";
+        if (btn) {
+          btn.disabled = true;
+          btn.innerHTML = `<i class="fas fa-spinner fa-spin me-1"></i>Refreshing...`;
+        }
+        try {
+          const token = getReportToken();
+          if (!token) throw new Error("Session expired. Please log in again.");
+          const res = await fetch("/api/report/report-data", {
+            headers: { Authorization: "Bearer " + token },
+          });
+          const json = await res.json().catch(() => ({}));
+          if (!res.ok || !json.success)
+            throw new Error(json.error || "Failed to reload report data.");
+
+          allSectionsData = json.data || [];
+          renderCards();
+
+          const updatedSec = allSectionsData.find(
+            (s) => s.sectionId === sectionId,
+          );
+          if (updatedSec) {
+            currentModalSection = updatedSec;
+            document.getElementById("modalClassTitle").innerText =
+              updatedSec.courseName;
+            document.getElementById("modalClassObjectives").innerText =
+              updatedSec.courseObjectives || "Objectives not yet updated.";
+            document.getElementById("modalClassId").innerText =
+              updatedSec.sectionId;
+            document.getElementById("modalClassDate").innerText =
+              updatedSec.sectionDate || "N/A";
+            document.getElementById("modalClassVenue").innerText =
+              updatedSec.venue || "N/A";
+            document.getElementById("modalClassRegCount").innerText =
+              updatedSec.registeredCount;
+            document.getElementById("modalClassFbCount").innerText =
+              updatedSec.feedbackCount;
+            renderModalTrainees(updatedSec);
+          } else {
+            bootstrap.Modal.getInstance(
+              document.getElementById("classDetailModal"),
+            )?.hide();
+          }
+        } catch (e) {
+          console.error("Failed to refresh:", e);
+          document.getElementById("modalClassTitle").innerText =
+            "Error: " + escapeHTML(e.message);
+        } finally {
+          if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+          }
+        }
+      }
+
+      // Boot
+      window.addEventListener("DOMContentLoaded", checkAutoLogin);
+    </script>
+
+    <script>
+      // Access logging
+      (function () {
+        try {
+          var email = sessionStorage.getItem("pdhub_report_email") || "";
+          fetch("/api/log/access", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+              page: "report",
+              scope: "admin",
+              email: email,
+              path: location.pathname,
+              referrer: document.referrer,
+            }),
+            keepalive: true,
+          }).catch(() => {});
+        } catch (e) {}
+      })();
+    </script>
+    <div
+      class="modal fade"
+      id="setupPinModal"
+      data-bs-backdrop="static"
+      tabindex="-1"
+    >
+      <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div
+          class="modal-content p-4 text-center"
+          style="border-radius: 16px; border: none"
+        >
+          <h5 class="fw-bold mb-3 text-primary">Secure Your Account</h5>
+          <p class="small text-muted">Set a 4-digit PIN for future logins.</p>
+          <input
+            type="password"
+            id="newPinInput"
+            class="form-control pin-box mb-3 text-center"
+            maxlength="4"
+            style="
+              letter-spacing: 15px;
+              font-size: 1.5rem;
+              background-color: #f8f9fa;
+            "
+          />
+          <div id="setupPinMsg" class="small text-danger mb-2 hidden"></div>
+          <button
+            class="btn btn-primary w-100 py-2 fw-bold"
+            onclick="processReportPinFirst(this)"
+          >
+            Create PIN
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <footer class="pd-oce-footer">
+      <div class="pd-oce-footer-container">
+        <div class="pd-oce-footer-grid">
+          <div class="pd-oce-footer-col">
+            <img
+              src="https://i.postimg.cc/Jn6DPbFK/Logo-white-02.png"
+              alt="EIU Logo"
+              class="pd-oce-footer-logo"
+            />
+            <p class="pd-oce-footer-text mt-3">
+              Eastern International University<br />Office of Community
+              Engagement
+            </p>
+          </div>
+          <div class="pd-oce-footer-col text-md-end">
+            <p class="pd-oce-footer-text">
+              Contact us for any training inquiries or support.
+            </p>
+            <p class="pd-oce-footer-text">Email: engagement@eiu.edu.vn</p>
+          </div>
+        </div>
+        <div class="pd-oce-footer-bottom">
+          <div>&copy; 2026 Eastern International University.</div>
+          <div>All rights reserved.</div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const observer = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting) {
+                entry.target.classList.add("is-visible");
+                observer.unobserve(entry.target);
+              }
+            });
+          },
+          { threshold: 0.1 },
+        );
+
+        // Observe existing and dynamically added cards
+        const observeCards = () => {
+          document
+            .querySelectorAll(
+              ".card, .hero-card, .section-card, .course-card, .view-pane > h3, .view-pane > h4, .view-pane > h5",
+            )
+            .forEach((el) => {
+              if (!el.classList.contains("fade-up")) {
+                el.classList.add("fade-up");
+                observer.observe(el);
+              }
+            });
+        };
+
+        observeCards();
+        // Simple mutation observer to catch dynamically loaded catalog lists
+        const mutObserver = new MutationObserver(observeCards);
+        mutObserver.observe(document.body, { childList: true, subtree: true });
+      });
+    </script>
+  </body>
+</html>

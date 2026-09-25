@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+
+# Wrangler build cache
+.wrangler/
+
+# Local scratch files
+scratch/
+
+# Test scripts (local dev only)
+test-*.mjs
+test*.js
+test2.js
+pg-test.cjs
+
+# Backup files
+*.bak
+
+# Internal version/step docs
+VERSION_*.md
+STEP*.md
+README_STEP*.md
+README_*.md
+POST_*.md
+PRODUCTION_*.md
+SECURITY_AND_TESTING.md
+OLD_*.md
+SHUTDOWN_*.md
+FINAL_*.md
+GOLIVE_*.md
+GO_LIVE_*.md
+HYBRID_*.md
+DEPLOY_NOTES*.txt
+*.cjs
+*.sql

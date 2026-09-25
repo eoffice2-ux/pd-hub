@@ -1,0 +1,11 @@
+{
+  "name": "pd-onestop-pages-functions",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "pg": "^8.13.0"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}

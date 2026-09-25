@@ -1,0 +1,2281 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <base target="_top" />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600;1,700;1,800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/oce-theme.css" />
+    <style>
+      /* PD Hub — Corporate / Client Portal · Page-specific overrides on top of oce-theme.css */
+      body {
+        background:
+          radial-gradient(
+            circle at top left,
+            rgba(79, 70, 229, 0.05),
+            transparent 34%
+          ),
+          radial-gradient(
+            circle at bottom right,
+            rgba(22, 163, 199, 0.04),
+            transparent 36%
+          ),
+          var(--pd-bg) !important;
+        color: var(--pd-text);
+        min-height: 100vh;
+      }
+      .view-pane {
+        display: none;
+      }
+      .view-pane.active {
+        display: block;
+        animation: pdFade 0.22s ease-out;
+      }
+      @keyframes pdFade {
+        from {
+          opacity: 0;
+          transform: translateY(6px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .en,
+      .italic,
+      small.italic {
+        font-style: italic;
+      }
+      .pin-box {
+        letter-spacing: 10px;
+        font-size: 24px;
+        text-align: center;
+        font-weight: bold;
+      }
+      .container.pb-5 {
+        padding-bottom: 4rem !important;
+      }
+
+      /* Cards & Components */
+      .card {
+        background-color: var(--pd-card);
+        border: 1px solid var(--pd-card-line) !important;
+        border-radius: 16px;
+        box-shadow: var(--pd-card-shadow-soft);
+        transition:
+          transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+          box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--pd-card-shadow-strong);
+      }
+
+      #viewLogin .card {
+        max-width: 470px !important;
+        border-top: 5px solid var(--c-navy) !important;
+        border-radius: 18px !important;
+        background: #ffffff !important;
+        box-shadow: var(--pd-card-shadow-strong) !important;
+      }
+      #viewLogin h3 {
+        letter-spacing: -0.25px;
+        color: var(--pd-indigo);
+      }
+      #viewLogin .fa-2x {
+        filter: drop-shadow(0 4px 9px rgba(13, 110, 253, 0.12));
+      }
+
+      #viewInquiryList h4,
+      #viewInquiryDetail h4,
+      #viewCorporate h4,
+      #viewPersonal h4 {
+        color: var(--pd-indigo);
+        letter-spacing: -0.25px;
+      }
+      #viewInquiryList .card,
+      #viewInquiryDetail .card,
+      #viewCorporate .card,
+      #viewPersonal .card {
+        background: rgba(255, 255, 255, 0.97);
+        border-top: 4px solid var(--pd-indigo) !important;
+      }
+
+      .form-control,
+      .form-select {
+        border-radius: 10px;
+        border-color: #dbe3ee;
+        min-height: 42px;
+      }
+      .form-control:focus,
+      .form-select:focus {
+        border-color: rgba(79, 70, 229, 0.55);
+        box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.15);
+      }
+      .btn {
+        border-radius: 10px !important;
+        font-weight: 700;
+      }
+
+      .list-group-item {
+        border-radius: 14px !important;
+        border: 1px solid var(--pd-card-line) !important;
+        transition:
+          background-color 0.18s ease,
+          color 0.18s ease,
+          box-shadow 0.18s ease;
+        margin-bottom: 8px;
+      }
+      .list-group-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06) !important;
+      }
+      .list-group-item::before {
+        content: "";
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: var(--pd-cyan);
+        margin-right: 8px;
+        vertical-align: middle;
+      }
+
+      .badge {
+        border-radius: 999px !important;
+        letter-spacing: 0.01em;
+      }
+      .modal-content {
+        border-radius: 18px !important;
+        border: 0 !important;
+        box-shadow: 0 24px 70px rgba(15, 23, 42, 0.18) !important;
+      }
+      #summaryContent .col-md-6 {
+        border-color: #eef2f7 !important;
+      }
+
+      /* Toast Notification System */
+      .pd-toast-container {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        z-index: 1055;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .pd-toast {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        padding: 14px 18px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        transform: translateY(100px);
+        opacity: 0;
+        transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        pointer-events: none;
+        border-left: 4px solid #6c757d;
+      }
+      .pd-toast.show {
+        transform: translateY(0);
+        opacity: 1;
+      }
+      .pd-toast.success {
+        border-left-color: #198754;
+      }
+      .pd-toast.success i {
+        color: #198754;
+      }
+      .pd-toast.error {
+        border-left-color: #dc3545;
+      }
+      .pd-toast.error i {
+        color: #dc3545;
+      }
+      .pd-toast.info {
+        border-left-color: var(--pd-indigo);
+      }
+      .pd-toast.info i {
+        color: var(--pd-indigo);
+      }
+      .pd-toast-icon {
+        font-size: 1.25rem;
+      }
+      .pd-toast-content {
+        flex: 1;
+      }
+      .pd-toast-title {
+        font-weight: bold;
+        font-size: 0.95rem;
+        margin-bottom: 2px;
+      }
+      .pd-toast-msg {
+        font-size: 0.85rem;
+        color: #6c757d;
+        line-height: 1.2;
+      }
+
+      /* Responsive: Mobile & Tablet */
+      @media (max-width: 576px) {
+        body {
+          font-size: 15px;
+          overflow-x: hidden;
+        }
+        .container,
+        .container.pb-5 {
+          width: 100%;
+          max-width: 100%;
+          padding-left: 10px !important;
+          padding-right: 10px !important;
+        }
+        #mainNav {
+          position: sticky;
+          top: 0;
+          z-index: 1020;
+          margin-bottom: 12px !important;
+          padding: 6px 0;
+        }
+        #mainNav .container {
+          display: block;
+          padding-left: 8px !important;
+          padding-right: 8px !important;
+        }
+        #navItems {
+          width: 100%;
+          display: grid !important;
+          grid-template-columns: repeat(auto-fit, minmax(65px, 1fr)) !important;
+          gap: 6px !important;
+          border-radius: 18px !important;
+          padding: 6px !important;
+          overflow: visible !important;
+        }
+        #navItems .nav-link {
+          width: 100%;
+          min-height: 48px;
+          padding: 0.45rem 0.25rem !important;
+          font-size: 0.72rem !important;
+          line-height: 1.08;
+          display: flex !important;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 3px;
+          white-space: normal !important;
+          text-align: center;
+        }
+        #navItems .nav-link i {
+          margin-right: 0 !important;
+          font-size: 1rem;
+        }
+        #navItems .nav-link.text-danger {
+          margin-left: 0 !important;
+        }
+
+        #viewLogin .container {
+          margin-top: 10px !important;
+        }
+        #viewLogin .row {
+          align-items: flex-start;
+          gap: 1rem !important;
+        }
+        #viewLogin .col-lg-5 {
+          order: 1;
+        }
+        #viewLogin .col-lg-6:first-child {
+          display: block !important;
+          order: 2;
+          margin-top: 12px;
+        }
+        #viewLogin .col-lg-6:first-child > div {
+          padding: 14px !important;
+          border-radius: 16px !important;
+          box-shadow: 0 8px 20px rgba(15, 23, 42, 0.055) !important;
+          background: rgba(255, 255, 255, 0.92) !important;
+        }
+        #viewLogin .col-lg-6:first-child h1,
+        #viewLogin .col-lg-6:first-child h2 {
+          font-size: 1.18rem !important;
+          line-height: 1.28 !important;
+          margin-bottom: 0.5rem !important;
+        }
+        #viewLogin .card {
+          margin-top: 8px;
+          padding: 1.25rem !important;
+          max-width: 100% !important;
+          border-radius: 18px !important;
+        }
+        #pinInput {
+          letter-spacing: 10px !important;
+          font-size: 1.25rem !important;
+        }
+        #viewInquiryList .card,
+        #viewInquiryDetail .card,
+        #viewCorporate .card,
+        #viewPersonal .card {
+          max-width: 100% !important;
+          padding: 16px !important;
+          border-radius: 16px !important;
+        }
+        #viewInquiryList h4,
+        #viewInquiryDetail h4,
+        #viewCorporate h4,
+        #viewPersonal h4 {
+          font-size: 1.12rem;
+          line-height: 1.35;
+        }
+        .list-group-item {
+          padding: 14px !important;
+        }
+        .list-group-item:hover {
+          transform: none;
+        }
+        .modal-dialog {
+          margin: 0.75rem;
+        }
+        table {
+          display: block;
+          overflow-x: auto;
+          white-space: nowrap;
+        }
+      }
+
+      @media (min-width: 577px) and (max-width: 991px) {
+        #navItems {
+          overflow-x: auto;
+          flex-wrap: nowrap;
+        }
+        #navItems .nav-link {
+          white-space: nowrap;
+        }
+        #viewInquiryList .card,
+        #viewInquiryDetail .card,
+        #viewCorporate .card,
+        #viewPersonal .card {
+          max-width: 96% !important;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .pd-toast-container {
+          bottom: 24px;
+          right: 12px;
+          left: 12px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="pd-oce-header">
+      <div class="pd-oce-header-inner">
+        <a href="/" class="pd-oce-logo-link">
+          <img
+            src="https://i.postimg.cc/hPBGsySC/Logo-white-021.png"
+            alt="EIU Logo"
+            class="pd-oce-logo"
+          />
+        </a>
+        <div class="pd-oce-dept">OCE · Phòng Kết Nối Cộng Đồng</div>
+      </div>
+    </nav>
+
+    <div
+      class="modal fade"
+      id="customAlertModal"
+      tabindex="-1"
+      aria-hidden="true"
+      style="z-index: 1055"
+    >
+      <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div
+          class="modal-content border-0 shadow-lg"
+          style="border-radius: 16px"
+        >
+          <div class="modal-body text-center p-4">
+            <div class="mb-3 text-primary">
+              <i class="fas fa-info-circle fa-3x"></i>
+            </div>
+            <h5 class="fw-bold mb-2" id="customAlertTitle">Notice</h5>
+            <p id="customAlertMessage" class="text-muted small mb-4"></p>
+            <button
+              type="button"
+              class="btn btn-primary w-100 fw-bold"
+              data-bs-dismiss="modal"
+              style="border-radius: 8px"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="loadingOverlay"
+      style="
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.8);
+        z-index: 10000;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      "
+    >
+      <div
+        class="spinner-border text-primary"
+        role="status"
+        style="width: 3rem; height: 3rem"
+      ></div>
+      <p class="mt-3 fw-bold text-primary">Please wait...</p>
+    </div>
+
+    <nav id="mainNav" class="pd-local-tabs" style="display: none">
+      <div class="container pd-app-nav-inner">
+        <div class="pd-page-title me-auto d-none d-md-block">
+          <h2>Corporate Portal</h2>
+          <span class="text-muted small">Professional Development Hub</span>
+        </div>
+        <div id="navItems" class="navbar-nav pd-app-tabs">
+          <a class="nav-link fw-bold" href="/" style="cursor: pointer"
+            ><i class="fas fa-home me-2"></i>Home</a
+          >
+          <a
+            class="nav-link active fw-bold"
+            id="navInquiry"
+            style="cursor: pointer"
+            onclick="showInquiryTab()"
+            ><i class="fas fa-clipboard-list me-2"></i>Inquiries</a
+          >
+          <a
+            class="nav-link fw-bold"
+            id="navCorporate"
+            style="cursor: pointer"
+            onclick="showCorporateTab()"
+            ><i class="fas fa-building me-2"></i>Corporate</a
+          >
+          <a
+            class="nav-link fw-bold"
+            id="navPersonal"
+            style="cursor: pointer"
+            onclick="showPersonalTab()"
+            ><i class="fas fa-user-cog me-2"></i>Personal</a
+          >
+          <a
+            class="nav-link text-danger fw-bold"
+            style="cursor: pointer"
+            onclick="logout()"
+            ><i class="fas fa-sign-out-alt me-2"></i>Logout</a
+          >
+        </div>
+      </div>
+    </nav>
+
+    <div class="container pb-5">
+      <div
+        id="viewLogin"
+        class="view-pane active pd-oce-hero"
+        style="min-height: 80vh"
+      >
+        <div class="container" style="margin-top: 60px">
+          <div class="row align-items-center justify-content-center g-5">
+            <div class="col-lg-6 col-md-12">
+              <div class="pe-lg-4">
+                <h3 class="fw-bold text-primary mb-2">
+                  Cổng Quản Lý Đào Tạo & Hồ Sơ
+                </h3>
+                <h6 class="text-light-muted mb-4" style="font-style: italic">
+                  Training Inquiries & Client Portal
+                </h6>
+
+                <p class="mb-5" style="line-height: 1.6">
+                  Hệ thống được thiết lập để Quý doanh nghiệp dễ dàng
+                  <strong
+                    >quản lý các yêu cầu đào tạo, lịch sử tương tác</strong
+                  >
+                  và <strong>cập nhật hồ sơ doanh nghiệp</strong>. Dữ liệu này
+                  sẽ phục vụ trực tiếp cho việc lên chương trình đào tạo chi
+                  tiết cũng như soạn thảo hợp đồng một cách chu đáo và chính xác
+                  nhất. <br /><br />
+                  <span class="text-muted small" style="font-style: italic">
+                    This portal is designed for our corporate partners to easily
+                    manage
+                    <strong>training inquiries, interaction history</strong>,
+                    and update <strong>corporate profiles</strong>. This data
+                    directly supports the detailed design of training programs
+                    and ensures the accurate preparation of contracts.
+                  </span>
+                </p>
+
+                <div class="d-flex mb-4">
+                  <div class="text-primary me-3 mt-1">
+                    <i class="fas fa-sign-in-alt fa-2x"></i>
+                  </div>
+                  <div>
+                    <h6 class="fw-bold mb-1">1. Đăng nhập / Login</h6>
+                    <p class="small text-muted mb-0">
+                      Nhập email doanh nghiệp và xác thực qua mã OTP an toàn.
+                    </p>
+                  </div>
+                </div>
+
+                <div class="d-flex mb-4">
+                  <div class="text-primary me-3 mt-1">
+                    <i class="fas fa-clipboard-list fa-2x"></i>
+                  </div>
+                  <div>
+                    <h6 class="fw-bold mb-1">
+                      2. Quản lý yêu cầu / Manage Inquiries
+                    </h6>
+                    <p class="small text-muted mb-0">
+                      Theo dõi tiến độ, cập nhật và xem lại lịch sử các nhu cầu
+                      đào tạo.
+                    </p>
+                  </div>
+                </div>
+
+                <div class="d-flex">
+                  <div class="text-primary me-3 mt-1">
+                    <i class="fas fa-file-signature fa-2x"></i>
+                  </div>
+                  <div>
+                    <h6 class="fw-bold mb-1">
+                      3. Hồ sơ & Hợp đồng / Profile & Contract
+                    </h6>
+                    <p class="small text-muted mb-0">
+                      Cập nhật hồ sơ pháp lý để phục vụ thiết kế chương trình và
+                      soạn thảo hợp đồng.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-lg-5 col-md-12">
+              <div
+                class="card p-4 mx-auto shadow"
+                style="
+                  border-radius: 16px;
+                  border: none;
+                  background-color: #ffffff;
+                  max-width: 450px;
+                "
+              >
+                <div class="text-center mb-4">
+                  <div
+                    class="bg-light text-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                    style="width: 65px; height: 65px"
+                  >
+                    <i class="fas fa-shield-alt fa-2x"></i>
+                  </div>
+                  <h4 class="fw-bold mb-0">Xác thực truy cập</h4>
+                  <small class="text-muted italic">Secure Login</small>
+                </div>
+
+                <div id="loginStep1">
+                  <label class="form-label small fw-bold text-muted"
+                    >Email doanh nghiệp / Corporate Email</label
+                  >
+                  <input
+                    type="email"
+                    id="emailInput"
+                    class="form-control form-control-lg mb-4"
+                    placeholder="name@company.com"
+                    style="background-color: #f8f9fa"
+                  />
+                  <button
+                    class="btn btn-primary w-100 py-2 fw-bold"
+                    onclick="handleLoginStep1(this)"
+                  >
+                    Continue <i class="fas fa-arrow-right ms-2"></i>
+                  </button>
+                </div>
+
+                <div id="loginStepChoice" style="display: none">
+                  <p class="text-center small text-muted mb-3">
+                    Vui lòng chọn phương thức / <i>Choose a method</i>
+                  </p>
+                  <button
+                    class="btn btn-outline-primary w-100 py-2 mb-3 fw-bold"
+                    onclick="showPinEntry()"
+                    style="border-radius: 8px"
+                  >
+                    <i class="fas fa-key me-2"></i> Use Personal PIN
+                  </button>
+                  <button
+                    class="btn btn-light w-100 py-2 fw-bold text-secondary"
+                    onclick="requestOTP()"
+                    style="border-radius: 8px; border: 1px solid #dee2e6"
+                  >
+                    <i class="fas fa-envelope me-2"></i> Receive Email OTP
+                  </button>
+                  <div class="text-center mt-3">
+                    <button
+                      type="button"
+                      class="btn btn-link text-decoration-none small text-muted fw-bold"
+                      onclick="backToStep1()"
+                    >
+                      Back
+                    </button>
+                  </div>
+                </div>
+
+                <div id="loginStepPIN" style="display: none">
+                  <div class="text-center mb-3">
+                    <p class="small text-muted fw-bold mb-1">
+                      Nhập mã PIN 4 số của bạn
+                    </p>
+                    <p class="small text-muted">
+                      <i>Enter your 4-digit PIN</i>
+                    </p>
+                  </div>
+                  <input
+                    type="password"
+                    id="pinInput"
+                    class="form-control form-control-lg mb-4 text-center pin-box"
+                    maxlength="4"
+                    style="
+                      background-color: #f8f9fa;
+                      letter-spacing: 15px;
+                      font-size: 1.5rem;
+                    "
+                  />
+                  <button
+                    class="btn btn-primary w-100 py-2 fw-bold"
+                    onclick="submitPin()"
+                  >
+                    Verify PIN
+                  </button>
+                  <div class="text-center mt-3">
+                    <button
+                      type="button"
+                      class="btn btn-link text-decoration-none small text-muted fw-bold"
+                      onclick="backToStepChoice()"
+                    >
+                      Back
+                    </button>
+                  </div>
+                </div>
+
+                <div id="loginStepOTP" style="display: none">
+                  <div class="text-center mb-3">
+                    <p class="small text-muted mb-1">
+                      Mã xác thực 6 số đã được gửi đến email của bạn.
+                    </p>
+                    <p class="small text-muted">
+                      <i>A 6-digit code has been sent to your email.</i>
+                    </p>
+                  </div>
+                  <input
+                    type="text"
+                    id="otpInput"
+                    class="form-control form-control-lg mb-4 text-center fw-bold pin-box"
+                    placeholder="0 0 0 0 0 0"
+                    maxlength="6"
+                    inputmode="numeric"
+                    oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                  />
+                  <button
+                    class="btn btn-success w-100 py-2 fw-bold mb-3"
+                    onclick="submitOTP()"
+                  >
+                    <i class="fas fa-check-circle me-2"></i> Verify
+                  </button>
+                  <div class="text-center">
+                    <button
+                      type="button"
+                      id="resendOtpBtn"
+                      class="btn btn-link text-decoration-none small text-muted fw-bold"
+                      onclick="resendOTP()"
+                      disabled
+                    >
+                      Resend OTP
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-link text-decoration-none small text-muted fw-bold ms-2"
+                      onclick="backToStepChoice()"
+                    >
+                      Back
+                    </button>
+                  </div>
+                </div>
+                <div class="text-center mt-3 login-back-home">
+                  <a
+                    href="/"
+                    class="btn btn-link text-decoration-none small text-muted fw-bold"
+                    ><i class="fas fa-arrow-left me-1"></i>Back to home</a
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="viewInquiryList" class="view-pane">
+        <div
+          class="card p-4 mx-auto shadow"
+          style="max-width: 900px; border-radius: 16px; border: none"
+        >
+          <h4 class="fw-bold text-primary mb-3">
+            <i class="fas fa-tasks me-2"></i>Quản lý nhu cầu đào tạo /
+            <span class="en">Training Inquiries</span>
+          </h4>
+          <p class="text-muted small mb-4">
+            Danh sách các yêu cầu đào tạo của Quý doanh nghiệp. Vui lòng chọn
+            một yêu cầu đang mở (New/In Progress) để bổ sung thông tin.
+          </p>
+
+          <div id="inquiryListContainer" class="list-group"></div>
+        </div>
+      </div>
+
+      <div id="viewInquiryDetail" class="view-pane">
+        <div
+          class="card p-5 mx-auto shadow"
+          style="max-width: 900px; border-radius: 16px; border: none"
+        >
+          <div
+            class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-4"
+          >
+            <h4 class="fw-bold text-primary mb-0">
+              <i class="fas fa-edit me-2"></i>Chi tiết Yêu cầu / Inquiry Details
+            </h4>
+            <span id="inqStatusBadge" class="badge bg-secondary fs-6"
+              >Status</span
+            >
+          </div>
+
+          <form id="inquiryForm" onsubmit="submitInquiryForm(event)">
+            <input type="hidden" name="inquiry id" id="field_inquiry_id" />
+
+            <div class="row g-3 mb-4">
+              <div class="col-12">
+                <label class="form-label small fw-bold"
+                  >Chủ đề quan tâm / Topic Interest
+                  <span class="text-danger">*</span></label
+                >
+                <textarea
+                  name="topic interest"
+                  class="form-control"
+                  rows="2"
+                  required
+                  placeholder="Nhập chủ đề..."
+                ></textarea>
+              </div>
+
+              <div class="col-12">
+                <label class="form-label small fw-bold"
+                  >Mục tiêu đào tạo chính / Main Objectives
+                  <span class="text-danger">*</span></label
+                >
+                <textarea
+                  name="main objectives of training"
+                  class="form-control"
+                  rows="3"
+                  required
+                  placeholder="Mục tiêu cụ thể..."
+                ></textarea>
+              </div>
+
+              <div class="col-12">
+                <label class="form-label small fw-bold"
+                  >Đối tượng tham gia / Targeted Trainee Profile
+                  <span class="text-danger">*</span></label
+                >
+                <textarea
+                  name="targeted trainee profile"
+                  class="form-control"
+                  rows="2"
+                  required
+                  placeholder="Ví dụ: Cấp quản lý, nhân viên mới..."
+                ></textarea>
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label small fw-bold"
+                  >Số lượng / Qty <span class="text-danger">*</span></label
+                >
+                <input
+                  type="text"
+                  inputmode="numeric"
+                  pattern="[0-9]*"
+                  name="targeted trainee qty"
+                  class="form-control"
+                  required
+                  oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                  placeholder="Chỉ nhập số..."
+                />
+              </div>
+
+              <div class="col-md-8">
+                <label class="form-label small fw-bold"
+                  >Ngôn ngữ / Language <span class="text-danger">*</span></label
+                >
+                <select
+                  name="language perfer"
+                  id="languageSelect"
+                  class="form-select"
+                  required
+                  onchange="toggleOtherLanguage()"
+                >
+                  <option value="">
+                    -- Chọn ngôn ngữ / Select language --
+                  </option>
+                  <option value="Tiếng Việt">Tiếng Việt / Vietnamese</option>
+                  <option value="Tiếng Anh">Tiếng Anh / English</option>
+                  <option value="Khác">Khác / Other</option>
+                </select>
+                <input
+                  type="text"
+                  id="otherLanguageInput"
+                  name="other_language"
+                  class="form-control mt-2"
+                  placeholder="Vui lòng ghi rõ ngôn ngữ / Please specify..."
+                  style="display: none"
+                />
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label small fw-bold"
+                  >Hình thức / Format <span class="text-danger">*</span></label
+                >
+                <select name="online_offline" class="form-select" required>
+                  <option value="">-- Chọn hình thức --</option>
+                  <option value="Online">Online</option>
+                  <option value="Offline">Offline</option>
+                  <option value="Hybrid">Hybrid</option>
+                </select>
+              </div>
+
+              <div class="col-md-8">
+                <label class="form-label small fw-bold"
+                  >Địa điểm / Venue <span class="text-danger">*</span></label
+                >
+                <select
+                  name="venue_select"
+                  id="venueSelect"
+                  class="form-select"
+                  required
+                  onchange="toggleOtherVenue()"
+                >
+                  <option value="">-- Chọn địa điểm / Select venue --</option>
+                  <option value="Eastern International University">
+                    Eastern International University
+                  </option>
+                  <option value="Tại trụ sở doanh nghiệp">
+                    Tại trụ sở doanh nghiệp / At company's premise
+                  </option>
+                  <option value="Khác">Khác / Other</option>
+                </select>
+                <input
+                  type="text"
+                  id="otherVenueInput"
+                  name="other_venue"
+                  class="form-control mt-2"
+                  placeholder="Vui lòng ghi rõ địa chỉ / Please specify address..."
+                  style="display: none"
+                />
+              </div>
+
+              <div class="col-md-8">
+                <label class="form-label small fw-bold"
+                  >Thời gian dự kiến / Desired Timeline
+                  <span class="text-danger">*</span></label
+                >
+                <input
+                  type="text"
+                  name="desired training timeline"
+                  class="form-control"
+                  required
+                  placeholder="Trong tuần/Cuối tuần, từ ngày... đến ngày..."
+                />
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label small fw-bold"
+                  >Thời lượng / Duration (Optional)</label
+                >
+                <input
+                  type="text"
+                  name="estimated duration"
+                  class="form-control"
+                  placeholder="Ví dụ: 24 giờ"
+                />
+              </div>
+
+              <div class="col-12 border-top pt-3 mt-4">
+                <h6 class="fw-bold text-secondary">
+                  Thông tin người đại diện phụ trách / Representative
+                  Information
+                </h6>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label small fw-bold text-muted"
+                  >Họ tên / Full Name</label
+                >
+                <input
+                  type="text"
+                  name="client representative name"
+                  class="form-control bg-light"
+                  readonly
+                />
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label small fw-bold text-muted">Email</label>
+                <input
+                  type="email"
+                  name="client representative email"
+                  class="form-control bg-light"
+                  readonly
+                />
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label small fw-bold text-dark"
+                  >Chức vụ / Position <span class="text-danger">*</span></label
+                >
+                <input
+                  type="text"
+                  name="client representative postition"
+                  class="form-control"
+                  required
+                  placeholder="Nhập chức vụ / Enter position..."
+                />
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label small fw-bold text-dark"
+                  >Số điện thoại / Phone
+                  <span class="text-danger">*</span></label
+                >
+                <input
+                  type="text"
+                  inputmode="numeric"
+                  pattern="[0-9]*"
+                  name="client representative phone number"
+                  class="form-control"
+                  required
+                  oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                />
+              </div>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 mt-4">
+              <button
+                type="button"
+                onclick="showInquiryTab()"
+                class="btn btn-light border px-4"
+              >
+                Cancel
+              </button>
+              <button type="submit" class="btn btn-primary px-5 fw-bold">
+                Save Changes
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div id="viewCorporate" class="view-pane">
+        <div
+          class="card p-5 mx-auto shadow"
+          style="max-width: 850px; border-radius: 16px; border: none"
+        >
+          <div
+            class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3"
+          >
+            <div>
+              <h4 class="fw-bold text-primary mb-0">
+                <i class="fas fa-building me-2"></i>Hồ sơ doanh nghiệp /
+                <span class="en">Corporate Profile</span>
+              </h4>
+              <small class="text-muted italic" id="profileEmailLabel"
+                >Corporate Profile Summary</small
+              >
+            </div>
+            <button
+              id="editBtn"
+              onclick="toggleEditMode(true)"
+              class="btn btn-outline-primary shadow-sm"
+            >
+              <i class="fas fa-edit me-1"></i> Edit
+            </button>
+          </div>
+
+          <div id="profileSummary">
+            <div class="row g-4" id="summaryContent"></div>
+          </div>
+
+          <form
+            id="profileForm"
+            onsubmit="handleFormSubmit(event)"
+            style="display: none"
+          >
+            <input type="hidden" name="client id" />
+
+            <h6 class="fw-bold text-secondary mb-3 text-uppercase small">
+              1. Thông tin công ty / Company Details
+            </h6>
+            <div class="row g-3 mb-4">
+              <div class="col-md-6">
+                <label class="form-label small fw-bold"
+                  >Tên công ty (VN) *</label
+                >
+                <input
+                  type="text"
+                  name="client name vn"
+                  class="form-control"
+                  required
+                />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-bold"
+                  >Company Name (EN) *</label
+                >
+                <input
+                  type="text"
+                  name="client name en"
+                  class="form-control"
+                  required
+                />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">Địa chỉ (VN) *</label>
+                <input
+                  type="text"
+                  name="client address vn"
+                  class="form-control"
+                  required
+                />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">Address (EN) *</label>
+                <input
+                  type="text"
+                  name="client address en"
+                  class="form-control"
+                  required
+                />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">Tax Code *</label>
+                <input
+                  type="text"
+                  name="tax code"
+                  class="form-control"
+                  required
+                />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">Phone Number *</label>
+                <input
+                  type="text"
+                  name="client phone number"
+                  class="form-control"
+                  required
+                />
+              </div>
+            </div>
+
+            <h6 class="fw-bold text-secondary mb-3 text-uppercase small">
+              2. Người đại diện / Representative
+            </h6>
+            <div class="row g-3 mb-4">
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">Họ tên (VN) *</label>
+                <input
+                  type="text"
+                  name="representative name vn"
+                  class="form-control"
+                  required
+                />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">Full Name (EN) *</label>
+                <input
+                  type="text"
+                  name="representative name en"
+                  class="form-control"
+                  required
+                />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">Chức vụ (VN) *</label>
+                <input
+                  type="text"
+                  name="representative position vn"
+                  class="form-control"
+                  required
+                />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">Position (EN) *</label>
+                <input
+                  type="text"
+                  name="representative position en"
+                  class="form-control"
+                  required
+                />
+              </div>
+            </div>
+
+            <div
+              class="mb-4 p-3"
+              style="
+                background-color: #fff8f0;
+                border: 1px solid #ffeeba;
+                border-radius: 8px;
+              "
+            >
+              <div class="form-check">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  id="agreementCheckbox"
+                  required
+                />
+                <label
+                  class="form-check-label small"
+                  for="agreementCheckbox"
+                  style="cursor: pointer; line-height: 1.6"
+                >
+                  <strong class="d-block mb-1"
+                    >Cam kết xác thực thông tin / Data Accuracy
+                    Commitment:</strong
+                  >
+                  <span class="text-dark">
+                    Tôi cam kết các thông tin trên là chính xác và chịu trách
+                    nhiệm trước pháp luật về dữ liệu dùng để soạn thảo hợp đồng
+                    này.
+                  </span>
+                  <br />
+                  <span class="text-muted italic" style="font-style: italic">
+                    I hereby certify that the information provided above is
+                    accurate and accept full legal responsibility for the data
+                    used in drafting this contract.
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2">
+              <button
+                type="button"
+                onclick="toggleEditMode(false)"
+                class="btn btn-light border"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                class="btn btn-primary px-4 fw-bold shadow-sm"
+              >
+                Confirm & Save
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div id="viewPersonal" class="view-pane">
+        <div
+          class="card p-5 mx-auto shadow"
+          style="max-width: 850px; border-radius: 16px; border: none"
+        >
+          <div
+            class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3"
+          >
+            <div>
+              <h4 class="fw-bold text-primary mb-0">
+                <i class="fas fa-user-cog me-2"></i>Cấu hình cá nhân /
+                <span class="en">Personal Security</span>
+              </h4>
+              <small class="text-muted italic" id="personalEmailLabel"
+                >Manage your personal credentials</small
+              >
+            </div>
+          </div>
+
+          <div
+            class="card p-4 shadow-sm border"
+            id="pinChangeSection"
+            style="border-radius: 16px; border: none; background-color: #ffffff"
+          >
+            <h5 class="fw-bold text-primary mb-3">Change PIN</h5>
+            <p class="small text-muted">
+              Vui lòng nhập mã PIN mới gồm 4 chữ số.
+            </p>
+            <div class="row align-items-center g-3">
+              <div class="col-sm-8 col-12">
+                <input
+                  type="password"
+                  id="changePinInput"
+                  class="form-control text-center pin-box"
+                  placeholder="New 4-digit PIN"
+                  maxlength="4"
+                  style="
+                    letter-spacing: 10px;
+                    font-size: 1.2rem;
+                    background-color: #f8f9fa;
+                  "
+                />
+              </div>
+              <div class="col-sm-4 col-12">
+                <button
+                  class="btn btn-primary w-100 py-2 fw-bold"
+                  onclick="updatePin()"
+                >
+                  Save PIN
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      function showToast(msg, type = "success") {
+        let title =
+          type === "success"
+            ? "Success"
+            : type === "error"
+              ? "Error"
+              : "Notice";
+        let icon =
+          type === "success"
+            ? "fa-check-circle"
+            : type === "error"
+              ? "fa-exclamation-circle"
+              : "fa-info-circle";
+        const toast = document.createElement("div");
+        toast.className = "pd-toast " + type;
+        toast.innerHTML =
+          '<div class="pd-toast-icon"><i class="fas ' +
+          icon +
+          '"></i></div><div class="pd-toast-content"><div class="pd-toast-title">' +
+          title +
+          '</div><div class="pd-toast-msg">' +
+          msg +
+          "</div></div>";
+        const c = document.getElementById("pdToastContainer");
+        if (c) {
+          c.appendChild(toast);
+          setTimeout(() => toast.classList.add("show"), 10);
+          setTimeout(() => {
+            toast.classList.remove("show");
+            setTimeout(() => toast.remove(), 300);
+          }, 3000);
+        }
+      }
+
+      /* =========================================================================
+     CLIENT PORTAL API MODE
+     - Client frontend now calls Cloudflare Pages Functions under /api/*.
+     - GAS bridge is no longer used by this page in mock backend mode.
+     ========================================================================= */
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const URL_TARGET_INQUIRY =
+        urlParams.get("inquiryId") ||
+        urlParams.get("inquiryid") ||
+        urlParams.get("targetInquiryId") ||
+        urlParams.get("inquiry") ||
+        urlParams.get("id") ||
+        "";
+
+      let loggedInEmail = "";
+      let otpTimerInterval;
+
+      function getSessionToken() {
+        return localStorage.getItem("pdhub_session_token") || "";
+      }
+
+      function setSession(email, token, expiresAt) {
+        loggedInEmail = String(email || "")
+          .toLowerCase()
+          .trim();
+        localStorage.setItem("pdhub_session_email", loggedInEmail);
+        localStorage.setItem("pdhub_session_time", new Date().getTime());
+        if (token) localStorage.setItem("pdhub_session_token", token);
+        if (expiresAt)
+          localStorage.setItem("pdhub_session_expires_at", expiresAt);
+      }
+
+      function clearSession() {
+        loggedInEmail = "";
+        localStorage.removeItem("pdhub_session_email");
+        localStorage.removeItem("pdhub_session_time");
+        localStorage.removeItem("pdhub_session_token");
+        localStorage.removeItem("pdhub_session_expires_at");
+      }
+
+      async function apiJson(path, options = {}) {
+        const token = getSessionToken();
+        const headers = {
+          accept: "application/json",
+          ...(options.headers || {}),
+        };
+
+        if (token) headers["authorization"] = "Bearer " + token;
+
+        const response = await fetch(path, { ...options, headers });
+        const json = await response.json().catch(() => ({}));
+
+        if (!response.ok || json.success === false) {
+          if (response.status === 401) {
+            clearSession();
+            if (!window.__sessionExpiredAlertShown) {
+              window.__sessionExpiredAlertShown = true;
+              showLoader(false);
+              showAlert(
+                "Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại. / Session expired. Please login again.",
+                "Session Expired",
+              );
+              setTimeout(() => {
+                location.reload();
+              }, 2500);
+            }
+          }
+          const message =
+            json.error || json.message || "API error: " + response.status;
+          const err = new Error(message);
+          err.status = response.status;
+          err.code = json.code || "";
+          err.payload = json;
+          throw err;
+        }
+        return json;
+      }
+
+      function showLoader(show) {
+        document.getElementById("loadingOverlay").style.display = show
+          ? "flex"
+          : "none";
+      }
+
+      function showAlert(msg, title = "Notice") {
+        document.getElementById("customAlertTitle").innerText = title;
+        document.getElementById("customAlertMessage").innerText = msg;
+        new bootstrap.Modal(document.getElementById("customAlertModal")).show();
+      }
+
+      // Identical Timer Logic from your code
+      function startOtpTimer(durationSeconds = 60) {
+        const resendBtn = document.getElementById("resendOtpBtn");
+        if (!resendBtn) return;
+        clearInterval(otpTimerInterval);
+        resendBtn.disabled = true;
+        resendBtn.classList.add("text-muted");
+        let timeLeft = durationSeconds;
+        resendBtn.innerText = `Resend OTP in ${timeLeft}s`;
+
+        otpTimerInterval = setInterval(() => {
+          timeLeft--;
+          if (timeLeft <= 0) {
+            clearInterval(otpTimerInterval);
+            resendBtn.disabled = false;
+            resendBtn.classList.remove("text-muted");
+            resendBtn.innerText = "Resend OTP";
+          } else {
+            resendBtn.innerText = `Resend OTP in ${timeLeft}s`;
+          }
+        }, 1000);
+      }
+
+      async function resendOTP() {
+        const email = document
+          .getElementById("emailInput")
+          .value.toLowerCase()
+          .trim();
+        const btn = document.getElementById("resendOtpBtn");
+        if (!email) {
+          showAlert("Please enter your email.", "Notice");
+          return;
+        }
+        showLoader(true);
+        btn.disabled = true;
+        btn.innerText = "Sending...";
+        try {
+          await apiJson("/api/auth/send-otp", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ email }),
+          });
+          showLoader(false);
+          startOtpTimer(60);
+        } catch (err) {
+          showLoader(false);
+          btn.disabled = false;
+          btn.innerText = "Resend OTP";
+          showAlert(err.message, "Error");
+        }
+      }
+
+      async function handleLoginStep1(btn) {
+        const email = document
+          .getElementById("emailInput")
+          .value.toLowerCase()
+          .trim();
+        if (!email) {
+          showAlert("Please enter your email.", "Notice");
+          return;
+        }
+
+        showLoader(true);
+        const originalText = btn.innerText;
+        btn.disabled = true;
+        btn.innerText = "Checking...";
+
+        try {
+          const checkRes = await apiJson(
+            "/api/auth/access-type?email=" +
+              encodeURIComponent(email) +
+              "&portal=client",
+          );
+          const data = checkRes.data || {};
+          loggedInEmail = email;
+          if (data.hasPin) {
+            showLoader(false);
+            btn.disabled = false;
+            btn.innerText = originalText;
+            document.getElementById("loginStep1").style.display = "none";
+            document.getElementById("loginStepChoice").style.display = "block";
+          } else {
+            await requestOTP(email, btn, originalText);
+          }
+        } catch (err) {
+          showLoader(false);
+          btn.disabled = false;
+          btn.innerText = originalText;
+          showAlert(err.message, "Access Denied");
+        }
+      }
+
+      function showPinEntry() {
+        document.getElementById("loginStepChoice").style.display = "none";
+        document.getElementById("loginStepPIN").style.display = "block";
+      }
+
+      async function requestOTP(email, btn, originalText) {
+        email =
+          email ||
+          document.getElementById("emailInput").value.toLowerCase().trim();
+        if (!btn) btn = document.querySelector("#loginStepChoice button");
+        if (!originalText && btn) originalText = btn.innerText;
+
+        showLoader(true);
+        if (btn) {
+          btn.disabled = true;
+          btn.innerText = "Sending...";
+        }
+
+        try {
+          await apiJson("/api/auth/send-otp", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ email }),
+          });
+          showLoader(false);
+          if (btn) {
+            btn.disabled = false;
+            btn.innerText = originalText;
+          }
+          document.getElementById("loginStep1").style.display = "none";
+          document.getElementById("loginStepChoice").style.display = "none";
+          document.getElementById("loginStepOTP").style.display = "block";
+          startOtpTimer(60);
+        } catch (err) {
+          showLoader(false);
+          if (btn) {
+            btn.disabled = false;
+            btn.innerText = originalText;
+          }
+          showAlert(err.message, "Error");
+        }
+      }
+
+      async function submitPin() {
+        const email = document
+          .getElementById("emailInput")
+          .value.toLowerCase()
+          .trim();
+        const pin = document.getElementById("pinInput").value.trim();
+        if (!/^\d{4}$/.test(pin)) {
+          showAlert("PIN must be 4 digits.", "Notice");
+          return;
+        }
+        showLoader(true);
+        try {
+          const res = await apiJson("/api/auth/verify-pin", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ email, pin, portal: "client" }),
+          });
+          showLoader(false);
+          if (res.data && res.data.ok) {
+            setSession(
+              res.data.email || email,
+              res.data.token,
+              res.data.expiresAt,
+            );
+            onLoginSuccess();
+          } else {
+            showAlert("Invalid PIN", "Login Failed");
+          }
+        } catch (err) {
+          showLoader(false);
+          showAlert(err.message, "Error");
+        }
+      }
+
+      async function submitOTP() {
+        const email = document
+          .getElementById("emailInput")
+          .value.toLowerCase()
+          .trim();
+        const otp = document.getElementById("otpInput").value.trim();
+        if (!email) {
+          showAlert("Please enter your email.", "Notice");
+          return;
+        }
+        if (!/^\d{6}$/.test(otp)) {
+          showAlert("Vui lòng nhập mã OTP gồm 6 chữ số.", "Thông báo");
+          return;
+        }
+
+        showLoader(true);
+        try {
+          const res = await apiJson("/api/auth/verify-otp", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ email, otp }),
+          });
+
+          const data = res.data || {};
+          setSession(data.email || email, data.token, data.expiresAt);
+          showLoader(false);
+
+          if (!data.hasPin) {
+            new bootstrap.Modal(
+              document.getElementById("setupPinModal"),
+            ).show();
+          } else {
+            onLoginSuccess();
+          }
+        } catch (err) {
+          showLoader(false);
+          showAlert(err.message, "Lỗi xác thực");
+        }
+      }
+
+      async function processPinFirst() {
+        const pin = document.getElementById("newPinInput").value.trim();
+        if (!/^\d{4}$/.test(pin)) {
+          showAlert("PIN must be 4 digits.", "Notice");
+          return;
+        }
+        const token = getSessionToken();
+        if (!token)
+          return showAlert("Session expired. Please login again.", "Error");
+
+        showLoader(true);
+        try {
+          await apiJson("/api/auth/set-pin", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ pin }),
+          });
+          showLoader(false);
+          const modalEl = document.getElementById("setupPinModal");
+          const modalInstance = bootstrap.Modal.getInstance(modalEl);
+          if (modalInstance) modalInstance.hide();
+          document.body.classList.remove("modal-open");
+          document.body.style = "";
+          document
+            .querySelectorAll(".modal-backdrop")
+            .forEach((b) => b.remove());
+          onLoginSuccess();
+        } catch (err) {
+          showLoader(false);
+          showAlert(err.message, "Error");
+        }
+      }
+
+      async function updatePin() {
+        const pin = document.getElementById("changePinInput").value.trim();
+        if (!/^\d{4}$/.test(pin)) {
+          showAlert("PIN must be 4 digits.", "Notice");
+          return;
+        }
+        const token = getSessionToken();
+        if (!token)
+          return showAlert("Session expired. Please login again.", "Error");
+
+        showLoader(true);
+        try {
+          await apiJson("/api/auth/set-pin", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ pin }),
+          });
+          showLoader(false);
+          showAlert("PIN updated successfully!", "Success");
+          document.getElementById("changePinInput").value = "";
+        } catch (err) {
+          showLoader(false);
+          showAlert(err.message, "Error");
+        }
+      }
+
+      function backToStep1() {
+        document.getElementById("loginStepChoice").style.display = "none";
+        document.getElementById("loginStepPIN").style.display = "none";
+        document.getElementById("loginStepOTP").style.display = "none";
+        document.getElementById("loginStep1").style.display = "block";
+      }
+
+      function backToStepChoice() {
+        document.getElementById("loginStepPIN").style.display = "none";
+        document.getElementById("loginStepOTP").style.display = "none";
+        document.getElementById("loginStepChoice").style.display = "block";
+      }
+
+      // 3. Cập nhật hàm loadProfileData (Gọi sau khi login thành công)
+      async function loadProfileData() {
+        const summaryContainer = document.getElementById("summaryContent");
+        if (summaryContainer) {
+          summaryContainer.innerHTML = `
+          <div class="col-12 text-center p-4">
+            <div class="spinner-border text-primary" role="status" style="width: 2.5rem; height: 2.5rem;"></div>
+            <p class="mt-2 fw-bold text-primary">Loading corporate profile...</p>
+          </div>
+        `;
+        }
+        if (document.getElementById("profileEmailLabel")) {
+          document.getElementById("profileEmailLabel").innerText =
+            "Logged in as: " + loggedInEmail;
+        }
+
+        try {
+          const res = await apiJson(
+            "/api/client/profile?email=" +
+              encodeURIComponent(loggedInEmail || ""),
+          );
+          const profile = res.data || {};
+
+          renderSummary(profile);
+
+          const form = document.getElementById("profileForm");
+          Object.keys(profile).forEach((key) => {
+            const input = form.querySelector(`[name="${key}"]`);
+            if (input) input.value = profile[key] || "";
+          });
+
+          showPane("viewCorporate");
+          toggleEditMode(false);
+        } catch (err) {
+          if (summaryContainer) {
+            summaryContainer.innerHTML = `<div class="col-12 alert alert-danger">Error loading profile: ${escapeHTML(err.message)}</div>`;
+          }
+          const rawMsg = String(err && err.message ? err.message : "");
+          const errorCode = String(err && err.code ? err.code : "");
+          const statusCode = Number(err && err.status ? err.status : 0);
+          const isProfileNotFound =
+            errorCode === "CLIENT_PROFILE_NOT_FOUND" ||
+            statusCode === 404 ||
+            /client profile not found|no client profile found|no client found/i.test(
+              rawMsg,
+            );
+
+          if (isProfileNotFound) {
+            showAlert(
+              "Chúng tôi chưa tìm thấy hồ sơ doanh nghiệp liên kết với email này.\n\n" +
+                "Email của bạn có thể chưa được cấp quyền truy cập, hoặc hồ sơ doanh nghiệp chưa được tạo trên hệ thống. Vui lòng liên hệ PD Team để được hỗ trợ.\n\n" +
+                "We could not find a company profile linked to this email. Please contact the PD Team for access support.",
+              "Chưa có hồ sơ doanh nghiệp / Profile not found",
+            );
+          } else {
+            showAlert(
+              "Không thể tải dữ liệu Hồ sơ. Vui lòng thử lại hoặc liên hệ PD Team nếu lỗi vẫn tiếp tục.\n\n" +
+                rawMsg,
+              "Lỗi dữ liệu / Data Error",
+            );
+          }
+        }
+      }
+
+      // 4. Cập nhật hàm handleFormSubmit (Gọi sau khi nhấn Save)
+      async function handleFormSubmit(event) {
+        event.preventDefault();
+        showLoader(true);
+
+        const formData = new FormData(event.target);
+        const data = Object.fromEntries(formData.entries());
+        data["client updater email"] =
+          data["client updater email"] || loggedInEmail;
+
+        try {
+          await apiJson("/api/client/profile/update", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify(data),
+          });
+          showLoader(false);
+          showAlert("Cập nhật thành công!", "Success");
+          loadProfileData();
+        } catch (err) {
+          showLoader(false);
+          showAlert("Lỗi khi cập nhật: " + err.message, "Lỗi hệ thống");
+        }
+      }
+
+      // Hàm điều hướng chính - THAY THẾ CHO switchView
+      function showPane(id) {
+        document
+          .querySelectorAll(".view-pane")
+          .forEach((v) => v.classList.remove("active"));
+        const target = document.getElementById(id);
+        if (target) target.classList.add("active");
+      }
+
+      function logout() {
+        clearSession();
+
+        document.getElementById("mainNav").style.display = "none";
+        document.getElementById("loginStepOTP").style.display = "none";
+        document.getElementById("loginStep1").style.display = "block";
+        document.getElementById("otpInput").value = "";
+        document.getElementById("emailInput").value = "";
+        showPane("viewLogin");
+      }
+
+      function toggleEditMode(isEdit) {
+        const summaryDiv = document.getElementById("profileSummary");
+        const formDiv = document.getElementById("profileForm");
+        const editBtn = document.getElementById("editBtn");
+
+        if (isEdit) {
+          summaryDiv.style.display = "none";
+          formDiv.style.display = "block";
+          editBtn.style.display = "none";
+          document.getElementById("agreementCheckbox").checked = false;
+        } else {
+          summaryDiv.style.display = "block";
+          formDiv.style.display = "none";
+          editBtn.style.display = "block";
+        }
+      }
+
+      function escapeHTML(value) {
+        return String(value ?? "")
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
+
+      function renderSummary(profile) {
+        const container = document.getElementById("summaryContent");
+        const fields = [
+          { label: "Tên công ty (VN)", val: profile["client name vn"] },
+          { label: "Company Name (EN)", val: profile["client name en"] },
+          { label: "Địa chỉ (VN)", val: profile["client address vn"] },
+          { label: "Address (EN)", val: profile["client address en"] },
+          { label: "Mã số thuế / Tax Code", val: profile["tax code"] },
+          {
+            label: "Số điện thoại / Phone",
+            val: profile["client phone number"],
+          },
+          {
+            label: "Người đại diện (VN)",
+            val: profile["representative name vn"],
+          },
+          { label: "Full Name (EN)", val: profile["representative name en"] },
+          { label: "Chức vụ (VN)", val: profile["representative position vn"] },
+          {
+            label: "Position (EN)",
+            val: profile["representative position en"],
+          },
+        ];
+
+        container.innerHTML = fields
+          .map(
+            (f) => `
+        <div class="col-md-6 mb-3 border-bottom pb-2">
+          <label class="text-muted small d-block mb-1">${f.label}</label>
+          <div class="fw-bold text-dark">${escapeHTML(f.val || "---")}</div>
+        </div>
+      `,
+          )
+          .join("");
+      }
+
+      // --- PHẦN ĐIỀU HƯỚNG TABS ---
+      function setActiveTab(activeId) {
+        ["navInquiry", "navCorporate", "navPersonal"].forEach((id) => {
+          const el = document.getElementById(id);
+          if (el) el.classList.toggle("active", id === activeId);
+        });
+      }
+
+      // Hàm hiển thị tab Nhu cầu đào tạo
+      function showInquiryTab() {
+        setActiveTab("navInquiry");
+        showPane("viewInquiryList");
+        document.title = "PD Hub Corporate — Inquiries";
+        // BẮT BUỘC PHẢI CÓ DÒNG NÀY ĐỂ TẢI DATA INQUIRY:
+        loadInquiryData();
+      }
+
+      // Hàm hiển thị tab Hồ sơ doanh nghiệp (Corporate)
+      function showCorporateTab() {
+        setActiveTab("navCorporate");
+        showPane("viewCorporate");
+        document.title = "PD Hub Corporate — Corporate Profile";
+        // BẮT BUỘC PHẢI CÓ DÒNG NÀY ĐỂ TẢI DATA PROFILE:
+        loadProfileData();
+      }
+
+      // Hàm hiển thị tab Bảo mật cá nhân (Personal)
+      function showPersonalTab() {
+        setActiveTab("navPersonal");
+        showPane("viewPersonal");
+        document.title = "PD Hub Corporate — Security Settings";
+        if (document.getElementById("personalEmailLabel")) {
+          document.getElementById("personalEmailLabel").innerText =
+            "Logged in as: " + loggedInEmail;
+        }
+      }
+
+      // Gắn vào hàm xử lý sau khi Login thành công
+      // SỬA LẠI ĐOẠN LOGIN THÀNH CÔNG: thay vì showPane('viewCorporate'), gọi hàm khởi tạo
+      function onLoginSuccess() {
+        document.getElementById("mainNav").style.display = "flex";
+
+        // Nếu khách vào bằng direct link có chứa ?inquiryid=
+        if (URL_TARGET_INQUIRY && URL_TARGET_INQUIRY.trim() !== "") {
+          showInquiryTab();
+        } else {
+          showInquiryTab(); // Mặc định vào trang Inquiry trước theo yêu cầu của bạn
+        }
+      }
+
+      // --- PHẦN LOGIC INQUIRY ---
+      let currentInquiries = [];
+
+      async function loadInquiryData() {
+        const container = document.getElementById("inquiryListContainer");
+        if (container) {
+          container.innerHTML = `
+          <div class="d-flex justify-content-center align-items-center p-5">
+            <div class="spinner-border text-primary" role="status" style="width: 2.5rem; height: 2.5rem;"></div>
+            <span class="ms-3 fw-bold text-primary">Loading inquiries...</span>
+          </div>
+        `;
+        }
+
+        try {
+          const res = await apiJson(
+            "/api/client/inquiries?email=" +
+              encodeURIComponent(loggedInEmail || ""),
+          );
+          const inquiries = Array.isArray(res.data) ? res.data : [];
+          currentInquiries = inquiries;
+          renderInquiryList(inquiries);
+
+          if (URL_TARGET_INQUIRY && URL_TARGET_INQUIRY.trim() !== "") {
+            const target = inquiries.find(
+              (i) => String(i["inquiry id"]).trim() === URL_TARGET_INQUIRY,
+            );
+            if (target) {
+              openInquiryDetail(target["inquiry id"]);
+            }
+          }
+        } catch (err) {
+          if (container) {
+            container.innerHTML = `<div class="alert alert-danger">Error loading inquiries: ${escapeHTML(err.message)}</div>`;
+          }
+          showAlert(err.message, "Lỗi hệ thống / System Error");
+        }
+      }
+
+      // Hàm hiển thị danh sách Inquiry ra màn hình
+      function renderInquiryList(inquiries) {
+        const container = document.getElementById("inquiryListContainer");
+        if (!inquiries || inquiries.length === 0) {
+          container.innerHTML = `<div class="alert alert-warning text-center">Bạn hiện chưa có yêu cầu đào tạo nào trong hệ thống.</div>`;
+          return;
+        }
+
+        let html = "";
+        inquiries.forEach((inq) => {
+          const id = String(inq["inquiry id"] || "");
+          const safeId = escapeHTML(id);
+          const safeIdForJs = id
+            .replaceAll("\\", "\\\\")
+            .replaceAll("'", "\\'");
+          const topic = escapeHTML(
+            inq["topic interest"] || "Chưa cập nhật chủ đề",
+          );
+          const bdIncharge = escapeHTML(
+            inq["bd incharge"] || "Đang chờ phân công",
+          );
+
+          // ---> [PHẦN MỚI THÊM] XỬ LÝ ẢO GIÁC TRẠNG THÁI <---
+          let statusRaw = String(inq["inquiry status"]).toUpperCase();
+
+          // Đổi tên hiển thị nếu trong Sheet ghi là CLIENT UPDATED
+          let statusDisplayName =
+            statusRaw === "CLIENT UPDATED" ? "UPDATED" : statusRaw;
+
+          let statusBadgeClass = "bg-secondary";
+          if (statusDisplayName.includes("NEW"))
+            statusBadgeClass = "bg-info text-dark";
+          if (statusDisplayName.includes("PROGRESS"))
+            statusBadgeClass = "bg-primary";
+          if (statusDisplayName.includes("UPDATED"))
+            statusBadgeClass = "bg-warning text-dark"; // Thêm màu vàng/cam để nổi bật việc đã cập nhật
+          if (statusDisplayName.includes("COMPLETED"))
+            statusBadgeClass = "bg-success";
+
+          // Thay href bằng style="cursor:pointer;" để tránh bị Google block sandbox
+          // HIỂN THỊ TÊN ĐÃ MAPPING ${statusDisplayName}
+          html += `
+  <a style="cursor:pointer;" onclick="openInquiryDetail('${safeIdForJs}')" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center p-3 mb-2 border rounded shadow-sm">
+    <div>
+      <h6 class="mb-1 fw-bold text-dark">${topic}</h6>
+      <small class="text-muted">Mã: ${safeId} | BD phụ trách: ${bdIncharge}</small>
+    </div>
+    <span class="badge ${statusBadgeClass} rounded-pill p-2">${escapeHTML(statusDisplayName)}</span>
+  </a>
+`;
+        });
+        container.innerHTML = html;
+      }
+
+      function openInquiryDetail(id) {
+        const target = currentInquiries.find(
+          (i) => String(i["inquiry id"]).trim() === id,
+        );
+        if (!target) return;
+
+        const form = document.getElementById("inquiryForm");
+
+        const fieldId = document.getElementById("field_inquiry_id");
+        if (fieldId) fieldId.value = target["inquiry id"];
+
+        const badge = document.getElementById("inqStatusBadge");
+        if (badge) {
+          let currentStatus = String(target["inquiry status"]).toUpperCase();
+          // Sửa hiển thị chữ
+          badge.textContent =
+            currentStatus === "CLIENT UPDATED"
+              ? "Updated"
+              : target["inquiry status"];
+          // Sửa màu
+          badge.className =
+            currentStatus === "CLIENT UPDATED" ||
+            currentStatus.includes("PROGRESS")
+              ? "badge bg-warning text-dark fs-6"
+              : "badge bg-info text-dark fs-6";
+        }
+
+        // Đổ dữ liệu chung, BỎ QUA 'language perfer' và 'venue' để xử lý riêng bên dưới
+        Object.keys(target).forEach((key) => {
+          const input = form.querySelector(`[name="${key}"]`);
+          if (input && key !== "language perfer" && key !== "venue") {
+            input.value = target[key];
+          }
+        });
+
+        // --- 1. Logic riêng cho trường Ngôn ngữ ---
+        const langVal = target["language perfer"] || "";
+        const langSelect = document.getElementById("languageSelect");
+        const langOtherInput = document.getElementById("otherLanguageInput");
+
+        if (langVal === "English" || langVal === "Tiếng Anh") {
+          langSelect.value = "Tiếng Anh";
+          langOtherInput.style.display = "none";
+        } else if (langVal === "Vietnamese" || langVal === "Tiếng Việt") {
+          langSelect.value = "Tiếng Việt";
+          langOtherInput.style.display = "none";
+        } else if (langVal.startsWith("Khác:")) {
+          langSelect.value = "Khác";
+          langOtherInput.style.display = "block";
+          langOtherInput.value = langVal.replace(/^Khác:\s*/i, "");
+        } else {
+          langSelect.value = langVal; // Trường hợp rỗng hoặc không khớp chuẩn
+          langOtherInput.style.display = "none";
+        }
+
+        // --- 2. Logic riêng cho trường Địa điểm (Venue) ---
+        const venueVal = target["venue"] || "";
+        const venueSelect = document.getElementById("venueSelect");
+        const venueOtherInput = document.getElementById("otherVenueInput");
+
+        if (
+          venueVal === "Eastern International University" ||
+          venueVal === "Tại trụ sở doanh nghiệp"
+        ) {
+          venueSelect.value = venueVal;
+          venueOtherInput.style.display = "none";
+        } else if (venueVal !== "") {
+          // Nếu có dữ liệu nhưng không khớp 2 option mặc định -> Chuyển thành Khác
+          venueSelect.value = "Khác";
+          venueOtherInput.style.display = "block";
+          venueOtherInput.value = venueVal;
+        } else {
+          // Rỗng (chưa chọn)
+          venueSelect.value = "";
+          venueOtherInput.style.display = "none";
+        }
+
+        showPane("viewInquiryDetail");
+      }
+
+      async function submitInquiryForm(event) {
+        event.preventDefault();
+        showLoader(true);
+
+        const formData = new FormData(event.target);
+        const data = Object.fromEntries(formData.entries());
+
+        // 1. Xử lý logic chuyển đổi ngôn ngữ (Mapping)
+        let selectedLang = data["language perfer"];
+
+        if (selectedLang === "Tiếng Anh") {
+          data["language perfer"] = "English";
+        } else if (selectedLang === "Tiếng Việt") {
+          data["language perfer"] = "Vietnamese";
+        } else if (selectedLang === "Khác") {
+          data["language perfer"] = "Khác: " + data["other_language"];
+        }
+
+        delete data["other_language"];
+
+        // 2. Xử lý logic Địa điểm (Venue)
+        let selectedVenue = data["venue_select"];
+        if (selectedVenue === "Khác") {
+          data["venue"] = data["other_venue"];
+        } else {
+          data["venue"] = selectedVenue;
+        }
+        delete data["venue_select"];
+        delete data["other_venue"];
+
+        data["client representative email"] =
+          data["client representative email"] || loggedInEmail;
+
+        // 3. Gửi dữ liệu về Cloudflare API mock
+        try {
+          await apiJson("/api/client/inquiry/update", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify(data),
+          });
+          showLoader(false);
+          showAlert("Cập nhật thành công! / Update successful!", "Success");
+          showInquiryTab();
+        } catch (err) {
+          showLoader(false);
+          showAlert(err.message, "Lỗi / Error");
+        }
+      }
+
+      function toggleOtherLanguage() {
+        const select = document.getElementById("languageSelect");
+        const otherInput = document.getElementById("otherLanguageInput");
+        if (select.value === "Khác") {
+          otherInput.style.display = "block";
+          otherInput.required = true;
+        } else {
+          otherInput.style.display = "none";
+          otherInput.required = false;
+          otherInput.value = "";
+        }
+      }
+
+      function toggleOtherVenue() {
+        const select = document.getElementById("venueSelect");
+        const otherInput = document.getElementById("otherVenueInput");
+        if (select.value === "Khác") {
+          otherInput.style.display = "block";
+          otherInput.required = true;
+        } else {
+          otherInput.style.display = "none";
+          otherInput.required = false;
+          otherInput.value = "";
+        }
+      }
+
+      // Kiểm tra session mỗi khi load lại trang
+      window.onload = function () {
+        const savedEmail = localStorage.getItem("pdhub_session_email");
+        const savedTime = localStorage.getItem("pdhub_session_time");
+        const savedToken = localStorage.getItem("pdhub_session_token");
+        const savedExpiresAt = localStorage.getItem("pdhub_session_expires_at");
+
+        if (savedEmail && savedTime && savedToken) {
+          const now = new Date().getTime();
+          const diffHours = (now - parseInt(savedTime)) / (1000 * 60 * 60);
+          const isTokenExpired =
+            savedExpiresAt && new Date(savedExpiresAt).getTime() <= now;
+
+          if (diffHours < 8 && !isTokenExpired) {
+            loggedInEmail = savedEmail;
+            document.getElementById("emailInput").value = savedEmail;
+            onLoginSuccess();
+          } else {
+            clearSession();
+          }
+        }
+      };
+    </script>
+
+    <script>
+      (function () {
+        try {
+          var email = localStorage.getItem("pdhub_session_email") || "";
+          fetch("/api/log/access", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+              page: "client",
+              scope: "client",
+              email: email,
+              path: location.pathname,
+              referrer: document.referrer,
+            }),
+            keepalive: true,
+          }).catch(() => {});
+        } catch (e) {}
+      })();
+    </script>
+
+    <div
+      class="modal fade"
+      id="setupPinModal"
+      data-bs-backdrop="static"
+      tabindex="-1"
+    >
+      <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content p-4 text-center" style="border-radius: 16px">
+          <h5 class="fw-bold mb-3 text-primary">Secure Your Account</h5>
+          <p class="small text-muted">Set a 4-digit PIN for future logins.</p>
+          <input
+            type="password"
+            id="newPinInput"
+            class="form-control pin-box mb-3 text-center"
+            maxlength="4"
+            style="
+              letter-spacing: 15px;
+              font-size: 1.5rem;
+              background-color: #f8f9fa;
+            "
+          />
+          <button
+            class="btn btn-primary w-100 py-2 fw-bold"
+            onclick="processPinFirst()"
+          >
+            Create PIN
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="pdToastContainer" class="pd-toast-container"></div>
+
+    <footer class="pd-oce-footer">
+      <div class="pd-oce-footer-container">
+        <div class="pd-oce-footer-grid">
+          <div class="pd-oce-footer-col">
+            <img
+              src="https://i.postimg.cc/Jn6DPbFK/Logo-white-02.png"
+              alt="EIU Logo"
+              class="pd-oce-footer-logo"
+            />
+            <p class="pd-oce-footer-text mt-3">
+              Eastern International University<br />Office of Community
+              Engagement
+            </p>
+          </div>
+          <div class="pd-oce-footer-col text-md-end">
+            <p class="pd-oce-footer-text">
+              Contact us for any training inquiries or support.
+            </p>
+            <p class="pd-oce-footer-text">Email: engagement@eiu.edu.vn</p>
+          </div>
+        </div>
+        <div class="pd-oce-footer-bottom">
+          <div>&copy; 2026 Eastern International University.</div>
+          <div>All rights reserved.</div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const observer = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting) {
+                entry.target.classList.add("is-visible");
+                observer.unobserve(entry.target);
+              }
+            });
+          },
+          { threshold: 0.1 },
+        );
+
+        // Observe existing and dynamically added cards
+        const observeCards = () => {
+          document
+            .querySelectorAll(
+              ".card, .hero-card, .section-card, .course-card, .view-pane > h3, .view-pane > h4, .view-pane > h5",
+            )
+            .forEach((el) => {
+              if (!el.classList.contains("fade-up")) {
+                el.classList.add("fade-up");
+                observer.observe(el);
+              }
+            });
+        };
+
+        observeCards();
+        // Simple mutation observer to catch dynamically loaded catalog lists
+        const mutObserver = new MutationObserver(observeCards);
+        mutObserver.observe(document.body, { childList: true, subtree: true });
+      });
+    </script>
+  </body>
+</html>

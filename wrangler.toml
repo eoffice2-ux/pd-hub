@@ -1,0 +1,73 @@
+name = "pd-onestop"
+compatibility_date = "2026-06-01"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = "public"
+
+[[hyperdrive]]
+binding = "HYPERDRIVE"
+id = "00903e250777488ea8244ef828ddd17e"
+
+[vars]
+
+# OTP email mode for go-live. Secrets RESEND_API_KEY/BREVO_API_KEY stay in Cloudflare Secrets.
+OTP_MODE = "email"
+OTP_EMAIL_PROVIDER = "brevo"
+OTP_FROM_EMAIL = "eoffice2@eiu.edu.vn"
+OTP_FROM_NAME = "Professional Development Team"
+OTP_APP_NAME = "PD Hub"
+OTP_TTL_SECONDS = "600"
+TAB_OTP_GSHEET = "temp_otp"
+TAB_APP_LOG_GSHEET = "pdc_app_logs"
+EMAIL_CENTER_URL_2 = "https://script.google.com/macros/s/AKfycby7Gl7ixtILz7bLV2DtqJV9qiz5Y0uz1JnnZIWipbwPG14hqE1tODpyJYHLZyYQM4coPw/exec"
+KEEPALIVE_TO = "eoffice2@eiu.edu.vn"
+KEEPALIVE_TOKEN = "pdc_ka_48f9a2b7190d45ca93f5be1c6e0388d7"
+
+# Admin portal access. Multiple emails can be separated by comma or semicolon.
+ADMIN_EMAILS = "eoffice2@eiu.edu.vn"
+
+# Non-secret runtime vars. Secrets such as GOOGLE_PRIVATE_KEY, API_SESSION_SECRET, DATABASE_URL stay in Cloudflare Variables and Secrets as encrypted secrets.
+DB_MODE = "psql"
+SESSION_TTL_SECONDS = "28800"
+MOCK_OTP = "998855"
+APPSHEET_WEBHOOK_SECRET = "radoenstring#$appsheet2026"
+GOOGLE_CLIENT_EMAIL = "pd-onestop-sheets@pd-hub-cloudflare.iam.gserviceaccount.com"
+GOOGLE_SHEET_ID_CORE = "17TLalQyBXZQpbhG39l9BzhWcYmAJ8I7gE6Tq5ujinuU"
+GOOGLE_SHEET_ID_FEEDBACK = "1dxo64K_b_cLCOZz-zMJ-oCnEh5A2q01OjmoeugCMDSM"
+
+
+TAB_CLIENT_PROFILE_SOURCE = "gsheet"
+
+TAB_CLIENT_INQUIRY_SOURCE = "psql"
+
+TAB_TRAINEE_PROFILE_SOURCE = "psql"
+
+TAB_SECTION_SOURCE = "psql"
+
+TAB_SECTION_ATTENDEE_SOURCE = "psql"
+
+TAB_COURSE_MASTER_SOURCE = "gsheet"
+
+TAB_VENUE_SOURCE = "psql"
+
+TAB_CHECKIN_PLAN_SOURCE = "psql"
+
+TAB_CHECKIN_LOG_SOURCE = "psql"
+
+TAB_FB_FORMS_SOURCE = "psql"
+
+TAB_FB_QUESTIONS_SOURCE = "psql"
+
+TAB_FB_SUBMISSIONS_SOURCE = "psql"
+
+TAB_FB_RESPONSES_SOURCE = "psql"
+
+TAB_FB_SECTIONFORMS_SOURCE = "psql"
+
+TAB_USER_ROLES_SOURCE = "gsheet"
+
+TAB_LOGISTIC_LOG_SOURCE = "psql"
+
+TAB_PROPOSAL_DATEPROPOSAL_SOURCE = "psql"
+
+TAB_ORGANIZATION_SOURCE = "psql"
+TAB_ORGANIZATION_GSHEET = "oce_industry_list"

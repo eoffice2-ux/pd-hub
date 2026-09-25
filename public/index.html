@@ -1,0 +1,499 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EIU PD One-Stop Hub</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600;1,700;1,800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/oce-theme.css" />
+    <style>
+      /* PD Hub — Home · Page-specific overrides on top of oce-theme.css */
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        min-height: 100vh;
+        margin: 0;
+        background:
+          radial-gradient(
+            circle at top left,
+            rgba(79, 70, 229, 0.05),
+            transparent 35%
+          ),
+          radial-gradient(
+            circle at bottom right,
+            rgba(22, 163, 199, 0.04),
+            transparent 36%
+          ),
+          var(--pd-bg);
+        color: var(--pd-text);
+        font-family: var(--pd-body-font);
+      }
+      .en {
+        font-style: italic;
+      }
+      .hub-shell {
+        padding: 54px 0 48px;
+      }
+      .hero-eyebrow,
+      .eyebrow {
+        display: inline-flex;
+        gap: 8px;
+        align-items: center;
+        padding: 7px 12px;
+        border-radius: 999px;
+        background: rgba(79, 70, 229, 0.1);
+        border: 1px solid var(--pd-border);
+        color: var(--pd-indigo);
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        box-shadow: 0 4px 10px rgba(15, 23, 42, 0.04);
+      }
+      .hero-card {
+        background: rgba(255, 255, 255, 0.86);
+        border: 1px solid rgba(226, 232, 240, 0.9);
+        border-radius: 24px;
+        padding: 34px;
+        box-shadow: 0 18px 45px rgba(15, 23, 42, 0.07);
+      }
+      .intro-title {
+        color: var(--pd-indigo);
+        letter-spacing: -0.35px;
+      }
+      .intro-copy {
+        line-height: 1.7;
+        color: #334155;
+      }
+      .feature-row {
+        display: flex;
+        gap: 14px;
+        padding: 14px 0;
+        border-bottom: 1px solid #eef2f7;
+      }
+      .feature-row:last-child {
+        border-bottom: 0;
+      }
+      .feature-icon {
+        flex: 0 0 46px;
+        width: 46px;
+        height: 46px;
+        border-radius: 14px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(
+          135deg,
+          rgba(0, 48, 135, 0.08),
+          rgba(201, 168, 76, 0.15)
+        );
+        color: var(--c-navy);
+      }
+      .portal-stack {
+        display: grid;
+        gap: 18px;
+      }
+      .portal-card {
+        position: relative;
+        display: block;
+        height: 100%;
+        overflow: hidden;
+        background-color: var(--pd-card);
+        border: 1px solid var(--pd-border);
+        border-radius: 22px;
+        text-decoration: none;
+        color: inherit;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
+        transition:
+          transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+          box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+          border-color 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .portal-card::before {
+        content: "";
+        position: absolute;
+        inset: 0 0 auto 0;
+        height: 4px;
+        background: linear-gradient(
+          90deg,
+          var(--accent, var(--pd-indigo)),
+          var(--pd-cyan)
+        );
+      }
+      .portal-card:hover {
+        transform: translateY(-4px) scale(1.01);
+        box-shadow: 0 18px 42px rgba(15, 23, 42, 0.1);
+        color: inherit;
+        border-color: rgba(79, 70, 229, 0.22);
+      }
+      .portal-card.trainee {
+        --accent: var(--pd-indigo);
+      }
+      .portal-card.client {
+        --accent: var(--pd-cyan);
+      }
+      .portal-card.staff {
+        --accent: var(--pd-navy);
+      }
+      .portal-content {
+        position: relative;
+        z-index: 1;
+        padding: 28px;
+      }
+      .icon-circle {
+        width: 66px;
+        height: 66px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+        margin-bottom: 16px;
+      }
+      .icon-trainee {
+        background: rgba(48, 42, 140, 0.08);
+        color: var(--pd-indigo);
+      }
+      .icon-client {
+        background: rgba(22, 163, 199, 0.08);
+        color: var(--pd-cyan);
+      }
+      .portal-action {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-top: 20px;
+        padding-top: 18px;
+        border-top: 1px solid #eef2f7;
+        font-weight: 800;
+      }
+      .system-note {
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid var(--pd-border);
+        box-shadow: 0 8px 22px rgba(15, 23, 42, 0.05);
+      }
+      @media (max-width: 991px) {
+        .hub-shell {
+          padding-top: 30px;
+        }
+        .hero-card {
+          padding: 24px;
+        }
+      }
+      @media (max-width: 576px) {
+        .hub-shell {
+          padding: 18px 12px 30px;
+        }
+        .hero-card,
+        .portal-content {
+          padding: 20px;
+        }
+        .intro-title {
+          font-size: 1.35rem;
+        }
+        .portal-card:hover {
+          transform: none;
+        }
+        .portal-action {
+          font-size: 0.95rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="pd-oce-header">
+      <div class="pd-oce-header-inner">
+        <a href="/" class="pd-oce-logo-link">
+          <img
+            src="https://i.postimg.cc/hPBGsySC/Logo-white-021.png"
+            alt="EIU Logo"
+            class="pd-oce-logo"
+          />
+        </a>
+        <div class="pd-oce-dept">OCE · Phòng Kết Nối Cộng Đồng</div>
+      </div>
+    </nav>
+
+    <div class="pd-oce-hero">
+      <main class="container hub-shell">
+        <div class="row align-items-center justify-content-center g-4 g-lg-5">
+          <section class="col-lg-6 col-md-12">
+            <div class="hero-card">
+              <div class="hero-eyebrow mb-3">
+                <i class="fas fa-shield-alt"></i> EIU Professional Development
+              </div>
+              <h2 class="fw-bold intro-title mb-2">
+                Cổng Thông Tin Đào Tạo & Phát Triển Chuyên Môn
+              </h2>
+              <h6 class="text-light-muted mb-4 en">
+                Professional Development One-Stop Hub
+              </h6>
+
+              <p class="mb-4 intro-copy">
+                Hệ thống được thiết lập để hỗ trợ học viên và doanh nghiệp truy
+                cập nhanh các dịch vụ đào tạo, quản lý nhu cầu, theo dõi quá
+                trình học tập và cập nhật hồ sơ liên quan.
+                <br /><br />
+                <span class="text-muted small en">
+                  This hub is designed to help trainees and corporate partners
+                  quickly access training services, manage inquiries, track
+                  learning activities, and update relevant profile information.
+                </span>
+              </p>
+
+              <div class="feature-row">
+                <div class="feature-icon">
+                  <i class="fas fa-user-graduate"></i>
+                </div>
+                <div>
+                  <h6 class="fw-bold mb-1">
+                    Học viên / <span class="en">Trainee</span>
+                  </h6>
+                  <p class="small text-muted mb-0">
+                    Đăng ký khóa học, điểm danh và theo dõi lịch sử học tập.<br /><span
+                      class="en"
+                      >Register for courses, check in, and track learning
+                      records.</span
+                    >
+                  </p>
+                </div>
+              </div>
+
+              <div class="feature-row">
+                <div class="feature-icon"><i class="fas fa-building"></i></div>
+                <div>
+                  <h6 class="fw-bold mb-1">
+                    Doanh nghiệp / <span class="en">Client</span>
+                  </h6>
+                  <p class="small text-muted mb-0">
+                    Quản lý nhu cầu đào tạo và cập nhật hồ sơ doanh nghiệp.<br /><span
+                      class="en"
+                      >Manage training inquiries and update corporate profile
+                      information.</span
+                    >
+                  </p>
+                </div>
+              </div>
+
+              <div class="feature-row">
+                <div class="feature-icon"><i class="fas fa-lock"></i></div>
+                <div>
+                  <h6 class="fw-bold mb-1">
+                    Truy cập bảo mật / <span class="en">Secure Access</span>
+                  </h6>
+                  <p class="small text-muted mb-0">
+                    Sử dụng email và xác thực để bảo vệ dữ liệu người dùng.<br /><span
+                      class="en"
+                      >Use email verification to protect user and partner
+                      data.</span
+                    >
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="col-lg-5 col-md-12">
+            <div class="portal-stack">
+              <a href="/trainee" class="portal-card trainee">
+                <div class="portal-content">
+                  <div class="d-flex align-items-center gap-3">
+                    <div class="icon-circle icon-trainee">
+                      <i class="fas fa-user-graduate"></i>
+                    </div>
+                    <div>
+                      <h4 class="fw-bold mb-1">Trainee Portal</h4>
+                      <small class="text-muted en"
+                        >Cổng dành cho học viên</small
+                      >
+                    </div>
+                  </div>
+                  <p class="small text-muted mt-3 mb-0">
+                    Xem khóa học, đăng ký, điểm danh và theo dõi lịch sử/chứng
+                    chỉ.<br />
+                    <span class="en"
+                      >Browse courses, register, check in, and review learning
+                      history/certificates.</span
+                    >
+                  </p>
+                  <div class="portal-action text-primary">
+                    <span>Access</span>
+                    <i class="fas fa-arrow-right"></i>
+                  </div>
+                </div>
+              </a>
+
+              <a href="/client" class="portal-card client">
+                <div class="portal-content">
+                  <div class="d-flex align-items-center gap-3">
+                    <div class="icon-circle icon-client">
+                      <i class="fas fa-building"></i>
+                    </div>
+                    <div>
+                      <h4 class="fw-bold mb-1">Client Portal</h4>
+                      <small class="text-muted en"
+                        >Cổng dành cho doanh nghiệp</small
+                      >
+                    </div>
+                  </div>
+                  <p class="small text-muted mt-3 mb-0">
+                    Quản lý nhu cầu đào tạo, cập nhật thông tin liên hệ và hồ sơ
+                    pháp lý.<br />
+                    <span class="en"
+                      >Manage training inquiries, contact details, and corporate
+                      profile information.</span
+                    >
+                  </p>
+                  <div class="portal-action text-success">
+                    <span>Access</span>
+                    <i class="fas fa-arrow-right"></i>
+                  </div>
+                </div>
+              </a>
+
+              <div class="portal-card staff">
+                <div class="portal-content" style="padding: 1.5rem">
+                  <div class="d-flex align-items-center gap-3">
+                    <div
+                      class="icon-circle"
+                      style="
+                        background: rgba(148, 163, 184, 0.1);
+                        color: var(--pd-muted);
+                      "
+                    >
+                      <i class="fas fa-lock"></i>
+                    </div>
+                    <div>
+                      <h4 class="fw-bold mb-1" style="font-size: 1.2rem">
+                        Staff & System
+                      </h4>
+                      <small class="text-muted en">Internal EIU Access</small>
+                    </div>
+                  </div>
+                  <div class="mt-4 d-flex gap-2">
+                    <a
+                      href="/report.html"
+                      class="btn btn-sm btn-outline-secondary flex-grow-1"
+                      ><i class="fas fa-chart-line me-2"></i>Report</a
+                    >
+                    <a
+                      href="/admin"
+                      class="btn btn-sm btn-outline-secondary flex-grow-1"
+                      ><i class="fas fa-user-shield me-2"></i>Admin</a
+                    >
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div class="system-note p-3 mt-4 mt-lg-5 text-center small text-muted">
+          PD Hub kết nối các phân hệ đào tạo trong một điểm truy cập thống
+          nhất.<br />
+          <span class="en"
+            >PD Hub connects training services into one unified access
+            point.</span
+          >
+        </div>
+      </main>
+    </div>
+
+    <script>
+      (function () {
+        try {
+          fetch("/api/log/access", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+              page: "home",
+              scope: "home",
+              path: location.pathname,
+              referrer: document.referrer,
+            }),
+            keepalive: true,
+          }).catch(() => {});
+        } catch (e) {}
+      })();
+    </script>
+
+    <footer class="pd-oce-footer">
+      <div class="pd-oce-footer-container">
+        <div class="pd-oce-footer-grid">
+          <div class="pd-oce-footer-col">
+            <img
+              src="https://i.postimg.cc/Jn6DPbFK/Logo-white-02.png"
+              alt="EIU Logo"
+              class="pd-oce-footer-logo"
+            />
+            <p class="pd-oce-footer-text mt-3">
+              Eastern International University<br />Office of Community
+              Engagement
+            </p>
+          </div>
+          <div class="pd-oce-footer-col text-md-end">
+            <p class="pd-oce-footer-text">
+              Contact us for any training inquiries or support.
+            </p>
+            <p class="pd-oce-footer-text">Email: engagement@eiu.edu.vn</p>
+          </div>
+        </div>
+        <div class="pd-oce-footer-bottom">
+          <div>&copy; 2026 Eastern International University.</div>
+          <div>All rights reserved.</div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const observer = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting) {
+                entry.target.classList.add("is-visible");
+                observer.unobserve(entry.target);
+              }
+            });
+          },
+          { threshold: 0.1 },
+        );
+
+        // Observe existing and dynamically added cards
+        const observeCards = () => {
+          document
+            .querySelectorAll(
+              ".card, .hero-card, .section-card, .course-card, .view-pane > h3, .view-pane > h4, .view-pane > h5",
+            )
+            .forEach((el) => {
+              if (!el.classList.contains("fade-up")) {
+                el.classList.add("fade-up");
+                observer.observe(el);
+              }
+            });
+        };
+
+        observeCards();
+        // Simple mutation observer to catch dynamically loaded catalog lists
+        const mutObserver = new MutationObserver(observeCards);
+        mutObserver.observe(document.body, { childList: true, subtree: true });
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,452 @@
+/* ==========================================================================
+   OCE DESIGN SYSTEM - CENTRAL STYLESHEET
+   Clean authoritative build for PD One-Stop
+   ========================================================================== */
+
+/* 1. Brand Tokens & Identity */
+:root {
+  --c-deep-navy: #001a4e;
+  --c-navy: #003087;
+  --c-gold: #c9a84c;
+  --c-surface: #f8f7f5;
+  --c-white: #ffffff;
+  --c-text-primary: #1a1a2e;
+  --c-text-muted: #5a6475;
+  --c-text-light: #ffffff;
+  --c-text-light-muted: rgba(255, 255, 255, 0.7);
+
+  /* Semantic page tokens */
+  --pd-bg: var(--c-surface) !important;
+  --pd-card: var(--c-white);
+  --pd-text: var(--c-text-primary) !important;
+  --pd-muted: var(--c-text-muted);
+  --pd-primary: var(--c-gold) !important;
+  --pd-navy: var(--c-deep-navy) !important;
+  --pd-indigo: var(--c-navy) !important;
+  --pd-violet: var(--c-navy) !important;
+  --pd-cyan: #16a3c7;
+  --pd-gold: var(--c-gold);
+  --pd-card-tint: #f8fbff;
+  --pd-card-line: rgba(0, 48, 135, 0.12) !important;
+  --pd-border: #e2e8f0;
+  --pd-success: #198754;
+  --pd-danger: #b42318;
+  --pd-shadow: 0 10px 28px rgba(15, 23, 42, 0.07);
+  --pd-card-shadow-strong: 0 18px 42px rgba(15, 23, 42, 0.12);
+  --pd-card-shadow-soft: 0 12px 30px rgba(15, 23, 42, 0.08);
+
+  --pd-heading-font: "Be Vietnam Pro", sans-serif !important;
+  --pd-body-font: "Be Vietnam Pro", sans-serif !important;
+}
+
+/* 2. Global Base & Sticky Footer Structure */
+body {
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 100vh !important;
+  margin: 0;
+  font-family: var(--pd-body-font) !important;
+  background: var(--c-surface) !important;
+  color: var(--c-text-primary) !important;
+}
+
+/* 3. Typography Standards */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.intro-title,
+.card-title,
+.section-title {
+  font-family: var(--pd-heading-font) !important;
+  letter-spacing: -0.02em !important;
+  line-height: 1.1 !important;
+  color: var(--c-deep-navy) !important;
+}
+
+p,
+span,
+div,
+label,
+input,
+button,
+select,
+textarea {
+  font-family: var(--pd-body-font) !important;
+}
+
+/* Ensure headings inside dark legacy headers and modals remain white */
+header h1,
+header h2,
+header h3,
+header h4,
+header h5,
+header h6,
+.modal-header h1,
+.modal-header h2,
+.modal-header h3,
+.modal-header h4,
+.modal-header h5,
+.modal-header h6 {
+  color: var(--c-white) !important;
+}
+
+/* 4. Unified OCE Header (64px, Deep Navy, sticky) */
+.pd-oce-header {
+  height: 64px;
+  position: sticky;
+  top: 0;
+  z-index: 1030;
+  background: var(--c-deep-navy);
+  width: 100%;
+}
+
+.pd-oce-header-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.pd-oce-logo {
+  height: 36px;
+  max-height: 80px;
+  width: auto;
+}
+
+.pd-oce-dept {
+  color: var(--c-text-light-muted);
+  font-weight: 500;
+  font-size: 0.875rem;
+}
+
+/* 5. Unified OCE Footer (Sticky bottom, 96px logo) */
+.pd-oce-footer {
+  background: var(--c-deep-navy);
+  padding: 4rem 0 2rem;
+  color: var(--c-text-light-muted);
+  margin-top: auto !important;
+  width: 100%;
+}
+
+.pd-oce-footer-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.pd-oce-footer-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.pd-oce-footer-logo {
+  height: 96px !important;
+  width: auto !important;
+  max-width: 100%;
+  object-fit: contain;
+  align-self: flex-start;
+}
+
+.pd-oce-footer-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.pd-oce-footer-text {
+  color: var(--c-text-light-muted);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.pd-oce-footer-bottom {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 2rem;
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.875rem;
+}
+
+/* 6. Buttons & Interactions */
+.btn-primary {
+  background: var(--c-gold) !important;
+  color: var(--c-deep-navy) !important;
+  border-radius: 8px !important;
+  padding: 0.875rem 1.5rem !important;
+  font-weight: 600 !important;
+  border: none !important;
+  transition:
+    transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    filter 0.2s !important;
+  box-shadow: none !important;
+}
+
+.btn-primary:hover {
+  filter: brightness(1.1) !important;
+  transform: translateY(-2px) !important;
+}
+
+.btn-primary:active {
+  transform: scale(0.98) !important;
+}
+
+.btn-secondary,
+.btn-outline-secondary {
+  background: var(--c-deep-navy) !important;
+  color: var(--c-white) !important;
+  border-radius: 8px !important;
+  padding: 0.875rem 1.5rem !important;
+  font-weight: 600 !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.btn-secondary:active,
+.btn-outline-secondary:active {
+  transform: scale(0.98) !important;
+}
+
+/* 7. Layout & Container */
+.container {
+  max-width: 1400px !important;
+  padding-left: 2rem !important;
+  padding-right: 2rem !important;
+}
+
+/* 8. Cards & Bento Components */
+.card,
+.hero-card,
+.section-card,
+.course-card {
+  border-radius: 12px !important;
+  background: var(--c-white) !important;
+  border: none !important;
+  border-left: 4px solid var(--c-navy) !important;
+  box-shadow: 0 10px 30px rgba(0, 26, 78, 0.05) !important;
+  transition:
+    transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.card:hover,
+.hero-card:hover,
+.section-card:hover,
+.course-card:hover {
+  transform: translateY(-4px) !important;
+  box-shadow: 0 12px 24px -10px rgba(0, 26, 78, 0.15) !important;
+}
+
+/* 9. Portal Cards (Main Index) */
+.portal-card h4,
+.portal-card h6,
+.portal-card p,
+.portal-card span,
+.portal-card div {
+  color: var(--c-text-primary) !important;
+}
+
+.portal-card .text-muted,
+.portal-card .small {
+  color: var(--c-text-muted) !important;
+}
+
+/* 10. Local Sub-page Tabs & Navigation */
+.pd-local-tabs {
+  max-width: 1400px !important;
+  margin: 1.5rem auto 2rem !important;
+  padding: 0 2rem !important;
+  display: flex;
+  justify-content: space-between !important;
+  align-items: center !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  width: 100%;
+}
+
+.pd-local-tabs .pd-app-nav-inner,
+.pd-local-tabs > div {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+.pd-page-title h2 {
+  margin: 0;
+  color: var(--c-deep-navy) !important;
+}
+
+.pd-page-title .text-muted {
+  color: var(--c-text-muted) !important;
+}
+
+/* Gated nav for portals before login */
+#mainNav.pd-local-tabs {
+  display: none;
+  background: transparent !important;
+  box-shadow: none !important;
+  border-bottom: none !important;
+}
+
+/* Ensure inline display: none is strictly honored */
+#mainNav[style*="display: none"],
+#mainNav[style*="display:none"],
+.pd-local-tabs[style*="display: none"],
+.pd-local-tabs[style*="display:none"] {
+  display: none !important;
+}
+
+/* Override legacy client nav background */
+.pd-client-nav #mainNav {
+  background: transparent !important;
+  box-shadow: none !important;
+  border-bottom: none !important;
+}
+
+#navItems.pd-app-tabs,
+.pd-app-tabs {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  gap: 0.5rem !important;
+  background: var(--c-surface) !important;
+  border: 1px solid rgba(0, 26, 78, 0.1) !important;
+  border-radius: 999px !important;
+  padding: 0.35rem !important;
+  box-shadow: 0 4px 12px rgba(0, 26, 78, 0.05) !important;
+  width: auto !important;
+  overflow-x: auto !important;
+}
+
+#navItems.pd-app-tabs .nav-link,
+.pd-app-tabs .nav-link {
+  color: var(--c-text-muted) !important;
+  background: transparent !important;
+  border-radius: 999px !important;
+  padding: 0.6rem 1.2rem !important;
+  font-weight: 600 !important;
+  font-size: 0.9rem !important;
+  text-decoration: none !important;
+  white-space: nowrap !important;
+  min-height: auto !important;
+  display: block !important;
+}
+
+#navItems.pd-app-tabs .nav-link:hover,
+.pd-app-tabs .nav-link:hover {
+  background: rgba(0, 26, 78, 0.05) !important;
+  color: var(--c-deep-navy) !important;
+}
+
+#navItems.pd-app-tabs .nav-link.active,
+.pd-app-tabs .nav-link.active {
+  background: var(--c-deep-navy) !important;
+  color: var(--c-white) !important;
+  box-shadow: 0 4px 10px rgba(0, 26, 78, 0.15) !important;
+}
+
+.nav-link.text-danger {
+  color: var(--pd-danger) !important;
+}
+
+.nav-link.text-danger:hover {
+  opacity: 0.85;
+}
+
+/* Ensure hidden links inside pd-app-tabs remain strictly hidden */
+#navItems.pd-app-tabs .nav-link.hidden,
+.pd-app-tabs .nav-link.hidden,
+.pd-app-tabs .hidden,
+.hidden {
+  display: none !important;
+}
+
+/* 11. Bento Grid Enforcements */
+#catalogList,
+#activeList {
+  display: grid !important;
+  grid-template-columns: repeat(12, 1fr) !important;
+  gap: 1.5rem !important;
+}
+
+#catalogList > div,
+#activeList > div {
+  width: auto !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+}
+
+#catalogList > div:nth-child(odd),
+#activeList > div:nth-child(odd) {
+  grid-column: span 7 !important;
+}
+
+#catalogList > div:nth-child(even),
+#activeList > div:nth-child(even) {
+  grid-column: span 5 !important;
+}
+
+/* === Responsive: Tablet Landscape (≤991px) === */
+@media (max-width: 991px) {
+  #catalogList > div:nth-child(n),
+  #activeList > div:nth-child(n) {
+    grid-column: span 12 !important;
+  }
+}
+
+/* 12. Motion & Scroll Reveals */
+.fade-up {
+  opacity: 0;
+  transform: translateY(24px);
+  transition:
+    opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.fade-up.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* === Responsive: Tablet Portrait & Mobile (≤768px) === */
+@media (max-width: 768px) {
+  .pd-oce-dept {
+    display: none;
+  }
+
+  .pd-oce-footer-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pd-oce-footer .text-md-end {
+    text-align: left !important;
+  }
+
+  .pd-local-tabs {
+    padding: 0 1rem !important;
+    justify-content: center !important;
+  }
+
+  #navItems.pd-app-tabs,
+  .pd-app-tabs {
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    border-radius: 16px !important;
+    padding: 0.5rem !important;
+  }
+
+  #navItems.pd-app-tabs .nav-link,
+  .pd-app-tabs .nav-link {
+    flex: 1 1 auto !important;
+    text-align: center !important;
+  }
+}

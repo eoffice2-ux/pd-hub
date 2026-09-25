@@ -1,0 +1,27 @@
+name: Email Service Keep-Alive
+
+on:
+  schedule:
+    - cron: '0 8 1 */3 *'   # 1st day of every 3rd month at 08:00 UTC (~90 days)
+  workflow_dispatch:          # Also triggerable manually from GitHub UI
+
+jobs:
+  keepalive:
+    name: Ping email keep-alive endpoint
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Send keep-alive ping to Brevo + Resend
+        run: |
+          response=$(curl -s -o body.txt -w "%{http_code}" -X POST \
+            "https://pd-onestop.pages.dev/api/admin/email-keepalive" \
+            -H "x-keepalive-token: ${{ secrets.KEEPALIVE_TOKEN }}" \
+            -H "Content-Type: application/json")
+          body=$(cat body.txt)
+          echo "HTTP Status: $response"
+          echo "Response: $body"
+          if [ "$response" != "200" ] && [ "$response" != "207" ]; then
+            echo "❌ Keep-alive failed with HTTP $response"
+            exit 1
+          fi
+          echo "✅ Keep-alive completed successfully"

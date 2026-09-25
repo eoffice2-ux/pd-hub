@@ -1,0 +1,14 @@
+/*
+  Cache-Control: no-cache
+
+/trainee/index.html
+  Cache-Control: no-store, no-cache, must-revalidate
+
+/trainee
+  Cache-Control: no-store, no-cache, must-revalidate
+
+/client/index.html
+  Cache-Control: no-store, no-cache, must-revalidate
+
+/client
+  Cache-Control: no-store, no-cache, must-revalidate

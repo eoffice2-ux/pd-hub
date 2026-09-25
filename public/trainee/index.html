@@ -1,0 +1,3790 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <base target="_top" />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600;1,700;1,800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/oce-theme.css" />
+    <style>
+      /* PD Hub — Trainee Portal · Page-specific overrides on top of oce-theme.css */
+      body {
+        background:
+          radial-gradient(
+            circle at top left,
+            rgba(79, 70, 229, 0.05),
+            transparent 34%
+          ),
+          radial-gradient(
+            circle at bottom right,
+            rgba(22, 163, 199, 0.04),
+            transparent 36%
+          ),
+          var(--pd-bg) !important;
+        color: var(--pd-text);
+        min-height: 100vh;
+      }
+      .view-pane {
+        display: none;
+      }
+      .view-pane.active {
+        display: block;
+        animation: pdFade 0.22s ease-out;
+      }
+      @keyframes pdFade {
+        from {
+          opacity: 0;
+          transform: translateY(6px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .en,
+      .italic,
+      small.italic {
+        font-style: italic;
+      }
+      .pin-box {
+        letter-spacing: 10px;
+        font-size: 24px;
+        text-align: center;
+        font-weight: bold;
+      }
+      .container.pb-5 {
+        padding-bottom: 4rem !important;
+      }
+
+      /* Cards & Catalog Styling */
+      .course-card,
+      .section-card {
+        background-color: var(--pd-card);
+        border: 1px solid var(--pd-card-line) !important;
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 20px;
+        box-shadow: var(--pd-card-shadow-soft);
+        transition:
+          transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+          box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+      }
+      .course-card:hover,
+      .section-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--pd-card-shadow-strong);
+      }
+      .course-card::before,
+      .section-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--pd-indigo), var(--pd-cyan));
+      }
+      .section-card::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 80px;
+        height: 80px;
+        background: radial-gradient(
+          circle,
+          rgba(79, 70, 229, 0.14),
+          transparent 62%
+        );
+        pointer-events: none;
+      }
+      .section-card.registered {
+        cursor: default;
+        background: #f8f9fa;
+        opacity: 0.8;
+        border: 1px solid #dee2e6;
+      }
+      .reg-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 5;
+      }
+      .course-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--pd-indigo);
+        margin-bottom: 12px;
+        line-height: 1.4;
+      }
+      #viewCatalog > h5,
+      #viewActive > h5 {
+        color: var(--pd-indigo);
+        font-weight: 800 !important;
+        padding: 10px 0 2px;
+      }
+
+      /* Badges */
+      .badge {
+        padding: 6px 12px;
+        border-radius: 999px !important;
+        font-size: 0.85rem;
+        font-weight: bold;
+        letter-spacing: 0.01em;
+      }
+      .badge-open {
+        background-color: #ecfdf5 !important;
+        color: #047857 !important;
+        border: 1px solid rgba(16, 185, 129, 0.15) !important;
+      }
+      .badge-missed {
+        background-color: #fff1f2 !important;
+        color: #be123c !important;
+        border: 1px solid rgba(244, 63, 94, 0.15) !important;
+      }
+      .badge-early {
+        background-color: #f1f5f9 !important;
+        color: #334155 !important;
+        border: 1px solid rgba(148, 163, 184, 0.15) !important;
+      }
+      .badge-reg {
+        background-color: #f0f4ff !important;
+        color: var(--c-navy) !important;
+        border: 1px solid rgba(0, 48, 135, 0.18) !important;
+      }
+
+      /* Search Autocomplete */
+      .search-container {
+        position: relative;
+      }
+      .search-results {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        z-index: 9999;
+        background: white;
+        border: 1px solid var(--pd-border);
+        border-radius: 12px;
+        display: none;
+        max-height: 200px;
+        overflow-y: auto;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
+      .result-item {
+        padding: 12px;
+        cursor: pointer;
+        border-bottom: 1px solid #eee;
+        font-size: 0.9rem;
+        transition: all 0.16s ease;
+      }
+      .result-item:hover {
+        background: #eef6ff;
+        color: #0056b3;
+      }
+
+      /* Static info cards (disable bubble hover) */
+      #historyDetailsContainer .card,
+      #activeDetailsContainer .card,
+      #viewProfile .card {
+        transform: none !important;
+        transition: none !important;
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03) !important;
+        background: #ffffff !important;
+        border: 1px solid var(--pd-card-line) !important;
+        border-radius: 12px !important;
+      }
+
+      /* Login Shell */
+      #viewLogin .card {
+        max-width: 470px !important;
+        border-top: 5px solid var(--c-navy) !important;
+        border-radius: 18px !important;
+        background: #ffffff !important;
+        box-shadow: var(--pd-card-shadow-strong) !important;
+      }
+      #viewLogin h3 {
+        letter-spacing: -0.25px;
+        color: var(--pd-indigo);
+      }
+      #viewLogin .fa-2x {
+        filter: drop-shadow(0 4px 9px rgba(13, 110, 253, 0.12));
+      }
+
+      /* Forms & Controls */
+      .form-control,
+      .form-select {
+        border-radius: 10px;
+        border-color: #dbe3ee;
+        min-height: 42px;
+      }
+      .form-control:focus,
+      .form-select:focus {
+        border-color: rgba(79, 70, 229, 0.55);
+        box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.15);
+      }
+      .btn {
+        border-radius: 10px !important;
+        font-weight: 700;
+      }
+      .btn-register {
+        background-color: var(--pd-indigo);
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: bold;
+      }
+      .btn-register:hover {
+        opacity: 0.9;
+      }
+      .btn-register:disabled {
+        background-color: #cccccc;
+        cursor: not-allowed;
+      }
+
+      /* Toast Notification System */
+      .pd-toast-container {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        z-index: 1055;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .pd-toast {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        padding: 14px 18px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        transform: translateY(100px);
+        opacity: 0;
+        transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        pointer-events: none;
+        border-left: 4px solid #6c757d;
+      }
+      .pd-toast.show {
+        transform: translateY(0);
+        opacity: 1;
+      }
+      .pd-toast.success {
+        border-left-color: #198754;
+      }
+      .pd-toast.success i {
+        color: #198754;
+      }
+      .pd-toast.error {
+        border-left-color: #dc3545;
+      }
+      .pd-toast.error i {
+        color: #dc3545;
+      }
+      .pd-toast.info {
+        border-left-color: var(--pd-indigo);
+      }
+      .pd-toast.info i {
+        color: var(--pd-indigo);
+      }
+      .pd-toast-icon {
+        font-size: 1.25rem;
+      }
+      .pd-toast-content {
+        flex: 1;
+      }
+      .pd-toast-title {
+        font-weight: bold;
+        font-size: 0.95rem;
+        margin-bottom: 2px;
+      }
+      .pd-toast-msg {
+        font-size: 0.85rem;
+        color: #6c757d;
+        line-height: 1.2;
+      }
+
+      /* Responsive: Mobile & Tablet */
+      @media (max-width: 576px) {
+        body {
+          font-size: 15px;
+          overflow-x: hidden;
+        }
+        .container,
+        .container.pb-5 {
+          width: 100%;
+          max-width: 100%;
+          padding-left: 10px !important;
+          padding-right: 10px !important;
+        }
+        #mainNav {
+          position: sticky;
+          top: 0;
+          z-index: 1020;
+          margin-bottom: 12px !important;
+          padding: 6px 0;
+        }
+        #mainNav .container {
+          display: block;
+          padding-left: 8px !important;
+          padding-right: 8px !important;
+        }
+        #navItems {
+          display: grid !important;
+          grid-template-columns: repeat(auto-fit, minmax(65px, 1fr)) !important;
+          gap: 6px !important;
+          width: 100%;
+          overflow: visible !important;
+        }
+        #navItems .nav-link {
+          min-height: 46px;
+          padding: 0.42rem 0.25rem !important;
+          font-size: 0.72rem !important;
+          line-height: 1.08;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          text-align: center;
+          white-space: normal !important;
+        }
+
+        #viewLogin .container {
+          margin-top: 10px !important;
+        }
+        #viewLogin .row {
+          align-items: flex-start;
+          gap: 1rem !important;
+        }
+        #viewLogin .col-lg-5 {
+          order: 1;
+        }
+        #viewLogin .col-lg-6:first-child {
+          display: block !important;
+          order: 2;
+          margin-top: 12px;
+        }
+        #viewLogin .col-lg-6:first-child > div {
+          padding: 14px !important;
+          border-radius: 16px !important;
+          box-shadow: 0 8px 20px rgba(15, 23, 42, 0.055) !important;
+          background: rgba(255, 255, 255, 0.92) !important;
+        }
+        #viewLogin .col-lg-6:first-child h1,
+        #viewLogin .col-lg-6:first-child h2 {
+          font-size: 1.18rem !important;
+          line-height: 1.28 !important;
+          margin-bottom: 0.5rem !important;
+        }
+        #viewLogin .card {
+          margin-top: 8px;
+          padding: 1.25rem !important;
+          max-width: 100% !important;
+          border-radius: 18px !important;
+        }
+        #pinInput {
+          letter-spacing: 10px !important;
+          font-size: 1.25rem !important;
+        }
+        #otpInput {
+          letter-spacing: 5px !important;
+          font-size: 1.1rem !important;
+        }
+        .course-card,
+        .section-card {
+          padding: 14px !important;
+          margin-bottom: 12px;
+          border-radius: 16px !important;
+        }
+        .course-card:hover,
+        .section-card:hover {
+          transform: none;
+        }
+        .badge {
+          font-size: 0.72rem;
+          padding: 5px 9px;
+          white-space: normal;
+        }
+        .reg-badge {
+          position: static;
+          display: inline-block;
+          margin-bottom: 8px;
+        }
+        #activeDetailsContainer {
+          max-width: 100% !important;
+        }
+        #activeDetailsContainer .card,
+        #viewHistory .card,
+        #viewProfile .card {
+          padding: 16px !important;
+          border-radius: 16px !important;
+        }
+        .modal-dialog {
+          margin: 0.75rem;
+        }
+        .modal-lg,
+        .modal-xl {
+          max-width: calc(100% - 1.5rem);
+        }
+        .modal-body {
+          max-height: calc(100vh - 140px);
+          overflow-y: auto;
+        }
+        .search-results {
+          position: fixed;
+          left: 10px;
+          right: 10px;
+          top: auto;
+          bottom: 12px;
+          max-height: 45vh;
+          border-radius: 16px;
+        }
+        table {
+          display: block;
+          overflow-x: auto;
+          white-space: nowrap;
+        }
+      }
+
+      @media (min-width: 577px) and (max-width: 991px) {
+        #mainNav .container {
+          max-width: 100%;
+        }
+        #navItems {
+          overflow-x: auto;
+          flex-wrap: nowrap;
+        }
+        #navItems .nav-link {
+          white-space: nowrap;
+        }
+        #activeDetailsContainer {
+          max-width: 92% !important;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .pd-toast-container {
+          bottom: 24px;
+          right: 12px;
+          left: 12px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="pd-oce-header">
+      <div class="pd-oce-header-inner">
+        <a href="/" class="pd-oce-logo-link">
+          <img
+            src="https://i.postimg.cc/hPBGsySC/Logo-white-021.png"
+            alt="EIU Logo"
+            class="pd-oce-logo"
+          />
+        </a>
+        <div class="pd-oce-dept">OCE · Phòng Kết Nối Cộng Đồng</div>
+      </div>
+    </nav>
+
+    <div
+      class="modal fade"
+      id="customAlertModal"
+      tabindex="-1"
+      aria-hidden="true"
+      style="z-index: 1055"
+    >
+      <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div
+          class="modal-content border-0 shadow-lg"
+          style="border-radius: 16px"
+        >
+          <div class="modal-body text-center p-4">
+            <div class="mb-3 text-primary">
+              <i class="fas fa-info-circle fa-3x"></i>
+            </div>
+            <h5 class="fw-bold mb-2" id="customAlertTitle">Notice</h5>
+            <p id="customAlertMessage" class="text-muted small mb-4"></p>
+            <button
+              type="button"
+              class="btn btn-primary w-100 fw-bold"
+              data-bs-dismiss="modal"
+              style="border-radius: 8px"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="loadingOverlay"
+      style="
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.8);
+        z-index: 10000;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      "
+    >
+      <div
+        class="spinner-border text-primary"
+        role="status"
+        style="width: 3rem; height: 3rem"
+      ></div>
+      <p class="mt-3 fw-bold text-primary">Please wait...</p>
+    </div>
+
+    <nav id="mainNav" class="pd-local-tabs" style="display: none">
+      <div class="container pd-app-nav-inner">
+        <div class="pd-page-title me-auto d-none d-md-block">
+          <h2>Trainee Portal</h2>
+          <span class="text-muted small">Professional Development Hub</span>
+        </div>
+        <div id="navItems" class="navbar-nav pd-app-tabs">
+          <a class="nav-link fw-bold" href="/" style="cursor: pointer"
+            ><i class="fas fa-home me-2"></i>Home</a
+          >
+          <a
+            id="navCatalog"
+            class="nav-link fw-bold"
+            style="cursor: pointer"
+            onclick="switchView('viewCatalog', this)"
+            ><i class="fas fa-book-open me-2"></i>Catalog</a
+          >
+          <a
+            id="navActive"
+            class="nav-link fw-bold"
+            style="cursor: pointer"
+            onclick="switchView('viewActive', this)"
+            ><i class="fas fa-calendar-check me-2"></i>Active</a
+          >
+          <a
+            id="navHistory"
+            class="nav-link fw-bold"
+            style="cursor: pointer"
+            onclick="switchView('viewHistory', this)"
+            ><i class="fas fa-history me-2"></i>History</a
+          >
+          <a
+            id="navProfile"
+            class="nav-link fw-bold"
+            style="cursor: pointer"
+            onclick="switchView('viewProfile', this)"
+            ><i class="fas fa-user-cog me-2"></i>Profile</a
+          >
+          <a
+            class="nav-link text-danger fw-bold"
+            style="cursor: pointer"
+            onclick="logout()"
+            ><i class="fas fa-sign-out-alt me-2"></i>Logout</a
+          >
+        </div>
+      </div>
+    </nav>
+
+    <div class="container pb-5">
+      <div
+        id="viewLogin"
+        class="view-pane active pd-oce-hero"
+        style="min-height: 80vh"
+      >
+        <div class="container" style="margin-top: 60px">
+          <div class="row align-items-center justify-content-center g-5">
+            <div class="col-lg-6 col-md-12">
+              <div class="pe-lg-4">
+                <h3 class="fw-bold text-primary mb-2">
+                  Cổng Thông Tin Đào Tạo
+                </h3>
+                <h6 class="text-light-muted mb-4" style="font-style: italic">
+                  PD Hub Training Portal
+                </h6>
+
+                <p class="mb-5" style="line-height: 1.6">
+                  Hệ thống này được thiết kế để giúp bạn dễ dàng theo dõi và
+                  quản lý lộ trình học tập của mình. Vui lòng sử dụng email cá
+                  nhân hoặc email nội bộ để truy cập các tiện ích dưới đây.
+                  <br /><br />
+                  <span class="text-muted small" style="font-style: italic">
+                    This system is designed to help you easily track and manage
+                    your learning journey. Please use your personal or internal
+                    email to access the features below.
+                  </span>
+                </p>
+
+                <div class="d-flex mb-4">
+                  <div class="text-primary me-3 mt-1">
+                    <i class="fas fa-search fa-2x"></i>
+                  </div>
+                  <div>
+                    <h6 class="fw-bold mb-1">
+                      1. Đăng ký khóa học / Course Registration
+                    </h6>
+                    <p class="small text-muted mb-0">
+                      Xem chi tiết danh sách các lớp đang mở và tiến hành đăng
+                      ký trực tuyến.<br />
+                      <i
+                        >Browse details of available courses and register
+                        online.</i
+                      >
+                    </p>
+                  </div>
+                </div>
+
+                <div class="d-flex mb-4">
+                  <div class="text-primary me-3 mt-1">
+                    <i class="fas fa-book-reader fa-2x"></i>
+                  </div>
+                  <div>
+                    <h6 class="fw-bold mb-1">
+                      2. Lớp học của tôi / Active Courses
+                    </h6>
+                    <p class="small text-muted mb-0">
+                      Theo dõi thời gian, địa điểm, tiến độ học tập và xác nhận
+                      điểm danh.<br />
+                      <i
+                        >Track schedules, venues, learning progress, and
+                        check-in status.</i
+                      >
+                    </p>
+                  </div>
+                </div>
+
+                <div class="d-flex">
+                  <div class="text-primary me-3 mt-1">
+                    <i class="fas fa-award fa-2x"></i>
+                  </div>
+                  <div>
+                    <h6 class="fw-bold mb-1">
+                      3. Lịch sử & Chứng chỉ / History & Certificates
+                    </h6>
+                    <p class="small text-muted mb-0">
+                      Xem lại toàn bộ các khóa học đã hoàn thành và kiểm tra
+                      chứng nhận.<br />
+                      <i
+                        >Review all completed courses and check your
+                        certifications.</i
+                      >
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-lg-5 col-md-12">
+              <div
+                class="card p-4 mx-auto shadow"
+                style="
+                  border-radius: 16px;
+                  border: none;
+                  background-color: #ffffff;
+                  max-width: 450px;
+                "
+              >
+                <div class="text-center mb-4">
+                  <div
+                    class="bg-light text-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                    style="width: 65px; height: 65px"
+                  >
+                    <i class="fas fa-user-graduate fa-2x"></i>
+                  </div>
+                  <h4 class="fw-bold mb-0">Đăng nhập</h4>
+                  <small class="text-muted italic">Learner Login</small>
+                </div>
+
+                <div id="loginStep1">
+                  <label class="form-label small fw-bold text-muted"
+                    >Email của bạn / Your Email
+                    <span class="text-danger">*</span></label
+                  >
+                  <input
+                    type="email"
+                    id="emailInput"
+                    class="form-control form-control-lg mb-4"
+                    placeholder="name@domain.com"
+                    style="font-size: 1rem; background-color: #f8f9fa"
+                  />
+                  <button
+                    class="btn btn-primary w-100 py-2 fw-bold"
+                    onclick="handleLoginStep1(this)"
+                    style="border-radius: 8px"
+                  >
+                    Continue <i class="fas fa-arrow-right ms-2"></i>
+                  </button>
+                </div>
+
+                <div id="loginStepChoice" style="display: none">
+                  <p class="text-center small text-muted mb-3">
+                    Vui lòng chọn phương thức / <i>Choose a method</i>
+                  </p>
+                  <button
+                    class="btn btn-outline-primary w-100 py-2 mb-3 fw-bold"
+                    onclick="showPinEntry()"
+                    style="border-radius: 8px"
+                  >
+                    <i class="fas fa-key me-2"></i> Use Personal PIN
+                  </button>
+                  <button
+                    class="btn btn-light w-100 py-2 fw-bold text-secondary mb-2"
+                    onclick="requestOTP()"
+                    style="border-radius: 8px; border: 1px solid #dee2e6"
+                  >
+                    <i class="fas fa-envelope me-2"></i> Receive Email OTP
+                  </button>
+                  <div class="text-center mt-3">
+                    <button
+                      type="button"
+                      class="btn btn-link text-decoration-none small text-muted fw-bold"
+                      onclick="backToStep1()"
+                    >
+                      Back
+                    </button>
+                  </div>
+                </div>
+
+                <div id="loginStepPIN" style="display: none">
+                  <div class="text-center mb-3">
+                    <p class="small text-muted fw-bold mb-1">
+                      Nhập mã PIN 4 số của bạn
+                    </p>
+                    <p class="small text-muted">
+                      <i>Enter your 4-digit PIN</i>
+                    </p>
+                  </div>
+                  <input
+                    type="password"
+                    id="pinInput"
+                    class="form-control form-control-lg mb-4 text-center pin-box"
+                    maxlength="4"
+                    style="
+                      background-color: #f8f9fa;
+                      letter-spacing: 15px;
+                      font-size: 1.5rem;
+                    "
+                  />
+                  <button
+                    class="btn btn-primary w-100 py-2 fw-bold"
+                    onclick="submitPin()"
+                    style="border-radius: 8px"
+                  >
+                    Verify PIN
+                  </button>
+                  <div class="text-center mt-3">
+                    <button
+                      type="button"
+                      class="btn btn-link text-decoration-none small text-muted fw-bold"
+                      onclick="backToStepChoice()"
+                    >
+                      Back
+                    </button>
+                  </div>
+                </div>
+
+                <div id="loginStepOTP" style="display: none">
+                  <div class="text-center mb-4">
+                    <p class="small text-muted mb-1">
+                      Mã xác thực 6 số đã được gửi đến email của bạn.
+                    </p>
+                    <p class="small text-muted">
+                      <i>A 6-digit code has been sent to your email.</i>
+                    </p>
+                  </div>
+
+                  <input
+                    type="text"
+                    id="otpInput"
+                    class="form-control form-control-lg mb-4 text-center fw-bold"
+                    style="
+                      background-color: #f8f9fa;
+                      letter-spacing: 8px;
+                      font-size: 1.2rem;
+                    "
+                    placeholder="0 0 0 0 0 0"
+                    maxlength="6"
+                    inputmode="numeric"
+                    oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                  />
+
+                  <button
+                    class="btn btn-success w-100 py-2 fw-bold mb-3"
+                    onclick="submitOTP()"
+                    style="border-radius: 8px"
+                  >
+                    <i class="fas fa-check-circle me-2"></i> Verify & Login
+                  </button>
+
+                  <div class="text-center">
+                    <button
+                      type="button"
+                      id="resendOtpBtn"
+                      class="btn btn-link text-decoration-none small text-muted fw-bold"
+                      onclick="resendOTP()"
+                      disabled
+                    >
+                      Resend OTP in 60s
+                    </button>
+                  </div>
+                  <div class="text-center mt-2">
+                    <button
+                      type="button"
+                      class="btn btn-link text-decoration-none small text-muted fw-bold"
+                      onclick="backToStepChoice()"
+                    >
+                      Back
+                    </button>
+                  </div>
+                </div>
+
+                <div class="text-center mt-3 login-back-home">
+                  <a
+                    href="/"
+                    class="btn btn-link text-decoration-none small text-muted fw-bold"
+                  >
+                    <i class="fas fa-arrow-left me-1"></i>Back to home
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="viewCatalog" class="view-pane">
+        <h5 class="fw-bold mb-4">
+          Khóa học đang mở / <span class="en">Available Courses</span>
+        </h5>
+        <div id="catalogList" class="row g-4"></div>
+      </div>
+
+      <div id="viewActive" class="view-pane">
+        <h5 class="fw-bold mb-4">
+          Lớp học của tôi / <span class="en">Your Active Courses</span>
+        </h5>
+        <div id="activeList" class="row g-4"></div>
+      </div>
+
+      <div id="viewActiveDetail" class="view-pane">
+        <div
+          id="activeDetailsContainer"
+          style="max-width: 600px; margin: 0 auto"
+        ></div>
+      </div>
+
+      <div
+        class="modal fade"
+        id="checkinModal"
+        tabindex="-1"
+        aria-hidden="true"
+      >
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+          <div
+            class="modal-content shadow border-0"
+            style="border-radius: 16px"
+          >
+            <div class="modal-body p-4 text-center">
+              <h5 class="fw-bold mb-3">Course Check-In</h5>
+              <p class="small text-muted mb-3">
+                Please enter the check-in code provided by the instructor.
+              </p>
+
+              <input
+                type="tel"
+                id="inputCheckinCode"
+                class="form-control pin-box mb-3"
+                placeholder="______"
+                inputmode="numeric"
+                pattern="[0-9]{6}"
+                maxlength="6"
+                autocomplete="off"
+              />
+
+              <input type="hidden" id="activeSectionId" />
+              <input type="hidden" id="pendingSlotId" />
+
+              <div
+                id="checkinErrorMsg"
+                class="text-danger small fw-bold mb-3"
+                style="display: none"
+              ></div>
+              <div
+                id="checkinSuccessBanner"
+                class="alert alert-success small fw-bold mb-3 py-2"
+                style="display: none"
+              ></div>
+
+              <button
+                id="btnSubmitCheckin"
+                class="btn btn-primary w-100 py-2 fw-bold"
+                onclick="submitCheckin()"
+              >
+                Confirm Check-In
+              </button>
+              <button
+                class="btn btn-link btn-sm text-muted mt-2"
+                data-bs-dismiss="modal"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal fade" id="formsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+          <div class="modal-content" style="border-radius: 16px; border: none">
+            <div
+              class="modal-header bg-white"
+              style="
+                border-bottom: 2px solid #f8f9fa;
+                border-radius: 16px 16px 0 0;
+              "
+            >
+              <h5 class="modal-title fw-bold text-dark">
+                <i class="fas fa-clipboard-list text-info me-2"></i> Associated
+                Forms
+              </h5>
+              <button
+                type="button"
+                class="btn-close"
+                data-bs-dismiss="modal"
+                aria-label="Close"
+              ></button>
+            </div>
+            <div
+              class="modal-body"
+              id="formsModalBody"
+              style="background-color: #f4f7f9"
+            ></div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="modal fade"
+        id="formSubmissionModal"
+        tabindex="-1"
+        aria-hidden="true"
+      >
+        <div
+          class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable"
+        >
+          <div class="modal-content" style="border-radius: 16px; border: none">
+            <div
+              class="modal-header bg-info text-white"
+              style="border-radius: 16px 16px 0 0"
+            >
+              <h5 class="modal-title fw-bold" id="formSubmissionTitle">
+                <i class="fas fa-edit me-2"></i> Complete Feedback
+              </h5>
+              <button
+                type="button"
+                class="btn-close btn-close-white"
+                data-bs-dismiss="modal"
+                aria-label="Close"
+              ></button>
+            </div>
+            <div class="modal-body" style="background-color: #f4f7f9">
+              <form id="dynamicFormContainer">
+                <div class="text-center py-4">
+                  <div class="spinner-border text-info" role="status"></div>
+                  <p class="mt-2 text-muted">Loading questions...</p>
+                </div>
+              </form>
+            </div>
+            <div
+              class="modal-footer bg-white"
+              style="
+                border-top: 2px solid #f8f9fa;
+                border-radius: 0 0 16px 16px;
+              "
+            >
+              <button
+                type="button"
+                class="btn btn-light border shadow-sm fw-bold"
+                data-bs-dismiss="modal"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                class="btn btn-success shadow-sm fw-bold"
+                id="btnSubmitForm"
+                onclick="submitDynamicForm()"
+                disabled
+              >
+                Submit Feedback
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="viewProfile" class="view-pane">
+        <div
+          class="card p-4 mx-auto shadow-sm"
+          style="max-width: 500px; border-radius: 12px"
+        >
+          <h5 class="fw-bold mb-3 text-primary">
+            Hồ sơ học viên / <span class="en">Trainee Profile</span>
+          </h5>
+          <p id="profileNotice" class="text-danger small d-none">
+            <i class="fas fa-exclamation-triangle"></i> Complete profile to
+            access Catalog.
+          </p>
+          <form id="profileForm">
+            <div class="col-md-12 mb-3">
+              <label class="small fw-bold text-muted">Email Address</label>
+              <input
+                type="email"
+                id="profEmail"
+                class="form-control bg-light"
+                disabled
+              />
+            </div>
+            <label class="small fw-bold"
+              >Full Name <span class="text-danger">*</span></label
+            >
+            <input
+              type="text"
+              name="fullName"
+              class="form-control mb-1"
+              disabled
+              required
+            />
+            <small
+              class="text-muted d-block mb-2 fst-italic"
+              style="font-size: 11px"
+              >Please note that your name will appear exactly as provided on the
+              issued certificate.</small
+            >
+            <label class="small fw-bold"
+              >Gender <span class="text-danger">*</span></label
+            >
+            <select name="gender" class="form-select mb-2" disabled required>
+              <option value="">Select...</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+            </select>
+
+            <label class="small fw-bold"
+              >Phone <span class="text-danger">*</span></label
+            >
+            <input
+              type="tel"
+              name="phone"
+              class="form-control mb-2"
+              pattern="[0-9]*"
+              inputmode="numeric"
+              oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+              disabled
+              required
+            />
+
+            <label class="small fw-bold"
+              >Organization <span class="text-danger">*</span></label
+            >
+            <div class="search-container mb-3">
+              <input type="hidden" id="profOrgId" name="organizationId" />
+              <input
+                type="text"
+                id="profOrg"
+                class="form-control"
+                autocomplete="off"
+                disabled
+                placeholder="Search company..."
+                required
+              />
+              <div id="profOrgResults" class="search-results shadow-sm"></div>
+            </div>
+
+            <label class="small fw-bold"
+              >Position <span class="text-danger">*</span></label
+            ><input
+              type="text"
+              name="position"
+              class="form-control mb-3"
+              disabled
+              required
+            />
+
+            <!-- Field 1: Always rendered; label + control adapt by user type -->
+            <div id="field1Group" style="display: none">
+              <!-- EIU variant: School / Department dropdown -->
+              <div id="field1Eiu" style="display: none">
+                <label class="small fw-bold">
+                  School / Department <span class="text-danger">*</span>
+                </label>
+                <select
+                  id="profSchool"
+                  name="school"
+                  class="form-select mb-2"
+                  disabled
+                >
+                  <option value="">Select School / Department...</option>
+                </select>
+              </div>
+
+              <!-- Non-EIU variant: Department free text -->
+              <div id="field1NonEiu" style="display: none">
+                <label class="small fw-bold">Department</label>
+                <input
+                  type="text"
+                  id="profDeptText"
+                  name="departmentText"
+                  class="form-control mb-2"
+                  disabled
+                  placeholder="e.g. Marketing, Engineering, HR..."
+                />
+              </div>
+            </div>
+
+            <!-- Field 2: EIU only — Concentration / Major (cascading) -->
+            <div id="field2Eiu" style="display: none">
+              <label class="small fw-bold">
+                Concentration / Major
+                <span class="text-danger" id="deptAsterisk">*</span>
+              </label>
+              <select
+                id="profDepartment"
+                name="department"
+                class="form-select mb-3"
+                disabled
+              >
+                <option value="">Select Concentration / Major...</option>
+              </select>
+            </div>
+
+            <div id="profileActions">
+              <button
+                type="button"
+                id="editBtn"
+                class="btn btn-outline-primary w-100"
+                onclick="toggleProfile(true)"
+              >
+                Edit Details
+              </button>
+              <div id="saveActions" class="d-none mt-2">
+                <button
+                  type="submit"
+                  id="saveBtn"
+                  class="btn btn-success w-75 me-1"
+                >
+                  Save Changes
+                </button>
+                <button
+                  type="button"
+                  id="cancelBtn"
+                  class="btn btn-light border w-20"
+                  onclick="cancelProfileEdit()"
+                >
+                  Cancel
+                </button>
+              </div>
+
+              <div id="pinChangeSection">
+                <hr />
+                <div class="mt-3">
+                  <label class="small fw-bold">Change PIN (4 Digits)</label>
+                  <div class="input-group">
+                    <input
+                      type="password"
+                      id="changePinInput"
+                      class="form-control pin-box"
+                      maxlength="4"
+                      placeholder="****"
+                      inputmode="numeric"
+                    />
+                    <button
+                      class="btn btn-outline-secondary"
+                      type="button"
+                      onclick="updatePin()"
+                    >
+                      Update PIN
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div id="viewHistory" class="view-pane"><div id="historyList"></div></div>
+      <div id="viewHistoryDetail" class="view-pane">
+        <div
+          id="historyDetailsContainer"
+          style="max-width: 500px; margin: 0 auto"
+        ></div>
+      </div>
+
+      <div id="viewReg" class="view-pane">
+        <div
+          id="confirmDetailsContainer"
+          style="max-width: 500px; margin: 0 auto"
+        ></div>
+      </div>
+    </div>
+
+    <div
+      class="modal fade"
+      id="setupPinModal"
+      data-bs-backdrop="static"
+      tabindex="-1"
+    >
+      <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content p-4 text-center">
+          <h5>Secure Your Account</h5>
+          <p class="small text-muted">Set a 4-digit PIN for future logins.</p>
+          <input
+            type="password"
+            id="newPinInput"
+            class="form-control pin-box mb-3"
+            maxlength="4"
+          /><button class="btn btn-primary w-100" onclick="processPinFirst()">
+            Create PIN
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      function backToStep1() {
+        document.getElementById("loginStepChoice").style.display = "none";
+        document.getElementById("loginStepPIN").style.display = "none";
+        document.getElementById("loginStepOTP").style.display = "none";
+        document.getElementById("loginStep1").style.display = "block";
+      }
+      function backToStepChoice() {
+        document.getElementById("loginStepPIN").style.display = "none";
+        document.getElementById("loginStepOTP").style.display = "none";
+        document.getElementById("loginStepChoice").style.display = "block";
+      }
+
+      /* =========================================================================
+     1. CLOUDFLARE DEEP LINK ROUTER (Handles your prefilled data!)
+     This replaces the old <?= targetSectionId ?> GAS templating.
+     ========================================================================= */
+      const urlParams = new URLSearchParams(window.location.search);
+      let autoOpenSectionId = urlParams.get("sectionId") || "";
+      let targetView = urlParams.get("view") || "";
+
+      /* =========================================================================
+     2. CLOUDFLARE API BRIDGE
+     Keeps the existing UI flow, but all calls now go to /api/trainee/*.
+     No Google Apps Script Web App URL is used.
+     ========================================================================= */
+      const PDC_TOKEN_KEY = "pdc_trainee_token";
+
+      function getSessionToken() {
+        return localStorage.getItem(PDC_TOKEN_KEY) || "";
+      }
+
+      function setSessionToken(token) {
+        if (token) localStorage.setItem(PDC_TOKEN_KEY, token);
+      }
+
+      function clearSessionToken() {
+        localStorage.removeItem(PDC_TOKEN_KEY);
+      }
+
+      // --- OPTIMISTIC UI OVERRIDE HELPERS ---
+      const OV_TTL_MS = 60000; // 60 seconds (user requested 30s-60s)
+      function ovSet(key, data = {}) {
+        localStorage.setItem(key, JSON.stringify({ ts: Date.now(), ...data }));
+      }
+      function ovGet(key) {
+        try {
+          const raw = JSON.parse(localStorage.getItem(key) || "null");
+          if (!raw) return null;
+          if (Date.now() - raw.ts > OV_TTL_MS) {
+            localStorage.removeItem(key);
+            return null;
+          }
+          return raw;
+        } catch {
+          return null;
+        }
+      }
+      function ovClear(key) {
+        localStorage.removeItem(key);
+      }
+
+      // --- CORE API CLIENT ---
+      async function pdcFetch(path, options = {}) {
+        const headers = {
+          "content-type": "application/json;charset=UTF-8",
+          ...(options.headers || {}),
+        };
+        const token = getSessionToken();
+        if (token) headers.Authorization = `Bearer ${token}`;
+
+        // Force no-store for UI dynamic fetches (e.g. catalog list, history)
+        if (!options.cache) options.cache = "no-store";
+
+        const method = String(options.method || "GET").toUpperCase();
+
+        const response = await fetch(path, { ...options, headers });
+        const payload = await response
+          .clone()
+          .json()
+          .catch(() => ({}));
+
+        if (!response.ok || payload.success === false) {
+          if (response.status === 401) {
+            clearSessionToken();
+            localStorage.removeItem("pdc_email");
+            if (!window.__sessionExpiredAlertShown) {
+              window.__sessionExpiredAlertShown = true;
+              showLoader(false);
+              showLoading(false);
+              showAlert(
+                "Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại. / Session expired. Please login again.",
+                "Session Expired",
+              );
+              setTimeout(() => {
+                location.reload();
+              }, 2500);
+            }
+          }
+          const msg =
+            payload.message ||
+            payload.error ||
+            `Request failed (${response.status})`;
+          const err = new Error(msg);
+          err.status = response.status;
+          err.payload = payload;
+          throw err;
+        }
+        return payload;
+      }
+
+      function asJsonString(value) {
+        return JSON.stringify(value || { plans: [], logs: [] });
+      }
+
+      async function callCloudflareAction(action, args) {
+        switch (action) {
+          case "getSchools": {
+            const res = await pdcFetch("/api/trainee/schools");
+            return res.data || [];
+          }
+          case "getPrograms": {
+            const [schoolId] = args;
+            const res = await pdcFetch(
+              `/api/trainee/programs?schoolId=${encodeURIComponent(schoolId || "")}`,
+            );
+            return res.data || [];
+          }
+          case "sendOTP": {
+            const [email] = args;
+            return pdcFetch("/api/auth/send-otp", {
+              method: "POST",
+              body: JSON.stringify({ email, scope: "trainee" }),
+            });
+          }
+          case "verifyOTP": {
+            const [email, otp] = args;
+            const res = await pdcFetch("/api/auth/verify-otp", {
+              method: "POST",
+              body: JSON.stringify({ email, otp, scope: "trainee" }),
+            });
+            setSessionToken(res?.data?.token);
+            return true;
+          }
+          case "checkUserAccessType": {
+            const [email] = args;
+            const res = await pdcFetch(
+              `/api/trainee/access-type?email=${encodeURIComponent(email || "")}`,
+            );
+            return res.data || { exists: false, hasPin: false };
+          }
+          case "verifyPin": {
+            const [email, pin] = args;
+            const res = await pdcFetch("/api/trainee/pin/verify", {
+              method: "POST",
+              body: JSON.stringify({ email, pin }),
+            });
+            if (res?.data?.token) setSessionToken(res.data.token);
+            return Boolean(res?.data?.ok ?? res?.data);
+          }
+          case "setTraineePin": {
+            const [email, pin] = args;
+            return pdcFetch("/api/trainee/pin/set", {
+              method: "POST",
+              body: JSON.stringify({ email, pin, __dryRun: false }),
+            });
+          }
+          case "getTraineeProfile": {
+            const [email] = args;
+            const res = await pdcFetch(
+              `/api/trainee/profile?email=${encodeURIComponent(email || "")}`,
+            );
+            return res.data || {};
+          }
+          case "updateTraineeProfile": {
+            const [email, formData] = args;
+            return pdcFetch("/api/trainee/profile/update", {
+              method: "POST",
+              body: JSON.stringify({
+                email,
+                ...(formData || {}),
+                __dryRun: false,
+              }),
+            });
+          }
+          case "searchIndustry": {
+            const [query] = args;
+            try {
+              const res = await pdcFetch(
+                `/api/trainee/organizations/search?q=${encodeURIComponent(query || "")}`,
+              );
+              window.__lastOrgSearchWarning = res.degraded
+                ? res.warning || "Organization search is temporarily degraded."
+                : "";
+              return res.data || [];
+            } catch (err) {
+              window.__lastOrgSearchWarning =
+                "Không thể tải danh sách tổ chức lúc này. Vui lòng thử lại sau. / Organization search is temporarily unavailable.";
+              return { error: window.__lastOrgSearchWarning };
+            }
+          }
+          case "preWarmOrgCache": {
+            return pdcFetch("/api/trainee/organizations/prewarm", {
+              method: "POST",
+              body: JSON.stringify({}),
+            });
+          }
+          case "getSections": {
+            const [email] = args;
+            const res = await pdcFetch(
+              `/api/trainee/sections?email=${encodeURIComponent(email || "")}`,
+            );
+            return res.data || [];
+          }
+          case "getSectionDetails": {
+            const [sectionId] = args;
+            const res = await pdcFetch(
+              `/api/trainee/section/details?sectionId=${encodeURIComponent(sectionId || "")}`,
+            );
+            return res.data || {};
+          }
+          case "handleRegistration": {
+            const [payload] = args;
+            const res = await pdcFetch("/api/trainee/register", {
+              method: "POST",
+              body: JSON.stringify({ ...(payload || {}), __dryRun: false }),
+            });
+            // Return the full object so the handler can inspect both status and message
+            return res;
+          }
+          case "getLearningHistory": {
+            const [email] = args;
+            const res = await pdcFetch(
+              `/api/trainee/history?email=${encodeURIComponent(email || "")}`,
+            );
+            return res.data || [];
+          }
+          case "getActiveSections": {
+            const [email] = args;
+            const res = await pdcFetch(
+              `/api/trainee/active-sections?email=${encodeURIComponent(email || "")}`,
+            );
+            return res.data || [];
+          }
+          case "fetchCheckinDataForSection": {
+            const [sectionId] = args;
+            const res = await pdcFetch(
+              `/api/trainee/checkin/data?sectionId=${encodeURIComponent(sectionId || "")}`,
+            );
+            return asJsonString(res.data || { plans: [], logs: [] });
+          }
+          case "processCheckIn": {
+            const [email, sectionId, inputCode, slotId] = args;
+            const res = await pdcFetch("/api/trainee/checkin/submit", {
+              method: "POST",
+              body: JSON.stringify({
+                email,
+                sectionId,
+                inputCode,
+                slotId,
+                __dryRun: false,
+              }),
+            });
+            ovSet(`pdc_ov_ci_${sectionId}_${slotId}`);
+            return res.message || res.status || "Check-in successful!";
+          }
+          case "getFormsForSection": {
+            const [sectionId] = args;
+            const res = await pdcFetch(
+              `/api/trainee/forms?sectionId=${encodeURIComponent(sectionId || "")}`,
+            );
+            return res;
+          }
+          case "getFormQuestions": {
+            const [formId, mappingId] = args;
+            const q = new URLSearchParams({
+              formId: formId || "",
+              mappingId: mappingId || currentRenderingMappingId || "",
+            });
+            const res = await pdcFetch(
+              `/api/trainee/forms/questions?${q.toString()}`,
+            );
+            return res;
+          }
+          case "saveFormSubmission": {
+            const [formId, mappingId, traineeEmail, answers] = args;
+            const res = await pdcFetch("/api/trainee/forms/submit", {
+              method: "POST",
+              body: JSON.stringify({
+                formId,
+                mappingId,
+                traineeEmail,
+                answers: answers || [],
+                __dryRun: false,
+              }),
+            });
+            ovSet(`pdc_ov_fb_${mappingId}`);
+            return res;
+          }
+          default:
+            throw new Error(`Unsupported Cloudflare API action: ${action}`);
+        }
+      }
+
+      const createApiRunProxy = () => {
+        const context = { onSuccess: null, onFailure: null };
+        const handler = {
+          get(target, prop) {
+            if (prop === "withSuccessHandler") {
+              return (cb) => {
+                target.onSuccess = cb;
+                return new Proxy(target, handler);
+              };
+            }
+            if (prop === "withFailureHandler") {
+              return (cb) => {
+                target.onFailure = cb;
+                return new Proxy(target, handler);
+              };
+            }
+            return (...args) => {
+              callCloudflareAction(prop, args)
+                .then((data) => {
+                  if (target.onSuccess) target.onSuccess(data);
+                })
+                .catch((err) => {
+                  if (target.onFailure) target.onFailure(err);
+                  else showAlert(err.message || String(err), "System Error");
+                });
+            };
+          },
+        };
+        return new Proxy(context, handler);
+      };
+
+      const api = {
+        get run() {
+          return createApiRunProxy();
+        },
+      };
+
+      /* =========================================================================
+     3. YOUR ORIGINAL UNMODIFIED SYSTEM LOGIC BEGINS HERE
+     ========================================================================= */
+
+      const INTERNAL_DOMAIN = "@eiu.edu.vn";
+      const INTERNAL_ORG = "Eastern International University";
+      let userEmail = localStorage.getItem("pdc_email");
+      if (userEmail && !getSessionToken()) {
+        userEmail = null;
+        localStorage.removeItem("pdc_email");
+      }
+      let cachedProfile = null;
+      let cachedHistory = []; // <--- ADD THIS LINE
+
+      window.onload = () => {
+        if (userEmail) initApp();
+        initSearch("profOrg", "profOrgResults");
+      };
+
+      function handleLoginStep1(btn) {
+        const email = document
+          .getElementById("emailInput")
+          .value.toLowerCase()
+          .trim();
+        if (!email) {
+          showAlert("Please enter your email.", "Notice");
+          return;
+        }
+
+        // 1. Show loader and disable button instantly!
+        showLoader(true);
+        const originalText = btn.innerText;
+        btn.disabled = true;
+        btn.innerText = "Checking...";
+
+        api.run
+          .withSuccessHandler((res) => {
+            if (res.hasPin) {
+              // Existing User: Hide loader and show PIN screen
+              showLoader(false);
+              btn.disabled = false;
+              btn.innerText = originalText;
+
+              document.getElementById("loginStep1").style.display = "none";
+              document.getElementById("loginStepChoice").style.display =
+                "block";
+            } else {
+              // New User: DO NOT hide the loader!
+              // Keep it spinning while requestOTP() contacts the server.
+              requestOTP(email, btn, originalText);
+            }
+          })
+          .withFailureHandler((err) => {
+            showLoader(false);
+            btn.disabled = false;
+            btn.innerText = originalText;
+            showAlert("Error: " + err.message, "Network Error");
+          })
+          .checkUserAccessType(email);
+      }
+
+      function showPinEntry() {
+        document.getElementById("loginStepChoice").style.display = "none";
+        document.getElementById("loginStepPIN").style.display = "block";
+      }
+
+      function requestOTP(email, btn, originalText) {
+        email = (email || document.getElementById("emailInput")?.value || "")
+          .toLowerCase()
+          .trim();
+        if (!email) {
+          showLoader(false);
+          showAlert(
+            "Please enter your email before requesting OTP.",
+            "Validation Error",
+          );
+          return;
+        }
+        if (!btn) {
+          btn = event?.target || null;
+        }
+        if (originalText === undefined && btn) originalText = btn.innerText;
+        if (btn) {
+          btn.innerText = "Sending...";
+          btn.disabled = true;
+        }
+        showLoader(true);
+
+        api.run
+          .withSuccessHandler(() => {
+            showLoader(false);
+
+            // Switch to OTP screen
+            document.getElementById("loginStep1").style.display = "none";
+            document.getElementById("loginStepOTP").style.display = "block";
+
+            // Auto-focus the OTP box
+            setTimeout(() => document.getElementById("otpInput").focus(), 100);
+
+            // --- NEW: START THE COUNTDOWN TIMER HERE ---
+            startOtpTimer(60);
+          })
+          .withFailureHandler((err) => {
+            showLoader(false);
+            if (btn) {
+              btn.disabled = false;
+              btn.innerText = originalText || "Nhận mã qua Email (Email OTP)";
+            }
+            showAlert(
+              "Failed to send OTP: " + (err.message || "Please try again."),
+              "Error",
+            );
+          })
+          .sendOTP(email);
+      }
+
+      function submitOTP() {
+        const email = document
+          .getElementById("emailInput")
+          .value.toLowerCase()
+          .trim();
+        const otp = document.getElementById("otpInput").value.trim();
+
+        // 1. Stop them if the OTP box is invalid!
+        if (!/^\d{6}$/.test(otp)) {
+          showAlert(
+            "Please enter the 6-digit code sent to your email.",
+            "Validation Error",
+          );
+          return;
+        }
+
+        // Optional: Change button text so they know it's loading
+        const btn =
+          event.target || document.querySelector("#loginStepOTP button");
+        const originalText = btn.innerText;
+        btn.disabled = true;
+        btn.innerText = "Verifying...";
+
+        showLoader(true); // Show loader immediately!
+
+        api.run
+          .withSuccessHandler((isValid) => {
+            if (isValid) {
+              userEmail = email;
+              localStorage.setItem("pdc_email", userEmail);
+
+              // Notice we DO NOT hide the loader here.
+              // We let the loader spin while it checks the PIN status.
+              api.run
+                .withSuccessHandler((res) => {
+                  showLoader(false); // Hide it ONLY when the next popup is ready
+
+                  if (!res.hasPin) {
+                    new bootstrap.Modal(
+                      document.getElementById("setupPinModal"),
+                    ).show();
+                  } else {
+                    initApp();
+                  }
+                })
+                .withFailureHandler((err) => {
+                  showLoader(false);
+                  btn.disabled = false;
+                  btn.innerText = originalText;
+                  showAlert(
+                    "Failed to check user profile status: " +
+                      (err.message || String(err)),
+                    "Error",
+                  );
+                })
+                .checkUserAccessType(userEmail);
+            } else {
+              showLoader(false); // Only hide if error
+              btn.disabled = false;
+              btn.innerText = originalText;
+              showAlert("Invalid or expired OTP. Please try again.", "Error");
+            }
+          })
+          .withFailureHandler((err) => {
+            showLoader(false);
+            btn.disabled = false;
+            btn.innerText = originalText;
+            showAlert(
+              "Failed to verify OTP: " + (err.message || String(err)),
+              "Error",
+            );
+          })
+          .verifyOTP(email, otp);
+      }
+
+      let isPinSubmitting = false;
+      function processPinFirst() {
+        const pin = document.getElementById("newPinInput").value;
+        if (pin.length < 4) return;
+        if (isPinSubmitting) return;
+
+        isPinSubmitting = true;
+        const btn = document.querySelector("#setupPinModal button.btn-primary");
+        btn.disabled = true;
+        btn.innerText = "Saving...";
+        showLoader(true); // Show loader immediately on click
+
+        api.run
+          .withSuccessHandler(() => {
+            isPinSubmitting = false;
+            // 1. Hide the modal cleanly
+            const modalEl = document.getElementById("setupPinModal");
+            const modalInstance = bootstrap.Modal.getInstance(modalEl);
+            if (modalInstance) modalInstance.hide();
+
+            // 2. Force remove the dark backdrop
+            document.body.classList.remove("modal-open");
+            document.body.style = "";
+            document
+              .querySelectorAll(".modal-backdrop")
+              .forEach((b) => b.remove());
+
+            // 3. Boot the app (initApp has its own loader logic)
+            initApp();
+          })
+          .withFailureHandler((err) => {
+            isPinSubmitting = false;
+            showLoader(false);
+            btn.disabled = false;
+            btn.innerText = "Save PIN";
+            showAlert(
+              "Failed to save PIN: " + (err.message || String(err)),
+              "Error",
+            );
+          })
+          .setTraineePin(userEmail, pin);
+      }
+
+      function submitPin() {
+        const email = document.getElementById("emailInput").value;
+        const pin = document.getElementById("pinInput").value;
+
+        showLoading(true);
+        api.run
+          .withSuccessHandler((ok) => {
+            showLoading(false);
+            if (ok) {
+              userEmail = email;
+              localStorage.setItem("pdc_email", userEmail);
+              initApp();
+            } else showAlert("Invalid PIN", "Login Failed");
+          })
+          .withFailureHandler((err) => {
+            showLoading(false);
+            showAlert(
+              "PIN verification failed: " + (err.message || String(err)),
+              "Error",
+            );
+          })
+          .verifyPin(email, pin);
+      }
+
+      function updatePin() {
+        const pin = document.getElementById("changePinInput").value;
+        if (pin.length !== 4 || isNaN(pin))
+          return showAlert("Please enter a 4-digit number", "Notice");
+
+        api.run
+          .withSuccessHandler((res) => {
+            showToast("PIN successfully updated!");
+            document.getElementById("changePinInput").value = "";
+          })
+          .setTraineePin(userEmail, pin);
+      }
+
+      function initApp() {
+        document.getElementById("viewLogin").classList.remove("active");
+        document.getElementById("mainNav").style.display = "flex";
+
+        showLoader(true); // Show loader while getting profile
+
+        api.run
+          .withSuccessHandler((p) => {
+            showLoader(false); // Hide loader when done
+            cachedProfile = p;
+            fillProfile();
+
+            const pinSection = document.getElementById("pinChangeSection");
+
+            if (p.isNew) {
+              // --- FIRST LOGIN FLOW (INCOMPLETE PROFILE) ---
+              document.getElementById("navItems").classList.add("d-none");
+              document
+                .getElementById("profileNotice")
+                .classList.remove("d-none");
+              if (pinSection) pinSection.classList.add("d-none");
+
+              switchView("viewProfile");
+              toggleProfile(true);
+
+              // ADD THIS LINE: Silently warm up the cache in the background!
+              api.run.preWarmOrgCache();
+            } else {
+              // --- EXISTING USER FLOW (PROFILE COMPLETE) ---
+              document.getElementById("navItems").classList.remove("d-none");
+              document.getElementById("profileNotice").classList.add("d-none");
+              if (pinSection) pinSection.classList.remove("d-none");
+              toggleProfile(false);
+
+              // ROUTING LOGIC:
+              if (targetView === "active") {
+                // 1. If they clicked the ?view=active link
+                targetView = ""; // Clear it so it doesn't loop
+                switchView("viewActive", document.getElementById("navActive"));
+              } else {
+                // 2. Normal login or Registration Deep Link
+                const activeEl = document.querySelector(".view-pane.active");
+                const activeViewId = activeEl ? activeEl.id : "viewLogin";
+
+                if (
+                  activeViewId === "viewLogin" ||
+                  activeViewId === "viewProfile"
+                ) {
+                  switchView(
+                    "viewCatalog",
+                    document.getElementById("navCatalog"),
+                  );
+                }
+              }
+            }
+          })
+          .withFailureHandler((err) => {
+            showLoader(false);
+            showAlert(
+              "Failed to load trainee profile: " + (err.message || String(err)),
+              "Error",
+            );
+            switchView("viewLogin");
+            document.getElementById("mainNav").style.display = "none";
+          })
+          .getTraineeProfile(userEmail);
+      }
+
+      function switchView(id, el) {
+        document
+          .querySelectorAll(".view-pane")
+          .forEach((v) => v.classList.remove("active"));
+        document.getElementById(id).classList.add("active");
+        if (el) {
+          document
+            .querySelectorAll(".nav-link")
+            .forEach((n) => n.classList.remove("active"));
+          el.classList.add("active");
+        }
+
+        if (id === "viewCatalog") loadCatalog();
+        if (id === "viewHistory") loadHistory();
+        // ADD THIS LINE
+        if (id === "viewActive") loadActiveSections();
+      }
+
+      let cachedSchools = [];
+
+      async function loadSchoolsDropdown(selectedSchoolId, selectedDeptId) {
+        try {
+          const data = await callCloudflareAction("getSchools", []);
+          cachedSchools = data;
+          const traineeType = cachedProfile.traineeType || "Industry";
+          const filtered =
+            traineeType === "Student"
+              ? cachedSchools.filter((s) => s.school_office_type === "School")
+              : cachedSchools;
+
+          const sel = document.getElementById("profSchool");
+          sel.innerHTML =
+            '<option value="">Select School / Department...</option>';
+          filtered.forEach((item) => {
+            const opt = document.createElement("option");
+            opt.value = item.id;
+            opt.textContent = item.name;
+            sel.appendChild(opt);
+          });
+
+          if (selectedSchoolId) {
+            sel.value = selectedSchoolId;
+          }
+
+          if (traineeType === "Student") {
+            document.getElementById("field2Eiu").style.display = "block";
+            if (selectedSchoolId)
+              await loadProgramsDropdown(selectedSchoolId, selectedDeptId);
+          } else {
+            const selected = cachedSchools.find(
+              (s) => s.id === (selectedSchoolId || sel.value),
+            );
+            const isSchoolType =
+              selected && selected.school_office_type === "School";
+            document.getElementById("field2Eiu").style.display = isSchoolType
+              ? "block"
+              : "none";
+            if (isSchoolType && selectedSchoolId) {
+              await loadProgramsDropdown(selectedSchoolId, selectedDeptId);
+            }
+          }
+        } catch (e) {
+          console.error("Error loading schools", e);
+        }
+      }
+
+      async function loadProgramsDropdown(schoolId, selectedDeptId) {
+        const sel = document.getElementById("profDepartment");
+        sel.innerHTML =
+          '<option value="">Select Concentration / Major...</option>';
+        if (!schoolId) return;
+        try {
+          const data = await callCloudflareAction("getPrograms", [schoolId]);
+          data.forEach((item) => {
+            const opt = document.createElement("option");
+            opt.value = item.id;
+            opt.textContent = item.program_function;
+            sel.appendChild(opt);
+          });
+          if (selectedDeptId) {
+            sel.value = selectedDeptId;
+          }
+        } catch (e) {
+          console.error("Error loading programs", e);
+        }
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        const profSchool = document.getElementById("profSchool");
+        if (profSchool) {
+          profSchool.addEventListener("change", function () {
+            const traineeType = cachedProfile.traineeType || "Industry";
+            const selected = cachedSchools.find((s) => s.id === this.value);
+            if (traineeType === "Student") {
+              document.getElementById("field2Eiu").style.display = "block";
+              loadProgramsDropdown(this.value, "");
+            } else {
+              const isSchoolType =
+                selected && selected.school_office_type === "School";
+              document.getElementById("field2Eiu").style.display = isSchoolType
+                ? "block"
+                : "none";
+              document.getElementById("profDepartment").value = "";
+              if (isSchoolType) loadProgramsDropdown(this.value, "");
+            }
+          });
+        }
+      });
+
+      function fillProfile() {
+        const f = document.getElementById("profileForm");
+        // THÊM DÒNG NÀY VÀO:
+        const emailInput = document.getElementById("profEmail");
+        if (emailInput) emailInput.value = userEmail || "";
+        f.fullName.value = cachedProfile.fullName || "";
+        f.phone.value = cachedProfile.phone || "";
+        f.gender.value = cachedProfile.gender || "";
+
+        // Check if the user is internal
+        const isEIU =
+          userEmail && userEmail.toLowerCase().endsWith(INTERNAL_DOMAIN);
+        if (isEIU) {
+          document.getElementById("profOrg").value = INTERNAL_ORG;
+          document.getElementById("profOrgId").value = "EIU"; // Or whatever ID EIU uses
+        } else {
+          document.getElementById("profOrg").value =
+            cachedProfile.organization || "";
+          document.getElementById("profOrgId").value =
+            cachedProfile.organizationId || "";
+        }
+
+        f.position.value = cachedProfile.position || "";
+
+        const asterisk = document.getElementById("deptAsterisk");
+        if (asterisk) {
+          if (cachedProfile.traineeType === "Staff") {
+            asterisk.style.display = "none";
+          } else {
+            asterisk.style.display = "inline";
+          }
+        }
+
+        document.getElementById("field1Group").style.display = "block";
+        if (isEIU) {
+          document.getElementById("field1Eiu").style.display = "block";
+          document.getElementById("field1NonEiu").style.display = "none";
+          loadSchoolsDropdown(cachedProfile.school, cachedProfile.department);
+        } else {
+          document.getElementById("field1Eiu").style.display = "none";
+          document.getElementById("field1NonEiu").style.display = "block";
+          document.getElementById("field2Eiu").style.display = "none";
+          document.getElementById("profDeptText").value =
+            cachedProfile.department || "";
+        }
+      }
+
+      // REWRITE initSearch to use the local memory instead of asking Code.gs
+      function initSearch(inputID, resultsID) {
+        const inp = document.getElementById(inputID);
+        const res = document.getElementById(resultsID);
+        let timer;
+        let currentSearchTerm = ""; // NEW: Keep track of what we are searching
+
+        inp.addEventListener("input", () => {
+          document.getElementById("profOrgId").value = "";
+
+          clearTimeout(timer);
+          const val = inp.value.trim();
+
+          if (val.length < 2) {
+            res.style.display = "none";
+            currentSearchTerm = "";
+            return;
+          }
+
+          timer = setTimeout(() => {
+            // NEW: If they somehow trigger a search for the exact same word, ignore it
+            if (currentSearchTerm === val) return;
+            currentSearchTerm = val;
+
+            res.innerHTML = `<div class="result-item text-muted"><i class="fas fa-spinner fa-spin"></i> Connecting to DB...</div>`;
+            res.style.display = "block";
+
+            api.run
+              .withSuccessHandler((data) => {
+                if (data && data.error) {
+                  //res.innerHTML = `<div class="result-item text-danger small"><b>DB Error:</b> ${data.error}</div>`;
+                  res.innerHTML = `<div class="result-item text-danger small" style="line-height: 1.4;">${data.error}</div>`;
+                  currentSearchTerm = ""; // Reset so they can try again
+                } else if (!data || data.length === 0) {
+                  const note = window.__lastOrgSearchWarning
+                    ? `<div class="result-item text-warning small" style="line-height:1.4;">${window.__lastOrgSearchWarning}</div>`
+                    : "";
+                  res.innerHTML =
+                    note +
+                    `<div class="result-item text-muted">No matches found.</div>`;
+                } else {
+                  let h = "";
+                  data.forEach((item) => {
+                    if (item.name) {
+                      let safeName = item.name.replace(/'/g, "\\'");
+                      h += `<div class="result-item" onclick="selectOrg('${inputID}','${resultsID}','${safeName}', '${item.id}')">${item.name}</div>`;
+                    }
+                  });
+                  res.innerHTML = h;
+                }
+              })
+              .searchIndustry(val);
+          }, 300);
+        });
+
+        document.addEventListener("click", (e) => {
+          if (e.target !== inp) res.style.display = "none";
+        });
+      }
+
+      // Update selectOrg to accept and store the orgId
+      function selectOrg(inpID, resID, val, orgId) {
+        document.getElementById(inpID).value = val;
+        document.getElementById("profOrgId").value = orgId || ""; // Store ID in hidden field
+        document.getElementById(resID).style.display = "none";
+      }
+
+      function validateProfileForm() {
+        const isEIU =
+          userEmail && userEmail.toLowerCase().endsWith(INTERNAL_DOMAIN);
+        const f = document.getElementById("profileForm");
+        const errors = [];
+
+        document
+          .querySelectorAll("#profileForm .is-invalid")
+          .forEach((el) => el.classList.remove("is-invalid"));
+        const existingErr = document.getElementById("profileFormError");
+        if (existingErr) existingErr.remove();
+
+        function check(value, elementId, label, focusElementId) {
+          if (!value || !String(value).trim()) {
+            const el =
+              document.getElementById(focusElementId || elementId) ||
+              f[elementId];
+            if (el) el.classList.add("is-invalid");
+            errors.push(label);
+          }
+        }
+
+        check(f.fullName.value, "fullName", "Full Name");
+        check(f.gender.value, "gender", "Gender");
+        check(f.phone.value, "phone", "Phone");
+        check(f.position.value, "position", "Position");
+
+        if (!isEIU) {
+          check(
+            document.getElementById("profOrgId").value,
+            "profOrgId",
+            "Organization",
+            "profOrg",
+          );
+        }
+
+        if (isEIU) {
+          check(
+            document.getElementById("profSchool").value,
+            "profSchool",
+            "School / Department",
+          );
+          const majorVisible =
+            document.getElementById("field2Eiu").style.display !== "none";
+          if (
+            majorVisible &&
+            (!cachedProfile || cachedProfile.traineeType !== "Staff")
+          ) {
+            check(
+              document.getElementById("profDepartment").value,
+              "profDepartment",
+              "Concentration / Major",
+            );
+          }
+        }
+
+        if (errors.length > 0) {
+          const div = document.createElement("div");
+          div.id = "profileFormError";
+          div.className = "alert alert-danger py-2 small mt-2";
+          div.textContent = `Please fill in: ${errors.join(", ")}`;
+          document.getElementById("saveActions").prepend(div);
+          return false;
+        }
+        return true;
+      }
+
+      let isProfileSubmitting = false;
+      document.getElementById("profileForm").onsubmit = (e) => {
+        e.preventDefault();
+        if (isProfileSubmitting) return;
+        if (!validateProfileForm()) return;
+
+        isProfileSubmitting = true;
+        const f = e.target;
+        const btn = document.getElementById("saveBtn");
+
+        btn.disabled = true;
+        btn.innerText = "Saving...";
+        showLoader(true);
+
+        const wasNewUser = cachedProfile.isNew;
+
+        const isEIU =
+          userEmail && userEmail.toLowerCase().endsWith(INTERNAL_DOMAIN);
+        let schoolVal = null,
+          deptVal = null;
+        if (isEIU) {
+          schoolVal = document.getElementById("profSchool").value || null;
+          deptVal = document.getElementById("profDepartment").value || null;
+        } else {
+          schoolVal = null;
+          deptVal =
+            document.getElementById("profDeptText").value.trim() || null;
+        }
+
+        const formData = {
+          fullName: f.fullName.value,
+          phone: f.phone.value,
+          gender: f.gender.value,
+          organization: document.getElementById("profOrg").value,
+          organizationId: document.getElementById("profOrgId").value,
+          position: f.position.value,
+          school: schoolVal,
+          department: deptVal,
+        };
+
+        // OPTIMISTIC UPDATE: Write to localStorage override immediately
+        ovSet("pdc_ov_profile", formData);
+
+        api.run
+          .withSuccessHandler(() => {
+            isProfileSubmitting = false;
+            showLoader(false); // FIX: Hide loader when done!
+            cachedProfile = { ...cachedProfile, ...formData, isNew: false };
+            showToast("Profile Saved!");
+
+            btn.disabled = false;
+            btn.innerText = "Save Changes";
+
+            toggleProfile(false);
+
+            if (wasNewUser) {
+              // If they just created their account and clicked the 'Active' link:
+              if (targetView === "active") {
+                targetView = "";
+                switchView("viewActive", document.getElementById("navActive"));
+              } else {
+                // Otherwise, normal catalog redirect
+                switchView(
+                  "viewCatalog",
+                  document.getElementById("navCatalog"),
+                );
+              }
+            }
+          })
+          .withFailureHandler((err) => {
+            // ROLLBACK OPTIMISTIC UPDATE
+            ovClear("pdc_ov_profile");
+            isProfileSubmitting = false;
+            showLoader(false);
+            showAlert(
+              "Failed to save profile: " + (err.message || String(err)),
+              "Error",
+            );
+            btn.disabled = false;
+            btn.innerText = "Save Changes";
+          })
+          .updateTraineeProfile(userEmail, formData);
+      };
+
+      // --- CATALOG RENDER ---
+      function renderCatalog(data) {
+        let h = "";
+
+        data.forEach((s) => {
+          // 1. Setup our dynamic styling based on the exact status from the backend
+          let badgeClass = "bg-secondary"; // Default gray
+          let cardOpacity = "1";
+          let cursorStyle = "cursor: pointer;";
+          let clickAction = "";
+
+          // Override status locally if we just registered successfully in this session
+          const ovReg = ovGet(`pdc_ov_reg_${s.id}`);
+          if (ovReg) {
+            s.status = "Registered";
+            s.isRegistered = true;
+          }
+
+          // 2. Map the backend statuses to Bootstrap UI
+          if (s.status === "Open for registration") {
+            badgeClass = "bg-success"; // Green
+            clickAction = `onclick="openRegistrationConfirm('${s.id}')"`; // Only click to register if open!
+          } else if (s.status === "Registered") {
+            badgeClass = "bg-primary"; // Blue
+            cardOpacity = "0.8"; // Dim it slightly
+            cursorStyle = "cursor: default;"; // Turn off the hand pointer
+          } else if (s.status === "Missed") {
+            badgeClass = "bg-danger"; // Red
+            cardOpacity = "0.7";
+            cursorStyle = "cursor: default;";
+          } else if (s.status === "Section Full") {
+            badgeClass = "bg-warning text-dark"; // Orange
+            cardOpacity = "0.75";
+            cursorStyle = "cursor: default;";
+          } else if (s.status === "Not Open for registration yet") {
+            badgeClass = "bg-secondary"; // Gray
+            cardOpacity = "0.7";
+            cursorStyle = "cursor: default;";
+          }
+
+          // 3. Build the capacity meter HTML
+          let capacityHtml = "";
+          if (s.maxParticipants > 0) {
+            const pct = Math.min(
+              100,
+              Math.round((s.currentCount / s.maxParticipants) * 100),
+            );
+            const barColor =
+              pct >= 100
+                ? "bg-danger"
+                : pct >= 75
+                  ? "bg-warning"
+                  : "bg-success";
+            capacityHtml = `
+          <hr class="my-2" style="opacity: 0.15;">
+          <div class="d-flex align-items-center gap-2 small text-muted mt-1">
+            <i class="fas fa-users text-secondary"></i>
+            <span>Seats:</span>
+            <div class="progress flex-grow-1 bg-light" style="height:6px; border-radius:3px;">
+              <div class="progress-bar ${barColor}" style="width:${pct}%; border-radius:3px;"></div>
+            </div>
+            <span class="fw-semibold text-dark" style="min-width: 45px; text-align: right;">${s.currentCount} / ${s.maxParticipants}</span>
+          </div>`;
+          }
+
+          // 4. Build the badge HTML
+          const statusBadge = `<span id="catalog-badge-${s.id}" class="badge ${badgeClass} float-end shadow-sm">${s.status}</span>`;
+
+          // 5. Construct the beautiful Bootstrap card
+          h += `<div class="col-md-6">
+        <div id="catalog-card-${s.id}" class="card p-3 bg-white shadow-sm section-card" 
+             style="${cursorStyle} opacity: ${cardOpacity}; transition: 0.2s;" 
+             ${clickAction}>
+          ${statusBadge} 
+          <div class="fw-bold text-dark pe-5">${s.name}</div>
+          
+          <div class="mt-3">
+            <div class="text-muted small mb-2" style="white-space: pre-line;">
+              <i class="far fa-calendar-alt me-2 text-primary"></i>${s.date}
+            </div>
+            <div class="text-muted small">
+              <i class="fas fa-map-marker-alt me-2 text-danger"></i>${s.venue}
+            </div>
+            ${capacityHtml}
+          </div>
+
+        </div>
+      </div>`;
+        });
+
+        // Safety check if no courses match the filter
+        document.getElementById("catalogList").innerHTML =
+          h ||
+          '<div class="col-12 text-center text-muted py-4">No courses available at this time.</div>';
+
+        // --- NEW: DEEP LINK AUTO-OPEN LOGIC ---
+        if (autoOpenSectionId !== "") {
+          // 1. Search the data to see if the requested course exists for this user
+          const targetSection = data.find((s) => s.id === autoOpenSectionId);
+
+          if (targetSection) {
+            // 2. Check if they are actually allowed to register
+            if (targetSection.status === "Open for registration") {
+              // Trigger your modal!
+              openRegistrationConfirm(autoOpenSectionId);
+            } else {
+              // If it's closed or they are already registered, let them know gracefully
+              showAlert(
+                "Unable to open registration. Your status for this course is: " +
+                  targetSection.status,
+                "Notice",
+              );
+            }
+          } else {
+            showAlert(
+              "The requested section could not be found, or you do not have access.",
+              "Notice",
+            );
+          }
+
+          // 3. Clear the variable so it doesn't pop up again if they click "Home"
+          autoOpenSectionId = "";
+        }
+      }
+
+      function loadCatalog() {
+        api.run.withSuccessHandler(renderCatalog).getSections(userEmail);
+      }
+
+      // --- 2. OPEN REGISTRATION CONFIRMATION SCREEN ---
+      function openRegistrationConfirm(sectionId) {
+        // GUARD: Profile must be complete before registration
+        if (cachedProfile && cachedProfile.isNew) {
+          showToast(
+            "Please complete your profile before registering for a course.",
+            "error",
+          );
+          switchView("viewProfile", document.getElementById("navProfile"));
+          return;
+        }
+
+        // 1. Swap Views using your actual IDs
+        document.getElementById("viewCatalog").classList.remove("active");
+        document.getElementById("viewReg").classList.add("active");
+
+        const container = document.getElementById("confirmDetailsContainer");
+        container.innerHTML = `
+      <div class="text-center my-5">
+        <i class="fas fa-spinner fa-spin fa-2x text-primary mb-3"></i>
+        <p class="text-muted">Loading section details...</p>
+      </div>`;
+
+        // 2. Ask backend for the data
+        api.run
+          .withSuccessHandler((data) => {
+            if (data.error) {
+              container.innerHTML = `<div class="alert alert-danger">${data.error}</div>
+                               <button class="btn btn-outline-secondary w-100 mt-2" onclick="goBackToCatalog()">Back to Catalog</button>`;
+              return;
+            }
+
+            // 3. Build the beautiful summary card
+            container.innerHTML = `
+        <div class="card shadow-sm border-0 mb-4">
+          <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Registration Summary</h5>
+          </div>
+          <div class="card-body">
+            <h5 class="text-dark mb-1">${data.nameEn}</h5>
+            <h6 class="text-muted mb-3">${data.nameVn}</h6>
+            
+            <ul class="list-group list-group-flush">
+              <li class="list-group-item px-0"><strong>Section Number:</strong> <span class="float-end">${data.sectionNumber}</span></li>
+              <li class="list-group-item px-0"><strong>Course:</strong> <span class="float-end text-end" style="max-width: 60%;">${data.courseName}</span></li>
+              
+              <li class="list-group-item px-0"><strong>Date:</strong> <span class="float-end text-end">${String(data.date).replace(/,/g, "<br>").replace(/\n/g, "<br>")}</span></li>
+
+              <li class="list-group-item px-0"><strong>Venue:</strong> <span class="float-end">${data.venue}</span></li>
+              <li class="list-group-item px-0"><strong>Room:</strong> <span class="float-end">${data.roomTitle}</span></li>
+              <li class="list-group-item px-0"><strong>Trainee Type:</strong> <span class="float-end">${data.traineeType}</span></li>
+              <li class="list-group-item px-0"><strong>Section Type:</strong> <span class="float-end">${data.sectionType}</span></li>
+              <li class="list-group-item px-0"><strong>Status:</strong> <span class="float-end badge bg-info text-dark">${data.status}</span></li>
+              <li class="list-group-item px-0"><strong>BD In-charge:</strong> <span class="float-end">${data.bdIncharge}</span></li>
+            </ul>
+          </div>
+        </div>
+        
+        <button class="btn btn-success w-100 py-2 mb-2" onclick="finalizeRegistration('${data.sectionId}', this)">
+          <i class="fas fa-check-circle me-2"></i> Confirm Registration
+        </button>
+        <button class="btn btn-light border w-100 py-2 text-muted" onclick="goBackToCatalog()">
+          Cancel
+        </button>
+      `;
+          })
+          .getSectionDetails(sectionId);
+      }
+
+      // --- 3. SUBMIT REGISTRATION ---
+      // --- 3. SUBMIT REGISTRATION (OPTIMISTIC) ---
+      function finalizeRegistration(sectionId, btnElement) {
+        // 1. Optimistic Update: Save to localStorage override immediately
+        ovSet(`pdc_ov_reg_${sectionId}`);
+
+        // 2. Optimistic Update: Update DOM elements immediately
+        const card = document.getElementById(`catalog-card-${sectionId}`);
+        const badge = document.getElementById(`catalog-badge-${sectionId}`);
+        if (card && badge) {
+          card.dataset.oldOnclick = card.getAttribute("onclick") || "";
+          card.removeAttribute("onclick");
+          card.style.cursor = "default";
+          card.style.opacity = "0.8";
+
+          badge.dataset.oldClass = badge.className;
+          badge.dataset.oldText = badge.innerText;
+          badge.className = "badge bg-primary float-end shadow-sm";
+          badge.innerText = "Registered";
+        }
+
+        // 3. Provide immediate feedback and redirect
+        showToast("Registration requested...", "info");
+        switchView("viewCatalog", document.getElementById("navCatalog"));
+
+        // 4. Fire POST to server in background
+        api.run
+          .withSuccessHandler((res) => {
+            const status =
+              typeof res === "object" && res !== null ? res.status : res;
+            const message =
+              typeof res === "object" && res !== null ? res.message : null;
+
+            if (status === "Success" || status === "Already Registered") {
+              showToast(
+                status === "Success"
+                  ? "Registration confirmed!"
+                  : "Already registered.",
+                "success",
+              );
+              // Server success, leave localStorage override intact (self-heals in 45s)
+            } else if (status === "Forbidden") {
+              rollbackRegistration(
+                sectionId,
+                message || "Please complete your profile before registering.",
+              );
+              switchView("viewProfile", document.getElementById("navProfile"));
+            } else if (status === "Section Full") {
+              rollbackRegistration(
+                sectionId,
+                message || "This section is now full.",
+              );
+            } else {
+              rollbackRegistration(
+                sectionId,
+                message || "Registration failed. Please try again.",
+              );
+            }
+          })
+          .withFailureHandler((err) => {
+            rollbackRegistration(
+              sectionId,
+              err.message || "Registration failed due to network error.",
+            );
+          })
+          .handleRegistration({ email: userEmail, sectionId: sectionId });
+      }
+
+      function rollbackRegistration(sectionId, errorMsg) {
+        // Revert local storage
+        ovClear(`pdc_ov_reg_${sectionId}`);
+
+        // Revert DOM
+        const card = document.getElementById(`catalog-card-${sectionId}`);
+        const badge = document.getElementById(`catalog-badge-${sectionId}`);
+        if (card && badge) {
+          if (card.dataset.oldOnclick)
+            card.setAttribute("onclick", card.dataset.oldOnclick);
+          card.style.cursor = "pointer";
+          card.style.opacity = "1";
+
+          if (badge.dataset.oldClass) badge.className = badge.dataset.oldClass;
+          if (badge.dataset.oldText) badge.innerText = badge.dataset.oldText;
+        }
+
+        showToast(errorMsg, "error");
+      }
+
+      // --- 4. UTILITIES ---
+      function goBackToCatalog() {
+        switchView("viewCatalog", document.getElementById("navCatalog"));
+      }
+
+      function toggleProfile(on) {
+        const f = document.getElementById("profileForm");
+        const elements = f.querySelectorAll("input:not(#profEmail), select");
+        elements.forEach((el) => (el.disabled = !on));
+
+        const orgInput = document.getElementById("profOrg");
+        if (userEmail && userEmail.toLowerCase().endsWith(INTERNAL_DOMAIN)) {
+          orgInput.disabled = true;
+        } else {
+          orgInput.disabled = !on;
+        }
+
+        if (on && cachedProfile && cachedProfile.traineeType === "Student") {
+          f.position.disabled = true;
+        }
+
+        document.getElementById("editBtn").classList.toggle("d-none", on);
+        document.getElementById("saveActions").classList.toggle("d-none", !on);
+
+        // --- ADDED FIX: Keep PIN fields enabled at all times ---
+        const pinIds = ["changePinInput"]; // Fixed to match your exact HTML ID!
+        pinIds.forEach((id) => {
+          const el = document.getElementById(id);
+          if (el) el.disabled = false;
+        });
+      }
+
+      function cancelProfileEdit() {
+        document
+          .querySelectorAll("#profileForm .is-invalid")
+          .forEach((el) => el.classList.remove("is-invalid"));
+        const err = document.getElementById("profileFormError");
+        if (err) err.remove();
+        fillProfile();
+        toggleProfile(false);
+      }
+
+      function loadHistory() {
+        api.run
+          .withSuccessHandler((data) => {
+            cachedHistory = data; // Save to our new global variable!
+
+            let h = "";
+            data.forEach((i) => {
+              const sectionId = i.sectionId || i.id || "";
+
+              // Show a badge if a certificate exists
+              let certBadge =
+                i.certIssued && i.certIssued.toString().trim() !== ""
+                  ? `<span class="badge bg-warning text-dark float-end"><i class="fas fa-certificate"></i> Certified</span>`
+                  : "";
+
+              h += `<div class="card p-3 mb-3 shadow-sm border-0 section-card" style="border-left: 5px solid #0056b3; cursor: pointer;" onclick="openHistoryDetail('${sectionId}')">
+                ${certBadge} 
+                <div class="fw-bold text-dark mb-2 pe-5">${i.sectionNameEn}</div>
+                
+                <div class="text-muted small mb-2" style="white-space: pre-line;">
+                  <i class="far fa-calendar-alt me-2 text-primary"></i>${i.sectionDate}
+                </div>
+                
+                <div class="text-muted small">
+                  <i class="fas fa-user-check me-2 text-success"></i>Check-in: <span class="fw-bold">${i.checkin}</span>
+                </div>
+              </div>`;
+            });
+            document.getElementById("historyList").innerHTML =
+              h || "No records.";
+          })
+          .getLearningHistory(userEmail);
+      }
+
+      function openHistoryDetail(sectionId) {
+        if (!sectionId) return alert("Error: Missing Section ID.");
+
+        // Look up the personal progress from our cache
+        const userProgress =
+          cachedHistory.find((h) => h.sectionId === sectionId) || {};
+
+        document.getElementById("viewHistory").classList.remove("active");
+        document.getElementById("viewHistoryDetail").classList.add("active");
+
+        const container = document.getElementById("historyDetailsContainer");
+        container.innerHTML = `
+      <div class="text-center my-5">
+        <i class="fas fa-spinner fa-spin fa-2x text-primary mb-3"></i>
+        <p class="text-muted">Loading complete details...</p>
+      </div>`;
+
+        api.run
+          .withSuccessHandler((data) => {
+            if (data.error) {
+              container.innerHTML = `<div class="alert alert-danger">${data.error}</div>
+                               <button class="btn btn-outline-secondary w-100 mt-2" onclick="goBackToHistory()">Back</button>`;
+              return;
+            }
+
+            // Handle the certificate display (make it a clickable link if it's a Drive/Web URL)
+            let certDisplay = '<span class="text-muted">Pending</span>';
+            if (
+              userProgress.certIssued &&
+              userProgress.certIssued.toString().trim() !== ""
+            ) {
+              if (userProgress.certIssued.toString().startsWith("http")) {
+                certDisplay = `<a href="${userProgress.certIssued}" target="_blank" class="btn btn-sm btn-warning"><i class="fas fa-download"></i> View Certificate</a>`;
+              } else {
+                certDisplay = `<span class="badge bg-success">${userProgress.certIssued}</span>`;
+              }
+            }
+
+            container.innerHTML = `
+        <h6 class="mb-2 text-primary fw-bold">Course Details</h6>
+        <div class="card shadow-sm border-0 mb-3">
+          <div class="card-body py-2">
+            <h5 class="text-dark mb-1 mt-2">${data.nameEn}</h5>
+            <h6 class="text-muted mb-3">${data.nameVn}</h6>
+            <ul class="list-group list-group-flush">
+              <li class="list-group-item px-0 py-1 border-0"><small><strong>Date:</strong> <span class="float-end text-end" style="white-space: pre-line;">${data.date}</span></small></li>
+              <li class="list-group-item px-0 py-1 border-0"><small><strong>Venue:</strong> <span class="float-end">${data.venue}</span></small></li>
+              <li class="list-group-item px-0 py-1 border-0"><small><strong>Room:</strong> <span class="float-end">${data.roomTitle}</span></small></li>
+              <li class="list-group-item px-0 py-1 border-0"><small><strong>Status:</strong> <span class="float-end badge bg-info text-dark">${data.status}</span></small></li>
+            </ul>
+          </div>
+        </div>
+        
+        <h6 class="mb-2 mt-4 text-success fw-bold">My Learning Progress</h6>
+        <div class="card shadow-sm border-0 mb-4" style="border-left: 4px solid #198754 !important;">
+          <ul class="list-group list-group-flush">
+            <li class="list-group-item px-3 py-2 text-muted"><small><strong>Registered:</strong> <span class="float-end">${userProgress.registeredAt || "N/A"}</span></small></li>
+            <li class="list-group-item px-3 py-2"><strong>Check-in Completion:</strong> <span class="float-end fw-bold">${userProgress.checkin || "0%"}</span></li>
+            <li class="list-group-item px-3 py-2"><strong>Assessment Score:</strong> <span class="float-end fw-bold">${userProgress.assessment || "0%"}</span></li>
+            <li class="list-group-item px-3 py-2"><strong>Feedback Given:</strong> <span class="float-end fw-bold">${userProgress.feedback || "0%"}</span></li>
+            <li class="list-group-item px-3 py-3 bg-light"><strong>Certificate:</strong> <span class="float-end">${certDisplay}</span></li>
+          </ul>
+        </div>
+        
+        <button class="btn btn-light border shadow-sm w-100 py-2 text-dark fw-bold" onclick="goBackToHistory()">
+          <i class="fas fa-arrow-left me-2"></i> Back to History
+        </button>
+      `;
+          })
+          .getSectionDetails(sectionId);
+      }
+
+      // Helper to go back to the history list
+      function goBackToHistory() {
+        document.getElementById("viewHistoryDetail").classList.remove("active");
+        document.getElementById("viewHistory").classList.add("active");
+      }
+
+      function logout() {
+        localStorage.removeItem("pdc_email");
+        clearSessionToken();
+        location.reload();
+      }
+
+      // --- ACTIVE SECTION & CHECK-IN LOGIC ---
+
+      let cachedActiveSections = null;
+
+      function loadActiveSections() {
+        const container = document.getElementById("activeList");
+
+        const render = (sections) => {
+          let html = "";
+          sections.forEach((s) => {
+            html += `
+          <div class="col-md-6">
+            <div class="card p-3 shadow-sm border-0 section-card" style="border-left: 5px solid #198754; cursor: pointer;" onclick="showActiveSectionDetails('${s.sectionId}', '${s.courseName}')">
+              
+              <div class="fw-bold text-dark mb-2">${s.courseName}</div>
+              
+              <div class="text-muted small mb-2" style="white-space: pre-line;">
+                <i class="far fa-calendar-alt me-2 text-primary"></i>${s.date}
+              </div>
+              
+              <div class="text-muted small mb-3">
+                <i class="fas fa-info-circle me-2 text-info"></i>Status: <span class="badge bg-light text-dark shadow-sm">${s.status}</span>
+              </div>
+              
+              <div class="text-primary small fw-bold mt-2 border-top pt-2">
+                View Section Details <i class="fas fa-arrow-right float-end mt-1"></i>
+              </div>
+              
+            </div>
+          </div>`;
+          });
+          container.innerHTML =
+            html ||
+            '<div class="col-12 text-center py-5">No active courses found.</div>';
+        };
+
+        if (cachedActiveSections) {
+          render(cachedActiveSections);
+          // Silently refresh in background
+          api.run
+            .withSuccessHandler((sections) => {
+              cachedActiveSections = sections;
+              render(sections);
+            })
+            .getActiveSections(userEmail);
+        } else {
+          container.innerHTML =
+            '<div class="col-12 text-center text-muted"><i class="fas fa-spinner fa-spin"></i> Checking your courses...</div>';
+          api.run
+            .withSuccessHandler((sections) => {
+              cachedActiveSections = sections;
+              render(sections);
+            })
+            .getActiveSections(userEmail);
+        }
+      }
+
+      // NEW: This function builds the check-in page for the selected course
+      function showActiveSectionDetails(sectionId, courseName) {
+        // Switch to the new detail view
+        document
+          .querySelectorAll(".view-pane")
+          .forEach((v) => v.classList.remove("active"));
+        document.getElementById("viewActiveDetail").classList.add("active");
+
+        const container = document.getElementById("activeDetailsContainer");
+
+        // Draw the UI container for the check-in slots AND the new Forms button
+        container.innerHTML = `
+      <h5 class="fw-bold mb-3 text-dark">${courseName}</h5>
+      
+      <div class="card mt-2 mb-3 border-0 shadow-sm" style="border-radius: 16px;">
+        <div class="card-header bg-white fw-bold" style="border-radius: 16px 16px 0 0; border-bottom: 2px solid #f8f9fa;">
+          <i class="fas fa-calendar-check text-primary me-2"></i> Attendance Check-in
+        </div>
+        <div class="card-body p-0">
+          <div id="checkinSlotsContainer" class="p-4 text-center text-muted">
+            <div class="spinner-border spinner-border-sm text-primary" role="status"></div> 
+            <span class="ms-2">Loading slots...</span>
+          </div>
+        </div>
+      </div>
+      
+      <button class="btn btn-info text-white border-0 shadow-sm w-100 py-2 fw-bold mb-3" style="border-radius: 10px;" onclick="viewActiveForms('${sectionId}')">
+        <i class="fas fa-clipboard-list me-2"></i> View Active Forms
+      </button>
+      
+      <button class="btn btn-light border shadow-sm w-100 py-2 text-dark fw-bold" style="border-radius: 10px;" onclick="switchView('viewActive', document.getElementById('navActive'))">
+        <i class="fas fa-arrow-left me-2"></i> Back to Active Courses
+      </button>
+    `;
+
+        // Trigger the backend to fetch the slots
+        loadCheckinSlots(sectionId);
+      }
+
+      // --- NEW CHECK-IN LOGIC ---
+      let currentActiveSectionId = null;
+      let pendingCheckinSlotId = null;
+      let checkinModalInstance = null;
+
+      // 1. Fetch filtered data from the backend
+      function loadCheckinSlots(sectionId, bypassCache = false) {
+        document.getElementById("activeSectionId").value = sectionId;
+        const container = document.getElementById("checkinSlotsContainer");
+
+        if (container) {
+          container.innerHTML =
+            '<div class="p-4 text-center text-muted"><div class="spinner-border spinner-border-sm text-primary"></div><span class="ms-2">Loading slots...</span></div>';
+        }
+
+        // Call the new FAST backend function, passing the sectionId
+        api.run
+          .withSuccessHandler((rawStringData) =>
+            processDataAppSide(rawStringData, sectionId),
+          )
+          .withFailureHandler((err) => {
+            if (container)
+              container.innerHTML = `<div class="p-4 text-danger"><i class="fas fa-exclamation-triangle"></i> ${err.message}</div>`;
+          })
+          .fetchCheckinDataForSection(sectionId);
+      }
+
+      // 2. Process data entirely App Side (Frontend)
+      function processDataAppSide(rawStringData, sectionId) {
+        if (!rawStringData) {
+          renderSlotsUI([]);
+          return;
+        }
+
+        const parsedDatabaseObject = JSON.parse(rawStringData);
+        const plansArray = parsedDatabaseObject.plans;
+        const logsArray = parsedDatabaseObject.logs;
+
+        const targetEmail = userEmail.toLowerCase().trim();
+
+        if (plansArray.length === 0) {
+          renderSlotsUI([]);
+          return;
+        }
+
+        const checkedInSlotIds = new Set();
+        logsArray.forEach((row) => {
+          const rTraineeId = String(row["trainee id"] || "")
+            .toLowerCase()
+            .trim();
+          if (rTraineeId === targetEmail) {
+            checkedInSlotIds.add(String(row["checkin slot id"]).trim());
+          }
+        });
+
+        // Merge local overrides so optimistic updates survive every re-render.
+        // Use the generic ovGet helper
+        plansArray.forEach((p) => {
+          const sid = String(p["checkin slot id"]).trim();
+          if (ovGet(`pdc_ov_ci_${sectionId}_${sid}`)) {
+            checkedInSlotIds.add(sid);
+          }
+        });
+
+        const now = new Date();
+        const yyyy = now.getFullYear();
+        const mm = String(now.getMonth() + 1).padStart(2, "0");
+        const dd = String(now.getDate()).padStart(2, "0");
+        const todayStr = `${yyyy}-${mm}-${dd}`;
+        const currentTimeStr = now.toTimeString().split(" ")[0];
+
+        const uiSlots = plansArray.map((row) => {
+          const slotId = String(row["checkin slot id"]).trim();
+          const type = String(
+            row["checkin type"] || "Flexible Check-In",
+          ).trim();
+
+          const rawDate = row["checkin date"];
+          const rawFrom = row["checkin valid from"];
+          const rawTo = row["checkin valid to"];
+
+          let slotDateStr = "";
+          let displayDate = "";
+
+          if (rawDate && String(rawDate).trim() !== "") {
+            const strVal = String(rawDate).trim();
+            if (strVal.match(/^\d{4}-\d{2}-\d{2}/)) {
+              const datePart = strVal.substring(0, 10);
+              const parts = datePart.split("-");
+              slotDateStr = datePart;
+              displayDate = `${parts[2]}/${parts[1]}/${parts[0]}`;
+            } else if (strVal.match(/^\d{1,2}\/\d{1,2}\/\d{4}/)) {
+              const datePart = strVal.split(" ")[0];
+              const parts = datePart.split("/");
+              const d = parts[0].padStart(2, "0");
+              const m = parts[1].padStart(2, "0");
+              const y = parts[2];
+              slotDateStr = `${y}-${m}-${d}`;
+              displayDate = `${d}/${m}/${y}`;
+            } else {
+              const d = new Date(strVal);
+              if (!isNaN(d.getTime())) {
+                const day = String(d.getDate()).padStart(2, "0");
+                const month = String(d.getMonth() + 1).padStart(2, "0");
+                const year = d.getFullYear();
+                slotDateStr = `${year}-${month}-${day}`;
+                displayDate = `${day}/${month}/${year}`;
+              }
+            }
+          }
+
+          function extractTime(raw) {
+            if (!raw) return null;
+            const str = String(raw).trim();
+
+            // Handle plain HH:MM or HH:MM:SS strings first
+            if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(str)) {
+              return str.length === 5 ? str + ":00" : str;
+            }
+
+            // Try standard Date parsing for ISO formats (like 2026-08-03T01:30:00.000Z)
+            const d = new Date(str);
+            if (!isNaN(d.getTime())) {
+              return d.toTimeString().split(" ")[0]; // returns HH:MM:SS in local timezone
+            }
+
+            // Fallback for custom YYYY-MM-DD HH:MM:SS
+            if (str.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/)) {
+              return str.split(" ")[1];
+            }
+
+            // Final fallback if it just contains a colon but isn't parsed by the above
+            if (str.includes(":")) {
+              // If it's an ISO string that failed Date parsing for some reason, split by T
+              if (str.includes("T")) {
+                const timePart = str.split("T")[1].split(".")[0].split("Z")[0];
+                return timePart;
+              }
+              return str;
+            }
+
+            return null;
+          }
+
+          const fromTime = extractTime(rawFrom) || "00:00:00";
+          const toTime = extractTime(rawTo) || "23:59:59";
+
+          let status = "Pending";
+          if (checkedInSlotIds.has(slotId)) {
+            status = "Checked";
+          } else {
+            if (slotDateStr && slotDateStr < todayStr) {
+              status = "Missed";
+            } else if (slotDateStr === todayStr) {
+              if (type === "Scheduled Check-In" && currentTimeStr > toTime) {
+                status = "Missed";
+              }
+            }
+          }
+
+          return {
+            slotId: slotId,
+            date: displayDate || "No Date",
+            // We include these two hidden fields specifically for sorting
+            sortDate: slotDateStr || "9999-12-31",
+            sortTime: fromTime,
+            type: type,
+            timeWindow:
+              type === "Scheduled Check-In"
+                ? `${fromTime.slice(0, 5)} - ${toTime.slice(0, 5)}`
+                : "All Day",
+            status: status,
+            isClickable:
+              status === "Pending" &&
+              slotDateStr === todayStr &&
+              (type === "Flexible Check-In" ||
+                (currentTimeStr >= fromTime && currentTimeStr <= toTime)),
+          };
+        });
+
+        // --- 🚀 NEW: SORTING LOGIC ---
+        uiSlots.sort((a, b) => {
+          // Sort by Date first
+          if (a.sortDate < b.sortDate) return -1;
+          if (a.sortDate > b.sortDate) return 1;
+          // If dates are the same, sort by Start Time
+          if (a.sortTime < b.sortTime) return -1;
+          if (a.sortTime > b.sortTime) return 1;
+          return 0;
+        });
+
+        renderSlotsUI(uiSlots);
+      }
+
+      function renderSlotsUI(slots) {
+        const container = document.getElementById("checkinSlotsContainer");
+        if (!container) return;
+
+        if (!slots || slots.length === 0) {
+          container.innerHTML =
+            '<div class="p-3 text-center text-muted">No check-in slots scheduled for this course.</div>';
+          return;
+        }
+
+        let html = '<ul class="list-group list-group-flush">';
+        slots.forEach((slot) => {
+          let badgeHtml =
+            slot.status === "Checked"
+              ? '<span class="badge bg-success"><i class="fas fa-check"></i> Checked</span>'
+              : slot.status === "Missed"
+                ? '<span class="badge bg-danger"><i class="fas fa-times"></i> Missed</span>'
+                : '<span class="badge bg-warning text-dark"><i class="fas fa-hourglass-half"></i> Pending</span>';
+
+          let btnHtml = "";
+          if (slot.status === "Pending") {
+            if (slot.isClickable) {
+              btnHtml = `<button class="btn btn-sm btn-outline-primary mt-2 w-100" onclick="openCheckinModal('${slot.slotId}')">Check-in Now</button>`;
+            } else {
+              btnHtml = `<button class="btn btn-sm btn-light text-muted mt-2 w-100" disabled>Not Active Yet</button>`;
+            }
+          }
+
+          html += `
+        <li class="list-group-item px-3 py-3" data-slot-id="${slot.slotId}">
+          <div class="d-flex justify-content-between align-items-start mb-1">
+            <div>
+              <h6 class="mb-0 fw-bold">${slot.date}</h6>
+              <small class="text-muted"><i class="far fa-clock"></i> ${slot.timeWindow} (${slot.type})</small>
+            </div>
+            <div>${badgeHtml}</div>
+          </div>
+          ${btnHtml}
+        </li>
+      `;
+        });
+        html += "</ul>";
+        container.innerHTML = html;
+        container.classList.remove("p-3", "text-center");
+      }
+
+      function markSlotAsChecked(slotId) {
+        // Persist in local override set so re-renders don't revert to "Pending"
+        localCheckedInSlotIds.add(slotId);
+
+        const li = document.querySelector(`[data-slot-id="${slotId}"]`);
+        if (!li) return;
+        // Swap badge
+        const badgeEl = li.querySelector(".badge");
+        if (badgeEl) {
+          badgeEl.className = "badge bg-success";
+          badgeEl.innerHTML = '<i class="fas fa-check"></i> Checked';
+        }
+        // Remove check-in button
+        const btn = li.querySelector("button");
+        if (btn) btn.remove();
+      }
+
+      function openCheckinModal(slotId) {
+        pendingCheckinSlotId = slotId;
+        // Save the slotId into the hidden input we added to your HTML
+        document.getElementById("pendingSlotId").value = slotId;
+        document.getElementById("inputCheckinCode").value = "";
+        document.getElementById("checkinErrorMsg").style.display = "none";
+
+        // Add event listener to strip non-digits if not already added
+        const inputEl = document.getElementById("inputCheckinCode");
+        if (!inputEl.hasAttribute("data-listener-added")) {
+          inputEl.addEventListener("input", function () {
+            this.value = this.value.replace(/\D/g, "").slice(0, 6);
+          });
+          inputEl.setAttribute("data-listener-added", "true");
+        }
+
+        if (!checkinModalInstance) {
+          checkinModalInstance = new bootstrap.Modal(
+            document.getElementById("checkinModal"),
+          );
+        }
+        checkinModalInstance.show();
+      }
+
+      function submitCheckin() {
+        const codeInput = document
+          .getElementById("inputCheckinCode")
+          .value.trim();
+        const sectionId = document.getElementById("activeSectionId").value; // Get from hidden input
+        const slotId = document.getElementById("pendingSlotId").value; // Get from hidden input
+        const errorMsg = document.getElementById("checkinErrorMsg");
+        const btn = document.getElementById("btnSubmitCheckin");
+
+        if (!codeInput) {
+          errorMsg.innerText = "Please enter a code.";
+          errorMsg.style.display = "block";
+          return;
+        }
+        if (!/^\d{6}$/.test(codeInput)) {
+          errorMsg.innerText = "Check-in code must be exactly 6 digits.";
+          errorMsg.style.display = "block";
+          return;
+        }
+
+        errorMsg.style.display = "none";
+        btn.innerHTML =
+          '<span class="spinner-border spinner-border-sm"></span> Verifying...';
+        btn.disabled = true;
+
+        api.run
+          .withSuccessHandler((res) => {
+            // checkinModalInstance.hide();
+            // 1. Hide the modal
+            const modalElement = document.getElementById("checkinModal");
+            const modalInstance = bootstrap.Modal.getInstance(modalElement);
+            if (modalInstance) modalInstance.hide();
+
+            btn.innerHTML = "Confirm Check-in";
+            btn.disabled = false;
+
+            // 1. Optimistic update: instantly flip slot to "Checked" in the DOM
+            markSlotAsChecked(slotId);
+
+            // 2. Show non-blocking success message inside modal before it closes
+            const banner = document.getElementById("checkinSuccessBanner");
+            if (banner) {
+              banner.innerText = "✅ Check-in successful!";
+              banner.style.display = "block";
+            }
+
+            // 3. Background refresh (no alert blocking it)
+            setTimeout(() => loadCheckinSlots(sectionId, true), 1500);
+          })
+          .withFailureHandler((err) => {
+            errorMsg.innerText = err.message;
+            errorMsg.style.display = "block";
+            btn.innerHTML = "Confirm Check-in";
+            btn.disabled = false;
+          })
+          .processCheckIn(userEmail, sectionId, codeInput, slotId);
+      }
+      // --- END NEW CHECK-IN LOGIC ---
+      // form hanlding
+
+      /**
+       * Opens the Forms Modal and fetches mapped forms from AppScript
+       */
+
+      function formatVietnamDisplayDateTime(value) {
+        if (!value) return "";
+        const d = new Date(value);
+        if (isNaN(d.getTime())) return String(value);
+        const parts = new Intl.DateTimeFormat("en-GB", {
+          timeZone: "Asia/Ho_Chi_Minh",
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+        })
+          .formatToParts(d)
+          .reduce((acc, part) => {
+            acc[part.type] = part.value;
+            return acc;
+          }, {});
+        return `${parts.day}/${parts.month}/${parts.year} ${parts.hour}:${parts.minute}`;
+      }
+
+      function viewActiveForms(sectionId) {
+        // We use your global userEmail variable as the trainee ID!
+        const traineeId = userEmail;
+        currentActiveSectionId = sectionId;
+
+        // Show modal with loading state
+        const formsModalBody = document.getElementById("formsModalBody");
+        formsModalBody.innerHTML = `
+      <div class="text-center py-4">
+        <div class="spinner-border text-info" role="status"></div>
+        <p class="mt-2 text-muted">Checking available forms...</p>
+      </div>`;
+
+        const formsModal = new bootstrap.Modal(
+          document.getElementById("formsModal"),
+        );
+        formsModal.show();
+
+        api.run
+          .withSuccessHandler((res) => {
+            if (!res.success) {
+              formsModalBody.innerHTML = `<div class="alert alert-danger">${res.message}</div>`;
+              return;
+            }
+
+            if (res.data.length === 0) {
+              formsModalBody.innerHTML = `<div class="alert alert-secondary text-center"><i class="fas fa-info-circle"></i> No forms are currently linked to this section.</div>`;
+              return;
+            }
+
+            let html = '<div class="list-group">';
+
+            res.data.forEach((form) => {
+              // Override status locally if we just submitted successfully in this session
+              if (ovGet(`pdc_ov_fb_${form.mappingId}`)) {
+                form.status = "Completed";
+              }
+
+              // Determine badge colors based on status
+              let badgeClass = "bg-secondary";
+              if (form.status === "Active") badgeClass = "bg-success";
+              if (form.status === "Completed") badgeClass = "bg-primary";
+              if (form.status === "Missed") badgeClass = "bg-danger";
+              if (form.status === "In-Active")
+                badgeClass = "bg-warning text-dark";
+
+              // Format dates as Vietnam local time to avoid mm/dd vs dd/mm confusion.
+              const sTime = formatVietnamDisplayDateTime(form.startTime);
+              const eTime = formatVietnamDisplayDateTime(form.endTime);
+
+              html += `
+            <div class="list-group-item list-group-item-action flex-column align-items-start mb-2 border rounded shadow-sm">
+              <div class="d-flex w-100 justify-content-between align-items-center mb-1">
+                <h5 class="mb-0 fw-bold text-dark">${form.title}</h5>
+                <span id="form-badge-${form.mappingId}" class="badge ${badgeClass} fs-6">${form.status}</span>
+              </div>
+              <p class="mb-2 text-muted small">${form.description || "No description provided."}</p>
+              <div class="d-flex justify-content-between align-items-center mt-2">
+                <small class="text-secondary"><i class="far fa-clock"></i> ${sTime} - ${eTime}</small>
+                
+                ${form.status === "Active" ? `<button id="form-btn-${form.mappingId}" class="btn btn-sm btn-success px-4" onclick="openFormRenderer('${form.formId}', '${form.mappingId}')">Fill Form</button>` : ""}
+              </div>
+            </div>
+          `;
+            });
+            html += "</div>";
+            formsModalBody.innerHTML = html;
+          })
+          .withFailureHandler((err) => {
+            document.getElementById("formsModalBody").innerHTML =
+              `<div class="alert alert-danger">Failed to load forms: ${err.message}</div>`;
+          })
+          .getFormsForSection(sectionId, traineeId);
+      }
+      /**
+       * Fetches questions and dynamically draws the form UI
+       */
+      let currentRenderingFormId = "";
+      let currentRenderingMappingId = ""; // NEW
+
+      function openFormRenderer(formId, mappingId) {
+        currentRenderingFormId = formId;
+        currentRenderingMappingId = mappingId;
+
+        // Hide the list modal, show the submission modal
+        const listModal = bootstrap.Modal.getInstance(
+          document.getElementById("formsModal"),
+        );
+        if (listModal) listModal.hide();
+
+        const formContainer = document.getElementById("dynamicFormContainer");
+        formContainer.innerHTML = `
+      <div class="text-center py-4">
+        <div class="spinner-border text-info" role="status"></div>
+        <p class="mt-2 text-muted">Loading questions...</p>
+      </div>`;
+
+        document.getElementById("btnSubmitForm").disabled = true;
+
+        const subModal = new bootstrap.Modal(
+          document.getElementById("formSubmissionModal"),
+        );
+        subModal.show();
+
+        api.run
+          .withSuccessHandler((res) => {
+            if (!res.success) {
+              formContainer.innerHTML = `<div class="alert alert-danger">${res.message}</div>`;
+              return;
+            }
+
+            if (res.data.length === 0) {
+              formContainer.innerHTML = `<div class="alert alert-warning">No questions found for this form.</div>`;
+              return;
+            }
+
+            let html = "";
+
+            // The Engine: Read question types and draw inputs
+            res.data.forEach((q, index) => {
+              const requiredAsterisk = q.isRequired
+                ? '<span class="text-danger">*</span>'
+                : "";
+              const requiredAttr = q.isRequired ? "required" : "";
+
+              html += `<div class="mb-4 p-3 border rounded bg-light shadow-sm question-block" data-qid="${q.questionId}" data-type="${q.type}" data-required="${q.isRequired}">`;
+              html += `<label class="form-label fw-bold text-dark">${index + 1}. ${q.text} ${requiredAsterisk}</label>`;
+
+              if (q.type === "short_text") {
+                html += `<input type="text" class="form-control" name="${q.questionId}" ${requiredAttr}>`;
+              } else if (q.type === "long_text") {
+                html += `<textarea class="form-control" name="${q.questionId}" rows="3" ${requiredAttr}></textarea>`;
+              } else if (q.type === "radio" && q.options) {
+                const opts = q.options.split(";");
+                opts.forEach((opt) => {
+                  const val = opt.trim();
+                  html += `
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="${q.questionId}" value="${val}" ${requiredAttr}>
+                  <label class="form-check-label">${val}</label>
+                </div>`;
+                });
+              } else if (q.type === "checkbox" && q.options) {
+                const opts = q.options.split(";"); // <-- UPDATED TO SEMICOLON
+                opts.forEach((opt) => {
+                  const val = opt.trim();
+                  if (!val) return;
+                  html += `
+                <div class="form-check mb-2">
+                  <input class="form-check-input" type="checkbox" name="${q.questionId}" value="${val}" style="transform: scale(1.2); margin-right: 10px;">
+                  <label class="form-check-label fs-6">${val}</label>
+                </div>`;
+                });
+              } else if (q.type === "scale" && q.options) {
+                const range = String(q.options || "")
+                  .split(/[;,]/)
+                  .map((x) => x.trim())
+                  .filter(Boolean);
+                const nums = range
+                  .map((x) => parseInt(x, 10))
+                  .filter((n) => !isNaN(n));
+                const min = nums.length ? Math.min(...nums) : 1;
+                const max = nums.length ? Math.max(...nums) : 5;
+
+                html += `<div class="d-flex flex-wrap gap-1 mt-2">`;
+                for (let i = min; i <= max; i++) {
+                  html += `
+                <div class="form-check form-check-inline mx-1 px-0">
+                  <input class="d-none" type="radio" name="${q.questionId}" id="${q.questionId}-${i}" value="${i}" ${requiredAttr} onchange="updateStarUI('${q.questionId}', ${i}, ${min}, ${max})">
+                  <label class="form-check-label" for="${q.questionId}-${i}" style="cursor: pointer;">
+                    <i class="fas fa-star fa-2x text-muted" id="star-${q.questionId}-${i}" style="transition: color 0.2s;"></i>
+                  </label>
+                </div>`;
+                }
+                html += `</div>`;
+              } else if (q.type === "nps") {
+                // NPS is standard 0-10 scale
+                html += `<div class="d-flex flex-wrap justify-content-between px-3 py-3 mt-2 bg-light rounded border">`;
+                for (let i = 0; i <= 10; i++) {
+                  html += `
+                <div class="form-check form-check-inline d-flex flex-column align-items-center mx-0 mb-2">
+                  <label class="form-check-label fw-bold mb-2">${i}</label>
+                  <input class="form-check-input m-0" type="radio" name="${q.questionId}" value="${i}" ${requiredAttr} style="transform: scale(1.4);">
+                </div>`;
+                }
+                html += `</div>`;
+                html += `<div class="d-flex justify-content-between px-2 mt-2 small text-muted fw-bold text-uppercase">
+                      <span>Not at all likely</span>
+                      <span>Extremely likely</span>
+                    </div>`;
+              } else {
+                html += `<p class="text-danger small">Unsupported question type: ${q.type}</p>`;
+              }
+
+              html += `</div>`;
+            });
+
+            formContainer.innerHTML = html;
+            document.getElementById("btnSubmitForm").disabled = false;
+          })
+          .withFailureHandler((err) => {
+            formContainer.innerHTML = `<div class="alert alert-danger">Failed to load: ${err.message}</div>`;
+          })
+          .getFormQuestions(formId, mappingId);
+      }
+
+      /**
+       * Scrapes the answers from the generated UI and sends them to the database
+       */
+      function submitDynamicForm() {
+        const btn = document.getElementById("btnSubmitForm");
+        btn.disabled = true;
+        btn.innerHTML =
+          '<span class="spinner-border spinner-border-sm"></span> Submitting...';
+
+        const formElement = document.getElementById("dynamicFormContainer");
+        const questionBlocks = formElement.querySelectorAll(".question-block");
+
+        let isValid = true;
+        const answers = [];
+
+        // Scrape data from UI
+        questionBlocks.forEach((block) => {
+          const qId = block.getAttribute("data-qid");
+          const qType = block.getAttribute("data-type");
+          const isRequired = block.getAttribute("data-required") === "true";
+
+          let answerVal = "";
+
+          if (qType === "short_text" || qType === "long_text") {
+            const input = block.querySelector(`[name="${qId}"]`);
+            answerVal = input ? input.value.trim() : "";
+          } else if (
+            qType === "radio" ||
+            qType === "scale" ||
+            qType === "nps"
+          ) {
+            const checked = block.querySelector(`input[name="${qId}"]:checked`);
+            answerVal = checked ? checked.value : "";
+          }
+          // Added checkbox support just in case you use it!
+          else if (qType === "checkbox") {
+            const checkedBoxes = block.querySelectorAll(
+              `input[name="${qId}"]:checked`,
+            );
+            const vals = Array.from(checkedBoxes).map((cb) => cb.value);
+            answerVal = vals.join(", ");
+          }
+
+          // Validation: Highlight missed required questions in red
+          if (isRequired && answerVal === "") {
+            isValid = false;
+            block.classList.add("border-danger", "bg-white");
+          } else {
+            block.classList.remove("border-danger", "bg-white");
+          }
+
+          answers.push({ questionId: qId, answer: answerVal });
+        });
+
+        if (!isValid) {
+          alert("Please fill out all required fields marked with *");
+          btn.disabled = false;
+          btn.innerHTML = "Submit Feedback";
+          return;
+        }
+
+        // NOTE: Replace `currentUserEmail` with wherever you store the active user's email in your frontend.
+        // Looking at your flow, it might be tied to your OTP login logic.
+        const traineeEmail = typeof userEmail !== "undefined" ? userEmail : "";
+
+        api.run
+          .withSuccessHandler((res) => {
+            btn.disabled = false;
+            btn.innerHTML = "Submit Feedback";
+
+            if (!res.success) {
+              showAlert("System Error: " + res.message, "Error");
+              return;
+            }
+
+            // Close Modal and Show Success
+            showToast("Feedback submitted successfully!", "success");
+            const subModal = bootstrap.Modal.getInstance(
+              document.getElementById("formSubmissionModal"),
+            );
+            if (subModal) subModal.hide();
+
+            // Optimistic UI Update for Form Badge
+            const formBadge = document.getElementById(
+              `form-badge-${currentRenderingMappingId}`,
+            );
+            const formBtn = document.getElementById(
+              `form-btn-${currentRenderingMappingId}`,
+            );
+            if (formBadge) {
+              formBadge.className = "badge bg-primary fs-6";
+              formBadge.innerText = "Completed";
+            }
+            if (formBtn) {
+              formBtn.style.display = "none";
+            }
+
+            // Show the list modal again
+            const listModal = new bootstrap.Modal(
+              document.getElementById("formsModal"),
+            );
+            listModal.show();
+
+            // Background refresh without jumping screens
+            if (currentActiveSectionId !== "") {
+              api.run
+                .withSuccessHandler((res) => {
+                  // Silently refreshed in cache if needed
+                })
+                .getFormsForSection(currentActiveSectionId, traineeEmail);
+            }
+          })
+          .withFailureHandler((err) => {
+            btn.disabled = false;
+            btn.innerHTML = "Submit Feedback";
+            showAlert("Network Error: " + err.message, "Error");
+          })
+          .saveFormSubmission(
+            currentRenderingFormId,
+            currentRenderingMappingId,
+            traineeEmail,
+            answers,
+          );
+      }
+      /**
+       * Updates the visual Star Rating when a user clicks a star
+       */
+      function updateStarUI(qId, selectedVal, min, max) {
+        for (let i = min; i <= max; i++) {
+          const starIcon = document.getElementById(`star-${qId}-${i}`);
+          if (starIcon) {
+            if (i <= selectedVal) {
+              starIcon.classList.remove("text-muted");
+              starIcon.classList.add("text-warning"); // Gold Color
+            } else {
+              starIcon.classList.remove("text-warning");
+              starIcon.classList.add("text-muted"); // Gray Color
+            }
+          }
+        }
+      }
+
+      // Function to show/hide the global loader
+      function showLoading(show) {
+        const overlay = document.getElementById("loadingOverlay");
+        overlay.style.display = show ? "flex" : "none";
+      }
+
+      // Function to disable/enable button with a spinner
+      function setBtnLoading(btnId, isLoading, originalText) {
+        const btn = document.getElementById(btnId);
+        if (!btn) return;
+        if (isLoading) {
+          btn.disabled = true;
+          btn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...`;
+        } else {
+          btn.disabled = false;
+          btn.innerHTML = originalText;
+        }
+      }
+
+      // Shows or hides the loading screen
+      function showLoader(show) {
+        showLoading(show);
+      }
+
+      // Replaces the default alert()
+      function showAlert(msg, title = "Notice") {
+        document.getElementById("customAlertTitle").innerText = title;
+        document.getElementById("customAlertMessage").innerText = msg;
+        new bootstrap.Modal(document.getElementById("customAlertModal")).show();
+      }
+
+      let otpTimerInterval; // Global variable to track the timer
+
+      // Controls the 60-second countdown
+      function startOtpTimer(durationSeconds = 60) {
+        const resendBtn = document.getElementById("resendOtpBtn");
+        if (!resendBtn) return;
+
+        // Clear any existing timer just in case
+        clearInterval(otpTimerInterval);
+
+        // Disable button and start countdown
+        resendBtn.disabled = true;
+        resendBtn.classList.add("text-muted");
+        let timeLeft = durationSeconds;
+
+        resendBtn.innerText = `Resend OTP in ${timeLeft}s`;
+
+        otpTimerInterval = setInterval(() => {
+          timeLeft--;
+          if (timeLeft <= 0) {
+            // Timer finished! Enable the button
+            clearInterval(otpTimerInterval);
+            resendBtn.disabled = false;
+            resendBtn.classList.remove("text-muted");
+            resendBtn.innerText = "Resend OTP";
+          } else {
+            // Still counting down
+            resendBtn.innerText = `Resend OTP in ${timeLeft}s`;
+          }
+        }, 1000);
+      }
+
+      // Wrapper function when the user clicks "Resend OTP"
+      function resendOTP() {
+        const email = document
+          .getElementById("emailInput")
+          .value.toLowerCase()
+          .trim();
+        const resendBtn = document.getElementById("resendOtpBtn");
+
+        // Call your existing requestOTP function
+        requestOTP(email, resendBtn, "Resend OTP");
+      }
+
+      // -----------------------------------------------------------
+      // NEW: TOAST NOTIFICATION SYSTEM
+      // -----------------------------------------------------------
+      function showToast(msg, type = "success") {
+        let title =
+          type === "success"
+            ? "Success"
+            : type === "error"
+              ? "Error"
+              : "Notice";
+        let icon =
+          type === "success"
+            ? "fa-check-circle"
+            : type === "error"
+              ? "fa-exclamation-circle"
+              : "fa-info-circle";
+
+        // Create toast element
+        const toast = document.createElement("div");
+        toast.className = `pd-toast ${type}`;
+        toast.innerHTML = `
+      <div class="pd-toast-icon"><i class="fas ${icon}"></i></div>
+      <div class="pd-toast-content">
+        <div class="pd-toast-title">${title}</div>
+        <div class="pd-toast-msg">${msg}</div>
+      </div>
+    `;
+
+        document.getElementById("pdToastContainer").appendChild(toast);
+
+        // Trigger animation
+        setTimeout(() => toast.classList.add("show"), 10);
+
+        // Remove after 3 seconds
+        setTimeout(() => {
+          toast.classList.remove("show");
+          setTimeout(() => toast.remove(), 300);
+        }, 3000);
+      }
+    </script>
+
+    <!-- Toast Container -->
+    <div id="pdToastContainer" class="pd-toast-container"></div>
+
+    <script>
+      (function () {
+        try {
+          var email = localStorage.getItem("pdc_email") || "";
+          fetch("/api/log/access", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+              page: "trainee",
+              scope: "trainee",
+              email: email,
+              path: location.pathname,
+              referrer: document.referrer,
+            }),
+            keepalive: true,
+          }).catch(() => {});
+        } catch (e) {}
+      })();
+    </script>
+
+    <footer class="pd-oce-footer">
+      <div class="pd-oce-footer-container">
+        <div class="pd-oce-footer-grid">
+          <div class="pd-oce-footer-col">
+            <img
+              src="https://i.postimg.cc/Jn6DPbFK/Logo-white-02.png"
+              alt="EIU Logo"
+              class="pd-oce-footer-logo"
+            />
+            <p class="pd-oce-footer-text mt-3">
+              Eastern International University<br />Office of Community
+              Engagement
+            </p>
+          </div>
+          <div class="pd-oce-footer-col text-md-end">
+            <p class="pd-oce-footer-text">
+              Contact us for any training inquiries or support.
+            </p>
+            <p class="pd-oce-footer-text">Email: engagement@eiu.edu.vn</p>
+          </div>
+        </div>
+        <div class="pd-oce-footer-bottom">
+          <div>&copy; 2026 Eastern International University.</div>
+          <div>All rights reserved.</div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const observer = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting) {
+                entry.target.classList.add("is-visible");
+                observer.unobserve(entry.target);
+              }
+            });
+          },
+          { threshold: 0.1 },
+        );
+
+        // Observe existing and dynamically added cards
+        const observeCards = () => {
+          document
+            .querySelectorAll(
+              ".card, .hero-card, .section-card, .course-card, .view-pane > h3, .view-pane > h4, .view-pane > h5",
+            )
+            .forEach((el) => {
+              if (!el.classList.contains("fade-up")) {
+                el.classList.add("fade-up");
+                observer.observe(el);
+              }
+            });
+        };
+
+        observeCards();
+        // Simple mutation observer to catch dynamically loaded catalog lists
+        const mutObserver = new MutationObserver(observeCards);
+        mutObserver.observe(document.body, { childList: true, subtree: true });
+      });
+    </script>
+  </body>
+</html>

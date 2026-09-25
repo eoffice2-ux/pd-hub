@@ -1,0 +1,6 @@
+/trainee.html  /trainee  301
+/client.html   /client   301
+/trainee       /trainee/index.html  200
+/trainee/      /trainee/index.html  200
+/client        /client/index.html   200
+/client/       /client/index.html   200
