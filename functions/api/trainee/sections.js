@@ -21,15 +21,24 @@ export async function onRequestGet(context) {
     return jsonResponseCacheable({ success: true, source: "mock", dbMode, authenticatedEmail: auth.session.email, requestedEmail: emailCheck.email, count: data.length, data });
   }
 
+  const bypassCache = url.searchParams.has("bypassCache");
+  const respond = (data, meta = {}) => {
+    const payload = {
+      success: true,
+      dbMode,
+      authenticatedEmail: auth.session.email,
+      requestedEmail: emailCheck.email,
+      ...meta,
+      ...data
+    };
+    return bypassCache ? jsonResponse(payload) : jsonResponseCacheable(payload);
+  };
+
   if (isPsql(env, "SECTION")) {
     try {
-      const result = await getTraineeSectionsPsql(env, emailCheck.email);
-      return jsonResponseCacheable({
-        success: true,
+      const result = await getTraineeSectionsPsql(env, emailCheck.email, { bypassCache });
+      return respond({
         source: "psql",
-        dbMode,
-        authenticatedEmail: auth.session.email,
-        requestedEmail: emailCheck.email,
         userType: result.userType,
         registeredCount: result.registeredCount,
         count: result.data.length,
@@ -41,13 +50,9 @@ export async function onRequestGet(context) {
   }
 
   try {
-    const result = await getTraineeSectionsFromSheet(env, emailCheck.email);
-    return jsonResponseCacheable({
-      success: true,
+    const result = await getTraineeSectionsFromSheet(env, emailCheck.email, { bypassCache });
+    return respond({
       source: "gsheet",
-      dbMode,
-      authenticatedEmail: auth.session.email,
-      requestedEmail: emailCheck.email,
       userType: result.userType,
       registeredCount: result.registeredCount,
       count: result.data.length,

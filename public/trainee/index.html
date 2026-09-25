@@ -1520,9 +1520,9 @@
             return res.data || [];
           }
           case "fetchCheckinDataForSection": {
-            const [sectionId] = args;
+            const [sectionId, bypass] = args;
             const res = await pdcFetch(
-              `/api/trainee/checkin/data?sectionId=${encodeURIComponent(sectionId || "")}`,
+              `/api/trainee/checkin/data?sectionId=${encodeURIComponent(sectionId || "")}${bypass ? "&bypassCache=true" : ""}`,
             );
             return asJsonString(res.data || { plans: [], logs: [] });
           }
@@ -2331,10 +2331,19 @@
 
       function parseDateString(dateStr) {
         if (!dateStr) return 0;
-        const match = String(dateStr).match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+        const str = String(dateStr).trim();
+        // Match DD/MM/YYYY or DD-MM-YYYY
+        let match = str.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
         if (match) {
           return new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1])).getTime();
         }
+        // Match YYYY-MM-DD or YYYY/MM/DD
+        match = str.match(/(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+        if (match) {
+          return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3])).getTime();
+        }
+        const ts = Date.parse(str);
+        if (!isNaN(ts)) return ts;
         return 0;
       }
 
@@ -2400,9 +2409,9 @@
             <i class="fas fa-users text-secondary"></i>
             <span>Seats:</span>
             <div class="progress flex-grow-1 bg-light" style="height:6px; border-radius:3px;">
-              <div class="progress-bar ${barColor}" style="width:${pct}%; border-radius:3px;"></div>
+              <div id="catalog-progress-${s.id}" class="progress-bar ${barColor}" style="width:${pct}%; border-radius:3px;" data-max="${s.maxParticipants}" data-current="${s.currentCount}"></div>
             </div>
-            <span class="fw-semibold text-dark" style="min-width: 45px; text-align: right;">${s.currentCount} / ${s.maxParticipants}</span>
+            <span id="catalog-capacity-text-${s.id}" class="fw-semibold text-dark" style="min-width: 45px; text-align: right;">${s.currentCount} / ${s.maxParticipants}</span>
           </div>`;
           }
 
@@ -2560,6 +2569,20 @@
           badge.innerText = "Registered";
         }
 
+        const capacityText = document.getElementById(`catalog-capacity-text-${sectionId}`);
+        const progressBar = document.getElementById(`catalog-progress-${sectionId}`);
+        if (capacityText && progressBar) {
+          const max = parseInt(progressBar.dataset.max) || 0;
+          let current = parseInt(progressBar.dataset.current) || 0;
+          current += 1;
+          capacityText.innerText = `${current} / ${max}`;
+          progressBar.dataset.current = current;
+          const pct = Math.min(100, Math.round((current / max) * 100));
+          progressBar.style.width = `${pct}%`;
+          const barColor = pct >= 100 ? "bg-danger" : pct >= 75 ? "bg-warning" : "bg-success";
+          progressBar.className = `progress-bar ${barColor}`;
+        }
+
         // 3. Provide immediate feedback and redirect
         showToast("Registration requested...", "info");
         switchView("viewCatalog", document.getElementById("navCatalog"));
@@ -2622,6 +2645,19 @@
 
           if (badge.dataset.oldClass) badge.className = badge.dataset.oldClass;
           if (badge.dataset.oldText) badge.innerText = badge.dataset.oldText;
+        }
+
+        const capacityText = document.getElementById(`catalog-capacity-text-${sectionId}`);
+        const progressBar = document.getElementById(`catalog-progress-${sectionId}`);
+        if (capacityText && progressBar) {
+          const max = parseInt(progressBar.dataset.max) || 0;
+          let current = Math.max(0, (parseInt(progressBar.dataset.current) || 1) - 1);
+          capacityText.innerText = `${current} / ${max}`;
+          progressBar.dataset.current = current;
+          const pct = Math.min(100, Math.round((current / max) * 100));
+          progressBar.style.width = `${pct}%`;
+          const barColor = pct >= 100 ? "bg-danger" : pct >= 75 ? "bg-warning" : "bg-success";
+          progressBar.className = `progress-bar ${barColor}`;
         }
 
         showToast(errorMsg, "error");
@@ -2913,7 +2949,7 @@
             if (container)
               container.innerHTML = `<div class="p-4 text-danger"><i class="fas fa-exclamation-triangle"></i> ${err.message}</div>`;
           })
-          .fetchCheckinDataForSection(sectionId);
+          .fetchCheckinDataForSection(sectionId, bypassCache);
       }
 
       // 2. Process data entirely App Side (Frontend)
@@ -3131,7 +3167,10 @@
 
       function markSlotAsChecked(slotId) {
         // Persist in local override set so re-renders don't revert to "Pending"
-        localCheckedInSlotIds.add(slotId);
+        const sectionId = document.getElementById("activeSectionId") ? document.getElementById("activeSectionId").value : "";
+        if (sectionId) {
+          ovSet(`pdc_ov_ci_${sectionId}_${slotId}`);
+        }
 
         const li = document.querySelector(`[data-slot-id="${slotId}"]`);
         if (!li) return;
@@ -3151,13 +3190,30 @@
         // Save the slotId into the hidden input we added to your HTML
         document.getElementById("pendingSlotId").value = slotId;
         document.getElementById("inputCheckinCode").value = "";
-        document.getElementById("checkinErrorMsg").style.display = "none";
+        const errorMsg = document.getElementById("checkinErrorMsg");
+        if (errorMsg) {
+          errorMsg.style.display = "none";
+          errorMsg.innerText = "";
+        }
+        const successBanner = document.getElementById("checkinSuccessBanner");
+        if (successBanner) {
+          successBanner.style.display = "none";
+          successBanner.innerText = "";
+        }
 
         // Add event listener to strip non-digits if not already added
         const inputEl = document.getElementById("inputCheckinCode");
         if (!inputEl.hasAttribute("data-listener-added")) {
           inputEl.addEventListener("input", function () {
             this.value = this.value.replace(/\D/g, "").slice(0, 6);
+            const err = document.getElementById("checkinErrorMsg");
+            if (err) err.style.display = "none";
+          });
+          inputEl.addEventListener("keydown", function (e) {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              submitCheckin();
+            }
           });
           inputEl.setAttribute("data-listener-added", "true");
         }
@@ -3197,30 +3253,25 @@
 
         api.run
           .withSuccessHandler((res) => {
-            // checkinModalInstance.hide();
-            // 1. Hide the modal
-            const modalElement = document.getElementById("checkinModal");
-            const modalInstance = bootstrap.Modal.getInstance(modalElement);
-            if (modalInstance) modalInstance.hide();
-
             btn.innerHTML = "Confirm Check-in";
             btn.disabled = false;
 
             // 1. Optimistic update: instantly flip slot to "Checked" in the DOM
             markSlotAsChecked(slotId);
 
-            // 2. Show non-blocking success message inside modal before it closes
-            const banner = document.getElementById("checkinSuccessBanner");
-            if (banner) {
-              banner.innerText = "✅ Check-in successful!";
-              banner.style.display = "block";
-            }
+            // 2. Hide the modal
+            const modalElement = document.getElementById("checkinModal");
+            const modalInstance = bootstrap.Modal.getInstance(modalElement);
+            if (modalInstance) modalInstance.hide();
 
-            // 3. Background refresh (no alert blocking it)
+            // 3. User feedback
+            showToast("Check-in successful!", "success");
+
+            // 4. Background refresh (bypassing cache)
             setTimeout(() => loadCheckinSlots(sectionId, true), 1500);
           })
           .withFailureHandler((err) => {
-            errorMsg.innerText = err.message;
+            errorMsg.innerText = err.message || "Check-in failed. Please try again.";
             errorMsg.style.display = "block";
             btn.innerHTML = "Confirm Check-in";
             btn.disabled = false;

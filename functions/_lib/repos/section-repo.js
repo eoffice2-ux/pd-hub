@@ -83,7 +83,8 @@ export async function getTraineeSectionsPsql(env, email, options = {}) {
       // Fetch active count directly to avoid circular dependency with registration-repo
       const activeRows = await psqlSelectRows(env, "SECTION_ATTENDEE", {
         where: { "section id": sectionId },
-        limit: 1000
+        limit: 1000,
+        bypassCache: options.bypassCache
       });
       currentCount = activeRows.filter(r => String(r["registration status"] || "").trim().toLowerCase() !== "withdrawn").length;
     }

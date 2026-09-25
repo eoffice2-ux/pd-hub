@@ -37,7 +37,8 @@ export async function listRegistrationsForTraineePsql(env, email, options = {}) 
 export async function listActiveRegistrationsForSectionPsql(env, sectionId, options = {}) {
   const rows = await psqlSelectRows(env, "SECTION_ATTENDEE", {
     where: { "section id": String(sectionId || "").trim() },
-    limit: options.limit || 1000
+    limit: options.limit || 1000,
+    bypassCache: options.bypassCache
   });
   
   // Filter out withdrawn trainees
@@ -79,7 +80,7 @@ export async function registerTraineeForSectionPsql(env, email, sectionId, dryRu
   // Capacity check
   const maxParticipants = parseInt(section["no of participant"]) || 0;
   if (maxParticipants > 0) {
-    const activeRegistrations = await listActiveRegistrationsForSectionPsql(env, safeSectionId);
+    const activeRegistrations = await listActiveRegistrationsForSectionPsql(env, safeSectionId, { bypassCache: true });
     if (activeRegistrations.length >= maxParticipants) {
       return { 
         status: "Section Full", 
