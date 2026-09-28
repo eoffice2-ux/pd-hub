@@ -720,6 +720,7 @@
                     placeholder="000000"
                     class="form-control form-control-lg text-center mb-4"
                     style="letter-spacing: 5px; font-size: 1.25rem"
+                    onkeydown="if(event.key === 'Enter') { const b = document.querySelector('#stepOtp button.btn-primary'); if (b) verifyOtp(b); }"
                   />
                   <button
                     class="btn btn-primary w-100 py-2 fw-bold mb-3"
@@ -746,32 +747,34 @@
                   </div>
                 </div>
 
-                <details
-                  style="
-                    margin-top: 20px;
-                    border-top: 1px solid #eee;
-                    padding-top: 15px;
-                  "
-                >
-                  <summary class="small text-muted cursor-pointer">
-                    <b>Đăng nhập khẩn cấp bằng DEBUG_TOKEN</b>
-                  </summary>
-                  <div class="mt-3">
-                    <input
-                      id="debugToken"
-                      type="password"
-                      placeholder="Nhập DEBUG_TOKEN"
-                      autocomplete="off"
-                      class="form-control mb-2"
-                    />
-                    <button
-                      class="btn btn-secondary w-100 py-2 fw-bold"
-                      onclick="loginWithDebugToken()"
-                    >
-                      Verify Token
-                    </button>
-                  </div>
-                </details>
+                <div id="debugTokenContainer" class="hidden">
+                  <details
+                    style="
+                      margin-top: 20px;
+                      border-top: 1px solid #eee;
+                      padding-top: 15px;
+                    "
+                  >
+                    <summary class="small text-muted cursor-pointer">
+                      <b>Đăng nhập khẩn cấp bằng DEBUG_TOKEN</b>
+                    </summary>
+                    <div class="mt-3">
+                      <input
+                        id="debugToken"
+                        type="password"
+                        placeholder="Nhập DEBUG_TOKEN"
+                        autocomplete="off"
+                        class="form-control mb-2"
+                      />
+                      <button
+                        class="btn btn-secondary w-100 py-2 fw-bold"
+                        onclick="loginWithDebugToken()"
+                      >
+                        Verify Token
+                      </button>
+                    </div>
+                  </details>
+                </div>
 
                 <div id="loginMessage" class="empty mt-4">
                   Nhập email admin của bạn để bắt đầu.
@@ -817,13 +820,13 @@
                 Closed
               </button>
             </div>
-            <div class="d-flex gap-2 align-items-center">
+            <div class="d-flex gap-2 align-items-center flex-wrap">
               <input
                 type="text"
                 id="filterCourseName"
                 class="form-control"
-                style="width: 200px; padding: 8px 12px; border-radius: 10px"
-                placeholder="Tên khóa học..."
+                style="width: 220px; padding: 8px 12px; border-radius: 10px"
+                placeholder="Tên, ID lớp, ngày..."
                 oninput="renderCards()"
               />
               <input
@@ -843,10 +846,27 @@
                 onchange="renderCards()"
                 title="Đến ngày"
               />
+              <select
+                id="sortSections"
+                class="form-select"
+                style="width: 165px; padding: 8px 12px; border-radius: 10px; font-weight: 500;"
+                onchange="renderCards()"
+              >
+                <option value="newest">Ngày mới nhất</option>
+                <option value="oldest">Ngày cũ nhất</option>
+                <option value="name_asc">Tên khóa (A-Z)</option>
+                <option value="reg_desc">Học viên nhiều nhất</option>
+                <option value="checkin_desc">Tỉ lệ điểm danh</option>
+              </select>
             </div>
           </div>
-          <div class="small text-muted" id="totalClassesLabel">
-            Đang tải danh sách...
+          <div class="d-flex flex-column align-items-end">
+            <div class="small text-muted" id="totalClassesLabel">
+              Đang tải danh sách...
+            </div>
+            <div id="dateFilterWarn" class="small text-warning mt-1 hidden" style="font-size: 11px;">
+              <i class="fas fa-info-circle me-1"></i>Một số lớp có ngày tự do nên có thể không khớp bộ lọc ngày.
+            </div>
           </div>
         </div>
 
@@ -879,14 +899,28 @@
           </div>
 
           <h5 class="fw-bold text-dark mb-3">Change PIN</h5>
-          <p class="small text-muted">Vui lòng nhập mã PIN mới gồm 4 chữ số.</p>
+          <p class="small text-muted">Vui lòng nhập mã PIN mới gồm 4 chữ số và xác nhận lại.</p>
           <div class="row align-items-center g-3">
-            <div class="col-sm-8 col-12">
+            <div class="col-sm-4 col-12">
               <input
                 type="password"
                 id="changePinInput"
                 class="form-control text-center pin-box"
-                placeholder="New 4-digit PIN"
+                placeholder="New PIN"
+                maxlength="4"
+                style="
+                  letter-spacing: 10px;
+                  font-size: 1.2rem;
+                  background-color: #f8f9fa;
+                "
+              />
+            </div>
+            <div class="col-sm-4 col-12">
+              <input
+                type="password"
+                id="confirmChangePinInput"
+                class="form-control text-center pin-box"
+                placeholder="Confirm PIN"
                 maxlength="4"
                 style="
                   letter-spacing: 10px;
@@ -927,6 +961,15 @@
           <div class="modal-header">
             <h5 class="modal-title" id="modalClassTitle">Class name</h5>
             <div class="d-flex align-items-center">
+              <button
+                type="button"
+                class="btn btn-sm btn-light text-dark border-0 me-2"
+                onclick="exportModalCsv()"
+                style="border-radius: 8px; font-weight: bold"
+                title="Tải danh sách hiện tại dưới dạng file CSV"
+              >
+                <i class="fas fa-file-csv me-1 text-primary"></i>Export CSV
+              </button>
               <button
                 type="button"
                 class="btn btn-sm btn-light text-dark border-0 me-2"
@@ -1091,8 +1134,9 @@
       let detailModal = null;
 
       function getReportToken() {
-        const token = sessionStorage.getItem(REPORT_TOKEN_KEY) || "";
-        const exp = Date.parse(sessionStorage.getItem(REPORT_EXP_KEY) || "");
+        const token = localStorage.getItem(REPORT_TOKEN_KEY) || sessionStorage.getItem(REPORT_TOKEN_KEY) || "";
+        const expStr = localStorage.getItem(REPORT_EXP_KEY) || sessionStorage.getItem(REPORT_EXP_KEY) || "";
+        const exp = Date.parse(expStr);
         if (!token || !exp || exp <= Date.now()) {
           clearReportSession();
           return "";
@@ -1101,13 +1145,17 @@
       }
 
       function setReportSession(data) {
-        sessionStorage.setItem(REPORT_TOKEN_KEY, data.token || "");
-        sessionStorage.setItem(REPORT_EXP_KEY, data.expiresAt || "");
-        sessionStorage.setItem(REPORT_EMAIL_KEY, data.email || "");
-        sessionStorage.setItem(REPORT_ROLE_KEY, data.role || "report_viewer");
+        localStorage.setItem(REPORT_TOKEN_KEY, data.token || "");
+        localStorage.setItem(REPORT_EXP_KEY, data.expiresAt || "");
+        localStorage.setItem(REPORT_EMAIL_KEY, data.email || "");
+        localStorage.setItem(REPORT_ROLE_KEY, data.role || "report_viewer");
       }
 
       function clearReportSession() {
+        localStorage.removeItem(REPORT_TOKEN_KEY);
+        localStorage.removeItem(REPORT_EXP_KEY);
+        localStorage.removeItem(REPORT_EMAIL_KEY);
+        localStorage.removeItem(REPORT_ROLE_KEY);
         sessionStorage.removeItem(REPORT_TOKEN_KEY);
         sessionStorage.removeItem(REPORT_EXP_KEY);
         sessionStorage.removeItem(REPORT_EMAIL_KEY);
@@ -1134,6 +1182,10 @@
       }
 
       async function checkAutoLogin() {
+        if (new URLSearchParams(window.location.search).get("debug") === "1") {
+          const dbg = document.getElementById("debugTokenContainer");
+          if (dbg) dbg.classList.remove("hidden");
+        }
         const token = getReportToken();
         if (token) {
           showPane("reportApp");
@@ -1325,12 +1377,20 @@
 
       async function processReportPinFirst(btn) {
         const pin = document.getElementById("newPinInput").value.trim();
+        const confirmPin = document.getElementById("confirmNewPinInput").value.trim();
         const msgEl = document.getElementById("setupPinMsg");
         if (msgEl) msgEl.classList.add("hidden");
 
         if (!/^\d{4}$/.test(pin)) {
           if (msgEl) {
             msgEl.textContent = "Mã PIN phải gồm đúng 4 chữ số.";
+            msgEl.classList.remove("hidden");
+          }
+          return;
+        }
+        if (pin !== confirmPin) {
+          if (msgEl) {
+            msgEl.textContent = "Mã xác nhận PIN không khớp.";
             msgEl.classList.remove("hidden");
           }
           return;
@@ -1385,6 +1445,7 @@
 
       async function updateReportPin(btn) {
         const pin = document.getElementById("changePinInput").value.trim();
+        const confirmPin = document.getElementById("confirmChangePinInput").value.trim();
         const msgEl = document.getElementById("changePinMsg");
         if (msgEl) msgEl.className = "small mt-2 hidden";
 
@@ -1392,6 +1453,13 @@
           if (msgEl) {
             msgEl.className = "small mt-2 text-danger";
             msgEl.textContent = "Mã PIN phải gồm đúng 4 chữ số.";
+          }
+          return;
+        }
+        if (pin !== confirmPin) {
+          if (msgEl) {
+            msgEl.className = "small mt-2 text-danger";
+            msgEl.textContent = "Mã xác nhận PIN không khớp.";
           }
           return;
         }
@@ -1427,6 +1495,7 @@
             msgEl.textContent = "Đổi PIN thành công!";
           }
           document.getElementById("changePinInput").value = "";
+          document.getElementById("confirmChangePinInput").value = "";
         } catch (err) {
           if (msgEl) {
             msgEl.className = "small mt-2 text-danger";
@@ -1452,9 +1521,9 @@
           btn.innerText = "Back to Reports";
           document.title = "Admin Profile · PD Hub";
           document.getElementById("profileEmail").innerText =
-            sessionStorage.getItem(REPORT_EMAIL_KEY) || "N/A";
+            localStorage.getItem(REPORT_EMAIL_KEY) || "N/A";
           document.getElementById("profileRole").innerText =
-            sessionStorage.getItem(REPORT_ROLE_KEY) || "report_viewer";
+            localStorage.getItem(REPORT_ROLE_KEY) || "report_viewer";
         }
       }
 
@@ -1484,6 +1553,20 @@
           const json = await res.json().catch(() => ({}));
           if (!res.ok || !json.success)
             throw new Error(json.error || "Token không hợp lệ.");
+
+          // Record audit log for debug token usage
+          fetch("/api/log/access", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+              page: "report",
+              scope: "debug_token_auth",
+              email: "debug@pdhub",
+              path: location.pathname,
+              detail: "Emergency DEBUG_TOKEN used on report dashboard",
+            }),
+            keepalive: true,
+          }).catch(() => {});
 
           // Save mock session exp
           setReportSession({
@@ -1540,10 +1623,10 @@
           filtered = filtered.filter((s) => {
             const st = String(s.status).toLowerCase();
             return (
-              st.includes("open") ||
+              (st.includes("open") ||
               st.includes("dang m?") ||
-              st.includes("in progress") ||
-              st === "registration closed"
+              st.includes("in progress")) &&
+              st !== "registration closed"
             );
           });
         } else if (currentFilter === "closed") {
@@ -1552,7 +1635,8 @@
             return (
               st.includes("completed") ||
               st.includes("hoan thanh") ||
-              st === "closed"
+              st === "closed" ||
+              st === "registration closed"
             );
           });
         }
@@ -1571,24 +1655,63 @@
         let toMs = Infinity;
         if (toDate) toMs = new Date(toDate).getTime() + 86399999; // include the whole day
 
+        let hasUnparseableDates = false;
+
         if (searchName || fromDate || toDate) {
           filtered = filtered.filter((s) => {
             if (searchName) {
               const cName = String(s.courseName || "").toLowerCase();
-              if (!cName.includes(searchName)) return false;
+              const sId = String(s.sectionId || "").toLowerCase();
+              const sDate = String(s.sectionDate || "").toLowerCase();
+              const sVenue = String(s.venue || "").toLowerCase();
+              if (
+                !cName.includes(searchName) &&
+                !sId.includes(searchName) &&
+                !sDate.includes(searchName) &&
+                !sVenue.includes(searchName)
+              ) {
+                return false;
+              }
             }
             if (fromMs > 0 || toMs < Infinity) {
               const sMs = parseDate(s.dateStart || s.sectionDate || "");
               if (sMs > 0) {
                 if (sMs < fromMs) return false;
                 if (sMs > toMs) return false;
-              } else if (fromMs > 0) {
-                return false;
+              } else {
+                hasUnparseableDates = true;
+                if (fromMs > 0) return false;
               }
             }
             return true;
           });
         }
+
+        const dateWarnEl = document.getElementById("dateFilterWarn");
+        if (dateWarnEl) {
+          dateWarnEl.classList.toggle("hidden", !(hasUnparseableDates && (fromMs > 0 || toMs < Infinity)));
+        }
+
+        // Sorting
+        const sortMode = document.getElementById("sortSections")?.value || "newest";
+        filtered.sort((a, b) => {
+          if (sortMode === "name_asc") {
+            return String(a.courseName || "").localeCompare(String(b.courseName || ""));
+          }
+          if (sortMode === "reg_desc") {
+            return (b.registeredCount || 0) - (a.registeredCount || 0);
+          }
+          if (sortMode === "checkin_desc") {
+            return (b.checkinRate || 0) - (a.checkinRate || 0);
+          }
+          const dateA = Number(a.checkinEndTimestamp) || parseDate(a.dateStart || a.sectionDate || "");
+          const dateB = Number(b.checkinEndTimestamp) || parseDate(b.dateStart || b.sectionDate || "");
+          if (sortMode === "oldest") {
+            return dateA - dateB;
+          }
+          // default "newest"
+          return dateB - dateA;
+        });
 
         label.innerText = `Tìm thấy ${filtered.length} lớp học`;
 
@@ -1599,14 +1722,15 @@
 
         container.innerHTML = filtered
           .map((sec) => {
-            const checkinPercent = Math.round(sec.checkinRate * 100);
-            const feedbackPercent = Math.round(sec.feedbackRate * 100);
+            const regCount = sec.registeredCount || 0;
+            const checkinPercent = regCount > 0 ? Math.round(((sec.checkinCount || 0) / regCount) * 100) : 0;
+            const feedbackPercent = regCount > 0 ? Math.round(((sec.feedbackCount || 0) / regCount) * 100) : 0;
             const stBadge = String(sec.status).toLowerCase();
             const isOpen =
-              stBadge.includes("open") ||
+              (stBadge.includes("open") ||
               stBadge.includes("dang m?") ||
-              stBadge.includes("in progress") ||
-              stBadge === "registration closed";
+              stBadge.includes("in progress")) &&
+              stBadge !== "registration closed";
             const statusClass = isOpen ? "badge-open" : "badge-closed";
 
             return `
@@ -1630,11 +1754,11 @@
               <div class="rate-section">
                 <div class="rate-label">
                   <span>Học viên đăng ký:</span>
-                  <span class="text-dark fw-bold">${sec.registeredCount}</span>
+                  <span class="text-dark fw-bold">${regCount}</span>
                 </div>
                 <div class="rate-label">
                   <span>Tỉ lệ điểm danh:</span>
-                  <span class="text-primary fw-bold">${checkinPercent}% (${sec.checkinCount}/${sec.registeredCount})</span>
+                  <span class="text-primary fw-bold">${checkinPercent}% (${sec.checkinCount || 0}/${regCount})</span>
                 </div>
                 <div class="progress">
                   <div class="progress-bar progress-bar-checkin" style="width: ${checkinPercent}%"></div>
@@ -1642,7 +1766,7 @@
                 
                 <div class="rate-label">
                   <span>Tỉ lệ feedback:</span>
-                  <span class="text-info fw-bold">${feedbackPercent}% (${sec.feedbackCount}/${sec.registeredCount})</span>
+                  <span class="text-info fw-bold">${feedbackPercent}% (${sec.feedbackCount || 0}/${regCount})</span>
                 </div>
                 <div class="progress mb-0">
                   <div class="progress-bar progress-bar-feedback" style="width: ${feedbackPercent}%"></div>
@@ -1715,8 +1839,15 @@
       let feedbackSort = { column: "latestTime", asc: false };
 
       const getTraineeDisplayName = (t) => {
-        const name = String(t.name || "").trim();
-        return name.includes("@") || !name ? "Học viên" : name;
+        let name = String(t.name || "").trim();
+        if (!name || name === "Học viên") {
+          if (t.email) {
+            name = t.email.split("@")[0];
+          } else {
+            name = "Học viên";
+          }
+        }
+        return name;
       };
 
       function getSortIcon(column, sortState) {
@@ -1870,11 +2001,11 @@
                 .map((st) => {
                   let icon = "";
                   if (st.status === "checked") {
-                    icon = `<i class="fas fa-star text-success" title="Có mặt lúc: ${escapeHTML(formatTimestampDisplay(st.timestamp))}"></i>`;
+                    icon = `<i class="fas fa-check-circle text-success" title="Có mặt lúc: ${escapeHTML(formatTimestampDisplay(st.timestamp))}"></i>`;
                   } else if (st.status === "absent") {
-                    icon = `<i class="fas fa-star text-danger" title="Vắng mặt"></i>`;
+                    icon = `<i class="fas fa-times-circle text-danger" title="Vắng mặt"></i>`;
                   } else {
-                    icon = `<i class="fas fa-star text-muted" title="Chưa diễn ra"></i>`;
+                    icon = `<i class="fas fa-minus-circle text-muted" title="Chưa diễn ra"></i>`;
                   }
                   return `<td class="text-center"><div class="star-indicator">${icon}</div></td>`;
                 })
@@ -1939,8 +2070,11 @@
 
         const mappingHeaders = mappings
           .map(
-            (m, idx) =>
-              `<th class="text-center" style="font-size: 11px; white-space: nowrap;">Đợt ${idx + 1}<br><span class="fw-normal text-muted" style="font-size: 10px;" title="${escapeHTML(m.formTitle)}">Khảo sát</span></th>`,
+            (m, idx) => {
+              const rawTitle = m.formTitle || "Khảo sát";
+              const shortTitle = rawTitle.length > 15 ? rawTitle.slice(0, 15) + "..." : rawTitle;
+              return `<th class="text-center" style="font-size: 11px; white-space: nowrap;">Đợt ${idx + 1}<br><span class="fw-normal text-muted" style="font-size: 10px;" title="${escapeHTML(rawTitle)}">${escapeHTML(shortTitle)}</span></th>`;
+            },
           )
           .join("");
         const headerHtml = `
@@ -1966,11 +2100,11 @@
                 .map((st) => {
                   let icon = "";
                   if (st.status === "submitted") {
-                    icon = `<i class="fas fa-star text-success" title="Đã nộp lúc: ${escapeHTML(formatTimestampDisplay(st.timestamp))}"></i>`;
+                    icon = `<i class="fas fa-check-circle text-success" title="Đã nộp lúc: ${escapeHTML(formatTimestampDisplay(st.timestamp))}"></i>`;
                   } else if (st.status === "absent") {
-                    icon = `<i class="fas fa-star text-danger" title="Bỏ lỡ"></i>`;
+                    icon = `<i class="fas fa-times-circle text-danger" title="Bỏ lỡ"></i>`;
                   } else {
-                    icon = `<i class="fas fa-star text-muted" title="Chưa mở"></i>`;
+                    icon = `<i class="fas fa-minus-circle text-muted" title="Chưa mở"></i>`;
                   }
                   return `<td class="text-center"><div class="star-indicator">${icon}</div></td>`;
                 })
@@ -2225,6 +2359,81 @@
         }
       }
 
+      function exportModalCsv() {
+        if (!currentModalSection) return;
+        const sec = currentModalSection;
+        const activeTabBtn = document.querySelector("#detailTabs button.active");
+        const tabTarget = activeTabBtn ? activeTabBtn.getAttribute("data-bs-target") : "#tabReg";
+
+        let headers = [];
+        let rows = [];
+        let filename = "";
+
+        if (tabTarget === "#tabReg") {
+          filename = `trainees_${sec.sectionId}.csv`;
+          headers = ["STT", "Học viên", "Email", "Thời gian đăng ký"];
+          rows = currentTrainees.map((t, idx) => [
+            idx + 1,
+            getTraineeDisplayName(t),
+            t.email || "",
+            formatTimestampDisplay(t.registeredAt)
+          ]);
+        } else if (tabTarget === "#tabCheckin") {
+          filename = `attendance_${sec.sectionId}.csv`;
+          const slotNames = currentSlots.map((s, i) => `Ca ${i + 1} (${formatTimestampDisplay(s.dateStr).split(" ")[0]})`);
+          headers = ["STT", "Học viên", "Email", ...slotNames, "Cập nhật lúc", "Tỉ lệ hoàn thành"];
+          rows = currentTrainees.map((t, idx) => {
+            const slotVals = t.checkinStatus.map((st) =>
+              st.status === "checked" ? "Có mặt" : st.status === "absent" ? "Vắng mặt" : "Chưa diễn ra"
+            );
+            const rate = Math.round(t.checkinCompletionRate * 100);
+            return [
+              idx + 1,
+              getTraineeDisplayName(t),
+              t.email || "",
+              ...slotVals,
+              formatTimestampDisplay(t.latestCheckinStr),
+              `${rate}%`
+            ];
+          });
+        } else if (tabTarget === "#tabFeedback") {
+          filename = `feedback_${sec.sectionId}.csv`;
+          const formNames = currentMappings.map((m, i) => `Đợt ${i + 1} (${m.formTitle || "Khảo sát"})`);
+          headers = ["STT", "Học viên", "Email", ...formNames, "Cập nhật lúc", "Tỉ lệ hoàn thành"];
+          rows = currentTrainees.map((t, idx) => {
+            const formVals = t.feedbackStatus.map((st) =>
+              st.status === "submitted" ? "Đã nộp" : st.status === "absent" ? "Bỏ lỡ" : "Chưa mở"
+            );
+            const rate = Math.round(t.feedbackCompletionRate * 100);
+            return [
+              idx + 1,
+              getTraineeDisplayName(t),
+              t.email || "",
+              ...formVals,
+              formatTimestampDisplay(t.latestFeedbackStr),
+              `${rate}%`
+            ];
+          });
+        }
+
+        const csvContent =
+          "\uFEFF" +
+          [
+            headers.map((h) => `"${String(h).replace(/"/g, '""')}"`).join(","),
+            ...rows.map((row) =>
+              row.map((cell) => `"${String(cell ?? "").replace(/"/g, '""')}"`).join(",")
+            ),
+          ].join("\r\n");
+
+        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.setAttribute("download", filename);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+
       // Boot
       window.addEventListener("DOMContentLoaded", checkAutoLogin);
     </script>
@@ -2233,7 +2442,7 @@
       // Access logging
       (function () {
         try {
-          var email = sessionStorage.getItem("pdhub_report_email") || "";
+          var email = localStorage.getItem("pdhub_report_email") || sessionStorage.getItem("pdhub_report_email") || "";
           fetch("/api/log/access", {
             method: "POST",
             headers: { "content-type": "application/json" },
@@ -2265,8 +2474,21 @@
           <input
             type="password"
             id="newPinInput"
+            class="form-control pin-box mb-2 text-center"
+            maxlength="4"
+            placeholder="••••"
+            style="
+              letter-spacing: 15px;
+              font-size: 1.5rem;
+              background-color: #f8f9fa;
+            "
+          />
+          <input
+            type="password"
+            id="confirmNewPinInput"
             class="form-control pin-box mb-3 text-center"
             maxlength="4"
+            placeholder="Confirm ••••"
             style="
               letter-spacing: 15px;
               font-size: 1.5rem;

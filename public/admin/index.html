@@ -614,6 +614,7 @@
             placeholder="000000"
             autocomplete="one-time-code"
             oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+            onkeydown="if(event.key === 'Enter') { const b = document.querySelector('#adminStepOtp button'); if (b) verifyAdminOtp(b); }"
           />
           <div class="toolbar" style="margin-top: 12px">
             <button onclick="verifyAdminOtp(this)">Verify & open admin</button>
@@ -628,28 +629,30 @@
             </button>
           </div>
         </div>
-        <details style="margin-top: 14px">
-          <summary class="small muted">
-            <b>Emergency DEBUG_TOKEN access</b>
-          </summary>
-          <p class="small muted">
-            Use only when OTP/email provider is unavailable. This token is not
-            saved.
-          </p>
-          <input
-            id="debugToken"
-            type="password"
-            placeholder="DEBUG_TOKEN"
-            autocomplete="off"
-          />
-          <button
-            class="secondary"
-            style="margin-top: 10px"
-            onclick="loadStatus(false, true)"
-          >
-            Check with DEBUG_TOKEN once
-          </button>
-        </details>
+        <div id="debugTokenContainer" class="hidden" style="margin-top: 14px">
+          <details>
+            <summary class="small muted">
+              <b>Emergency DEBUG_TOKEN access</b>
+            </summary>
+            <p class="small muted">
+              Use only when OTP/email provider is unavailable. This token is not
+              saved.
+            </p>
+            <input
+              id="debugToken"
+              type="password"
+              placeholder="DEBUG_TOKEN"
+              autocomplete="off"
+            />
+            <button
+              class="secondary"
+              style="margin-top: 10px"
+              onclick="loadStatus(false, true)"
+            >
+              Check with DEBUG_TOKEN once
+            </button>
+          </details>
+        </div>
         <div id="loginMessage" class="empty" style="margin-top: 14px">
           Enter admin email to receive OTP.
         </div>
@@ -668,7 +671,7 @@
             <i class="fas fa-user-shield me-2"></i>Roles
           </button>
           <button class="tab" id="tabDocs" onclick="showTab('docs')">
-            <i class="fas fa-book me-2"></i>Documentation
+            <i class="fas fa-book me-2"></i>Developer Docs
           </button>
           <button class="tab" id="tabLogs" onclick="showTab('logs')">
             <i class="fas fa-list me-2"></i>Access & Email Logs
@@ -741,7 +744,11 @@
                     type="email"
                     placeholder="user@example.com"
                     style="margin-top: 6px"
+                    oninput="checkRoleEmailDomain(this)"
                   />
+                  <div id="roleEmailWarn" class="small hidden" style="color: #d97706; margin-top: 4px; font-weight: 500;">
+                    <i class="fas fa-exclamation-triangle me-1"></i>Lưu ý: Email không thuộc miền @eiu.edu.vn
+                  </div>
                 </div>
                 <div style="min-width: 180px">
                   <label class="small muted"><b>Role</b></label>
@@ -766,6 +773,9 @@
                   Assign Role
                 </button>
               </div>
+              <div class="small muted" style="margin-top: 12px; background: rgba(0, 48, 135, 0.04); border-left: 3px solid var(--c-navy); padding: 8px 12px; border-radius: 6px;">
+                <i class="fas fa-info-circle me-1"></i><b>Lưu ý:</b> Tài khoản nằm trong cấu hình <code>ADMIN_EMAILS</code> trên máy chủ Cloudflare luôn có toàn quyền quản trị, bất kể danh sách này.
+              </div>
               <div
                 id="roleAssignMsg"
                 class="empty hidden"
@@ -782,19 +792,28 @@
 
         <section id="panelLogs" class="panel">
           <div class="card">
-            <h2>Access & Email Logs</h2>
-            <p class="small muted">
-              Operational log summary for user page access, OTP email sending,
-              OTP verification, and admin login. Logs are stored in the core
-              Google Sheet tab configured by <code>TAB_APP_LOG_GSHEET</code>,
-              default <code>pdc_app_logs</code>.
-            </p>
+            <div class="status-actions">
+              <div>
+                <h2>Access & Email Logs</h2>
+                <p class="small muted">
+                  Operational log summary for user page access, OTP email sending,
+                  OTP verification, and admin login. Logs are stored in Google Sheets (<code>TAB_APP_LOG_GSHEET</code>) and PostgreSQL.
+                </p>
+              </div>
+              <div class="toolbar action-toolbar">
+                <button onclick="loadStatus(false); showTab('logs');">&#8635; Refresh Logs</button>
+              </div>
+            </div>
+            <div id="logsEmptyNotice" class="empty hidden" style="margin-top: 14px">
+              <p>Chưa có dữ liệu nhật ký / Logs not loaded yet.</p>
+              <button onclick="loadStatus(false); showTab('logs');" style="margin-top: 8px;">Run Status Check to Load Logs</button>
+            </div>
             <div id="logSummary" class="grid"></div>
-            <h3>Top access pages, last 7 days</h3>
+            <h3 style="margin-top: 24px;"><i class="fas fa-chart-bar me-2 text-primary"></i>Top access pages, last 7 days</h3>
             <div id="logPages" class="card"></div>
-            <h3>Recent log entries</h3>
+            <h3 style="margin-top: 24px;"><i class="fas fa-table me-2 text-primary"></i>Recent operational log entries (Google Sheets)</h3>
             <div id="logRecent" class="card"></div>
-            <h3>Recent Email OTP logs (PostgreSQL)</h3>
+            <h3 style="margin-top: 24px;"><i class="fas fa-envelope-open-text me-2 text-primary"></i>Recent Email OTP logs (PostgreSQL)</h3>
             <div id="logEmailOtp" class="card"></div>
           </div>
         </section>
@@ -877,74 +896,17 @@
 
         <section id="panelVersions" class="panel">
           <div class="card">
-            <h2>Version changes / Change log</h2>
-            <div class="change-item">
-              <b>Step 45</b> — Upgraded Developer Documentation Hub with Mermaid
-              architecture diagrams, Prism syntax highlighting, and 100%
-              Markdown-driven content.
+            <div class="status-actions" style="margin-bottom: 12px;">
+              <div>
+                <h2>Version changes / Change log</h2>
+                <p class="small muted">Nội dung tự động cập nhật từ <code>/docs/CHANGELOG.md</code>.</p>
+              </div>
+              <div class="toolbar action-toolbar">
+                <button onclick="loadChangelog(true)">&#8635; Refresh</button>
+              </div>
             </div>
-            <div class="change-item">
-              <b>Step 44</b> — Added Email OTP Logs (PostgreSQL) and
-              Architecture tab to Admin dashboard.
-            </div>
-            <div class="change-item">
-              <b>Step 43</b> — PostgreSQL Migration: Completed database schema
-              migration and API routing for 14 core transaction and master
-              tables including section management, attendee registration,
-              check-ins, and feedback forms, with hybrid routing configuration
-              to maintain Google Sheets fallback.
-            </div>
-            <div class="change-item">
-              <b>Step 42</b> — Advanced Caching Refinements: Implemented
-              cache-bypass capabilities on all write validation pathways
-              (registration, check-in, feedback, OTP verification, profiles, and
-              PIN updates) to prevent double-submission race conditions, added
-              write-through caching to update reads immediately, and extended
-              static data caching TTL to 30 seconds for master lists (courses
-              and venues).
-            </div>
-            <div class="change-item">
-              <b>Step 41</b> — Operational Stability & Hotfixes:
-              Case-insensitive section type mapping, 3-second edge caching for
-              Google Sheets API reads, Trainee PIN text format preservation to
-              prevent leading-zero truncation, 6-digit input length validation
-              on check-in code, and frontend failure recovery handling to
-              prevent login page freeze.
-            </div>
-            <div class="change-item">
-              <b>Step 40</b> — UI/UX Refinement: Refined gradients, cards, and
-              input glows. Soft Alert badges.
-            </div>
-            <div class="change-item">
-              <b>Step 39</b> — Admin monitoring logs: user access, OTP email
-              send/verify counts, and recent operational log entries.
-            </div>
-            <div class="change-item">
-              <b>Step 38</b> — Admin OTP login, admin docs/change log, home
-              admin link, login back-to-home buttons, mobile UI polish.
-            </div>
-            <div class="change-item">
-              <b>Step 37</b> — Admin status page and monitoring visibility.
-            </div>
-            <div class="change-item">
-              <b>Step 36</b> — Final go-live closeout package.
-            </div>
-            <div class="change-item">
-              <b>Step 32 Fix 2</b> — Friendly client profile-not-found UX.
-            </div>
-            <div class="change-item">
-              <b>Step 30</b> — Real OTP email with Brevo.
-            </div>
-            <div class="change-item">
-              <b>Step 27</b> — Hybrid stable: Google Sheets core + PostgreSQL
-              Organization via Hyperdrive.
-            </div>
-            <div class="change-item">
-              <b>Step 24–25</b> — Trainee frontend cutover from GAS to
-              Cloudflare API and stable package.
-            </div>
-            <div class="change-item">
-              <b>Step 14</b> — Client stable cutover from GAS to Cloudflare API.
+            <div id="changelogBody" class="markdown-body">
+              <div class="empty">Loading version history...</div>
             </div>
           </div>
         </section>
@@ -976,7 +938,7 @@
             </div>
 
             <h3>Change PIN</h3>
-            <p class="small muted">Vui lòng nhập mã PIN mới gồm 4 chữ số.</p>
+            <p class="small muted">Vui lòng nhập mã PIN mới gồm 4 chữ số và xác nhận lại.</p>
             <div
               style="
                 display: flex;
@@ -992,6 +954,20 @@
                 maxlength="4"
                 style="
                   flex: 1;
+                  min-width: 140px;
+                  text-align: center;
+                  font-size: 16px;
+                  letter-spacing: 5px;
+                "
+              />
+              <input
+                type="password"
+                id="confirmChangePinInput"
+                placeholder="Confirm PIN"
+                maxlength="4"
+                style="
+                  flex: 1;
+                  min-width: 140px;
                   text-align: center;
                   font-size: 16px;
                   letter-spacing: 5px;
@@ -999,6 +975,7 @@
               />
               <button onclick="updateAdminPin(this)">Save PIN</button>
             </div>
+            <div id="changePinMsg" class="empty hidden" style="margin-top: 10px; width: 100%;"></div>
           </div>
         </section>
       </section>
@@ -1036,15 +1013,19 @@
         location.reload();
       }
       function setReportSession(data) {
-        sessionStorage.setItem("pdhub_report_token", data.token || "");
-        sessionStorage.setItem("pdhub_report_exp", data.expiresAt || "");
-        sessionStorage.setItem("pdhub_report_email", data.email || "");
-        sessionStorage.setItem(
+        localStorage.setItem("pdhub_report_token", data.token || "");
+        localStorage.setItem("pdhub_report_exp", data.expiresAt || "");
+        localStorage.setItem("pdhub_report_email", data.email || "");
+        localStorage.setItem(
           "pdhub_report_role",
           data.role || "report_viewer",
         );
       }
       function boot() {
+        if (new URLSearchParams(window.location.search).get("debug") === "1") {
+          const dbg = document.getElementById("debugTokenContainer");
+          if (dbg) dbg.classList.remove("hidden");
+        }
         const adminToken = getAdminToken();
         if (adminToken) {
           const role = localStorage.getItem("pdhub_admin_role");
@@ -1056,10 +1037,13 @@
               role: "report_viewer",
             });
             clearAdminSession();
-            window.location.href = "/report.html";
+            showLogin("You have Report Viewer access. Redirecting to Report Dashboard...", "ok");
+            setTimeout(() => { window.location.href = "/report.html"; }, 800);
             return;
           }
           openAdmin();
+          loadStatus(false);
+          loadRoles();
         }
       }
       async function sendAdminOtp(btn) {
@@ -1155,7 +1139,8 @@
           if (data.role === "report_viewer") {
             setReportSession(data);
             clearAdminSession();
-            window.location.href = "/report.html";
+            showLogin("You have Report Viewer access. Redirecting to Report Dashboard...", "ok");
+            setTimeout(() => { window.location.href = "/report.html"; }, 800);
             return;
           }
           setAdminSession(data);
@@ -1209,7 +1194,8 @@
 
       function finalizeAdminLogin(data) {
         if (data.role === "report_viewer") {
-          window.location.href = "/report.html";
+          showLogin("You have Report Viewer access. Redirecting to Report Dashboard...", "ok");
+          setTimeout(() => { window.location.href = "/report.html"; }, 800);
         } else {
           openAdmin();
           loadStatus(false);
@@ -1219,10 +1205,26 @@
 
       async function processAdminPinFirst(btn) {
         const pin = document.getElementById("newPinInput").value.trim();
-        if (!/^\d{4}$/.test(pin)) return alert("PIN must be 4 digits.");
+        const confirmPin = document.getElementById("confirmNewPinInput").value.trim();
+        const msgEl = document.getElementById("setupPinMsg");
+        msgEl.className = "empty bad";
+        msgEl.classList.remove("hidden");
+
+        if (!/^\d{4}$/.test(pin)) {
+          msgEl.innerText = "Mã PIN phải gồm đúng 4 chữ số.";
+          return;
+        }
+        if (pin !== confirmPin) {
+          msgEl.innerText = "Mã xác nhận PIN không khớp.";
+          return;
+        }
+
         const token =
-          getAdminToken() || sessionStorage.getItem("pdhub_report_token");
-        if (!token) return alert("Session expired. Please login again.");
+          getAdminToken() || localStorage.getItem("pdhub_report_token");
+        if (!token) {
+          msgEl.innerText = "Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.";
+          return;
+        }
 
         const old = btn.innerText;
         btn.disabled = true;
@@ -1236,10 +1238,10 @@
           document.getElementById("setupPinModal").classList.add("hidden");
           const role =
             localStorage.getItem("pdhub_admin_role") ||
-            sessionStorage.getItem("pdhub_report_role");
+            localStorage.getItem("pdhub_report_role");
           finalizeAdminLogin({ role });
         } catch (err) {
-          alert("Error setting PIN: " + err.message);
+          msgEl.innerText = "Lỗi cài đặt PIN: " + err.message;
         } finally {
           btn.disabled = false;
           btn.innerText = old;
@@ -1248,9 +1250,25 @@
 
       async function updateAdminPin(btn) {
         const pin = document.getElementById("changePinInput").value.trim();
-        if (!/^\d{4}$/.test(pin)) return alert("PIN must be 4 digits.");
+        const confirmPin = document.getElementById("confirmChangePinInput").value.trim();
+        const msgEl = document.getElementById("changePinMsg");
+        msgEl.className = "empty bad";
+        msgEl.classList.remove("hidden");
+
+        if (!/^\d{4}$/.test(pin)) {
+          msgEl.innerText = "Mã PIN phải gồm đúng 4 chữ số.";
+          return;
+        }
+        if (pin !== confirmPin) {
+          msgEl.innerText = "Mã xác nhận PIN không khớp.";
+          return;
+        }
+
         const token = getAdminToken();
-        if (!token) return alert("Session expired. Please login again.");
+        if (!token) {
+          msgEl.innerText = "Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.";
+          return;
+        }
 
         const old = btn.innerText;
         btn.disabled = true;
@@ -1261,10 +1279,12 @@
             headers: { Authorization: "Bearer " + token },
             body: { pin },
           });
-          alert("PIN updated successfully!");
+          msgEl.className = "empty ok";
+          msgEl.innerText = "Cập nhật mã PIN thành công!";
           document.getElementById("changePinInput").value = "";
+          document.getElementById("confirmChangePinInput").value = "";
         } catch (err) {
-          alert("Error updating PIN: " + err.message);
+          msgEl.innerText = "Lỗi cập nhật PIN: " + err.message;
         } finally {
           btn.disabled = false;
           btn.innerText = old;
@@ -1310,6 +1330,7 @@
         }
       }
       async function loadStatus(deep, useDebug) {
+        window.lastStatusIsDeep = !!deep;
         try {
           showMessage("Loading admin status...", "");
           const headers = {};
@@ -1342,7 +1363,13 @@
             throw new Error(json.error || "Status check failed.");
           lastStatus = json;
           render(json);
-          showMessage("Status loaded at " + new Date().toLocaleString(), "ok");
+          const genDate = new Date(json.generatedAt);
+          const timeLabel = !isNaN(genDate.getTime()) 
+            ? genDate.toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', hour12: false }) + " ICT" 
+            : new Date().toLocaleString();
+          showMessage("Status loaded at " + timeLabel + (deep ? " (Deep check)" : " (Quick check)"), "ok");
+          const notice = document.getElementById("logsEmptyNotice");
+          if (notice) notice.classList.add("hidden");
           if (useDebug) openAdmin();
         } catch (err) {
           showMessage("Unable to load admin status: " + err.message, "bad");
@@ -1395,6 +1422,13 @@
           if (panel) panel.classList.toggle("active", n === name);
           if (tab) tab.classList.toggle("active", n === name);
         }
+        if (name === "logs") {
+          const notice = document.getElementById("logsEmptyNotice");
+          if (notice) notice.classList.toggle("hidden", !!lastStatus);
+        }
+        if (name === "versions") {
+          loadChangelog();
+        }
         if (name === "docs") {
           if (!docCache[currentDoc]) {
             switchDoc(
@@ -1410,6 +1444,30 @@
             localStorage.getItem("pdhub_admin_email") || "N/A";
           document.getElementById("profileRole").innerText =
             localStorage.getItem("pdhub_admin_role") || "admin";
+        }
+      }
+
+      let changelogLoaded = false;
+      async function loadChangelog(force) {
+        if (changelogLoaded && !force) return;
+        const el = document.getElementById("changelogBody");
+        if (!el) return;
+        el.innerHTML = '<div class="empty">Loading version history...</div>';
+        try {
+          const res = await fetch("/docs/CHANGELOG.md?t=" + Date.now());
+          if (!res.ok) throw new Error("Changelog not found (HTTP " + res.status + ")");
+          const md = await res.text();
+          if (typeof marked !== "undefined") {
+            el.innerHTML = marked.parse(md);
+          } else {
+            el.innerHTML = "<pre>" + escapeHtml(md) + "</pre>";
+          }
+          if (typeof Prism !== "undefined") {
+            el.querySelectorAll("pre code").forEach((b) => Prism.highlightElement(b));
+          }
+          changelogLoaded = true;
+        } catch (err) {
+          el.innerHTML = '<div class="empty bad"><p>Unable to load changelog: ' + escapeHtml(err.message) + '</p></div>';
         }
       }
 
@@ -1439,7 +1497,9 @@
           const res = await fetch("/docs/" + filename);
           if (!res.ok)
             throw new Error(
-              "Failed to load " + filename + " (HTTP " + res.status + ")",
+              res.status === 404
+                ? "Document not found / Tài liệu chưa khả dụng (" + filename + ")"
+                : "Failed to load " + filename + " (HTTP " + res.status + ")"
             );
           const md = await res.text();
           docCache[filename] = md;
@@ -1555,6 +1615,17 @@
           return '<span class="pill" style="background:#d1fae5;color:#065f46;">&#128202; report_viewer</span>';
         return escapeHtml(role);
       }
+      function checkRoleEmailDomain(input) {
+        const email = (input.value || "").trim().toLowerCase();
+        const warnEl = document.getElementById("roleEmailWarn");
+        if (!warnEl) return;
+        if (email.includes("@") && !email.endsWith("@eiu.edu.vn")) {
+          warnEl.classList.remove("hidden");
+        } else {
+          warnEl.classList.add("hidden");
+        }
+      }
+
       async function assignRole(btn) {
         const email = document
           .getElementById("roleEmail")
@@ -1579,9 +1650,11 @@
             role,
           });
           msg.className = "empty ok";
-          msg.innerText = `✓ ${json.action === "created" ? "Tạo" : "Cập nhật"} thành công: ${email} → ${role}`;
+          msg.innerText = `✓ ${json.action === "created" ? "Tạo mới" : "Cập nhật"} thành công: ${email} → ${role}`;
           msg.classList.remove("hidden");
           document.getElementById("roleEmail").value = "";
+          const warnEl = document.getElementById("roleEmailWarn");
+          if (warnEl) warnEl.classList.add("hidden");
           loadRoles();
         } catch (err) {
           msg.className = "empty bad";
@@ -1592,8 +1665,23 @@
           btn.innerText = old;
         }
       }
-      async function removeRole(email, btn) {
-        if (!confirm(`Xóa role của ${email}?`)) return;
+      function removeRole(email, btn) {
+        if (btn.getAttribute("data-confirm") !== "true") {
+          btn.setAttribute("data-confirm", "true");
+          btn.innerText = "Confirm?";
+          btn.style.background = "#be123c";
+          setTimeout(() => {
+            if (btn && btn.getAttribute("data-confirm") === "true") {
+              btn.removeAttribute("data-confirm");
+              btn.innerText = "Delete";
+              btn.style.background = "";
+            }
+          }, 4000);
+          return;
+        }
+        doRemoveRole(email, btn);
+      }
+      async function doRemoveRole(email, btn) {
         const token = getAdminToken();
         if (!token) return;
         const old = btn.innerText;
@@ -1661,6 +1749,13 @@
       function render(data) {
         const summary = data.summary || {};
         const c = data.components || {};
+        const genDate = new Date(data.generatedAt);
+        const vnTimeStr = !isNaN(genDate.getTime())
+          ? genDate.toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', hour12: false }) + " ICT"
+          : (data.generatedAt || "unknown");
+        const isStale = !isNaN(genDate.getTime()) && (Date.now() - genDate.getTime() > 15 * 60 * 1000);
+        const checkTypeLabel = window.lastStatusIsDeep ? "Deep check" : "Quick check";
+
         document.getElementById("summary").innerHTML = [
           metric(
             "Overall",
@@ -1714,7 +1809,8 @@
           ),
           metric("OTP verify 24h", String(summary.otpVerifyLast24h ?? 0), "ok"),
           metric("Admin auth", data.environment?.authMethod || "unknown", "ok"),
-          metric("Generated", new Date(data.generatedAt).toLocaleString(), ""),
+          metric("Check mode", checkTypeLabel, "ok"),
+          metric("Generated (ICT)", vnTimeStr + (isStale ? " ⚠️ Stale" : ""), isStale ? "warn" : ""),
         ].join("");
 
         document.getElementById("details").innerHTML = [
@@ -1735,7 +1831,37 @@
         return `<div class="metric"><div class="label">${escapeHtml(label)}</div><div class="value ${cls || ""}">${escapeHtml(value)}</div></div>`;
       }
       function component(title, obj) {
-        return `<div class="card"><h2>${escapeHtml(title)}</h2><pre>${escapeHtml(JSON.stringify(obj || {}, null, 2))}</pre></div>`;
+        if (!obj || typeof obj !== "object") {
+          return `<div class="card"><h2>${escapeHtml(title)}</h2><pre>${escapeHtml(JSON.stringify(obj || {}, null, 2))}</pre></div>`;
+        }
+        const entries = Object.entries(obj);
+        const checklistHtml = entries.map(([key, val]) => {
+          let badge = '';
+          if (typeof val === "boolean") {
+            badge = val 
+              ? '<span class="pill" style="background:#ecfdf5;color:#047857;padding:3px 8px;border-radius:12px;font-size:12px;"><i class="fas fa-check-circle me-1"></i>Active</span>' 
+              : '<span class="pill" style="background:#fff1f2;color:#be123c;padding:3px 8px;border-radius:12px;font-size:12px;"><i class="fas fa-times-circle me-1"></i>Disabled</span>';
+          } else if (typeof val === "number" || typeof val === "string") {
+            badge = `<span class="pill" style="background:#f1f5f9;color:#334155;padding:3px 8px;border-radius:12px;font-size:12px;">${escapeHtml(String(val))}</span>`;
+          } else if (val === null || val === undefined) {
+            badge = '<span class="pill" style="background:#f1f5f9;color:#94a3b8;padding:3px 8px;border-radius:12px;font-size:12px;">None</span>';
+          } else {
+            badge = `<span class="pill" style="background:#f8fafc;color:#475569;padding:3px 8px;border-radius:12px;font-size:12px;">[${Array.isArray(val) ? val.length + ' items' : 'Object'}]</span>`;
+          }
+          return `<div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid rgba(0,0,0,0.05); font-size:13px;">
+            <span style="font-weight:500;">${escapeHtml(key)}</span>
+            ${badge}
+          </div>`;
+        }).join("");
+
+        return `<div class="card">
+          <h2>${escapeHtml(title)}</h2>
+          <div style="margin: 10px 0;">${checklistHtml}</div>
+          <details style="margin-top:8px;">
+            <summary class="small muted" style="cursor:pointer;"><b>View raw JSON</b></summary>
+            <pre style="margin-top:6px; font-size:11px;">${escapeHtml(JSON.stringify(obj, null, 2))}</pre>
+          </details>
+        </div>`;
       }
       function renderLogs(logs) {
         const sum = logs.summary || {};
@@ -1767,7 +1893,7 @@
         const recent = logs.recent || [];
         document.getElementById("logRecent").innerHTML = recent.length
           ? renderSmallTable(
-              ["Time", "Event", "Scope", "Email", "Path", "OK", "Detail"],
+              ["Time (ICT)", "Event", "Scope", "Email", "Path", "OK", "Detail"],
               recent
                 .slice(0, 30)
                 .map((r) => [
@@ -1786,14 +1912,14 @@
         document.getElementById("logEmailOtp").innerHTML =
           logs && logs.length
             ? renderSmallTable(
-                ["Time", "App", "Email", "OTP", "Service", "Status", "Detail"],
+                ["Time (ICT)", "App", "Email", "OTP", "Service", "Status", "Detail"],
                 logs
                   .slice(0, 30)
                   .map((r) => [
                     formatTime(r.timestamp),
                     r.app,
                     r.user_email,
-                    r.otp,
+                    r.otp ? "••••••" : "-",
                     r.sending_service,
                     r.status,
                     r.detail,
@@ -1807,7 +1933,7 @@
       function formatTime(value) {
         const d = new Date(value);
         return Number.isFinite(d.getTime())
-          ? d.toLocaleString()
+          ? d.toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh", hour12: false })
           : String(value || "");
       }
 
@@ -1948,10 +2074,23 @@
             text-align: center;
             font-size: 20px;
             letter-spacing: 10px;
-            margin-bottom: 16px;
+            margin-bottom: 12px;
           "
           placeholder="••••"
         />
+        <input
+          type="password"
+          id="confirmNewPinInput"
+          maxlength="4"
+          style="
+            text-align: center;
+            font-size: 20px;
+            letter-spacing: 10px;
+            margin-bottom: 16px;
+          "
+          placeholder="Confirm ••••"
+        />
+        <div id="setupPinMsg" class="empty hidden" style="margin-bottom: 12px; font-size: 13px;"></div>
         <div class="toolbar" style="margin-top: 12px; justify-content: center">
           <button class="primary" onclick="processAdminPinFirst(this)">
             Create PIN
