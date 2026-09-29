@@ -936,7 +936,7 @@
             <div class="toolbar" style="margin-top: 14px; gap: 8px;">
               <span class="small muted"><b>Sort by:</b></span>
               <button class="light" id="sortPendingOrgs_name"
-                onclick="setPendingOrgsSort('name')">Name</button>
+                onclick="setPendingOrgsSort('name')">Company VN</button>
               <button class="light" id="sortPendingOrgs_created_at"
                 onclick="setPendingOrgsSort('created_at')">Date Submitted</button>
               <button class="light" id="sortPendingOrgs_status"
@@ -2089,6 +2089,7 @@
           const oceUpdated = rows.filter(r => r.resolved_status === "OCE List Updated").length;
           const unverified = rows.filter(r => r.resolved_status === "Unverified").length;
           const verified   = rows.filter(r => r.resolved_status === "Verified").length;
+          const removed    = rows.filter(r => r.resolved_status === "Removed").length;
 
           if (summaryEl) {
             summaryEl.innerHTML = [
@@ -2096,6 +2097,7 @@
               metric("OCE List Updated",   String(oceUpdated), oceUpdated > 0 ? "ok" : ""),
               metric("Unverified",         String(unverified), unverified > 0 ? "warn" : ""),
               metric("Verified",           String(verified),   "ok"),
+              metric("Removed",            String(removed),    removed > 0 ? "bad" : ""),
             ].join("");
           }
 
@@ -2104,24 +2106,39 @@
             return;
           }
 
-          const arrowFor = (col) => pendingOrgsSort === col ? (pendingOrgsOrder === "asc" ? " ?" : " ?") : "";
+          const arrowFor = (col) => pendingOrgsSort === col ? (pendingOrgsOrder === "asc" ? " ▲" : " ▼") : "";
 
           const headerCells = [
-            `<th style="cursor:pointer" onclick="setPendingOrgsSort('name')">#&nbsp; Name${arrowFor("name")}</th>`,
+            `<th style="cursor:pointer" onclick="setPendingOrgsSort('name')">#&nbsp; Company VN${arrowFor("name")}</th>`,
+            `<th>Company EN</th>`,
             `<th>PD ID</th>`,
             `<th>Submitted by</th>`,
             `<th style="cursor:pointer" onclick="setPendingOrgsSort('created_at')">Date Submitted${arrowFor("created_at")}</th>`,
             `<th style="cursor:pointer" onclick="setPendingOrgsSort('status')">Status${arrowFor("status")}</th>`,
+            `<th>Action</th>`,
           ].join("");
 
           const bodyRows = rows.map((r, i) => {
             const statusBadge = renderPendingOrgStatus(r.resolved_status);
+            let actionHtml = "";
+            if (r.resolved_status === "OCE List Updated") {
+              actionHtml = `<span class="badge bg-light text-muted" title="Linked to OCE list; editing locked"><i class="fas fa-lock me-1"></i>Locked</span>`;
+            } else {
+              const safePdId = escapeHtml(r.pd_id).replace(/'/g, "\\'");
+              const safeName = escapeHtml(r.name || "").replace(/'/g, "\\'");
+              const safeNameEn = escapeHtml(r.name_en || "").replace(/'/g, "\\'");
+              const safeStatus = escapeHtml(r.status || "pending").replace(/'/g, "\\'");
+              actionHtml = `<button class="light" style="padding: 3px 8px; font-size: 12px; border-radius: 4px;" onclick="openEditPendingOrg('${safePdId}', '${safeName}', '${safeNameEn}', '${safeStatus}')"><i class="fas fa-edit me-1"></i>Edit</button>`;
+            }
+
             return `<tr>
               <td><b>${i + 1}</b>&nbsp; ${escapeHtml(r.name)}</td>
+              <td>${escapeHtml(r.name_en || "-")}</td>
               <td><code class="small">${escapeHtml(r.pd_id)}</code></td>
               <td class="muted small">${escapeHtml(r.submitted_by || "-")}</td>
               <td class="muted small">${formatTime(r.created_at)}</td>
               <td>${statusBadge}</td>
+              <td>${actionHtml}</td>
             </tr>`;
           }).join("");
 
@@ -2145,7 +2162,69 @@
         if (status === "Unverified" || status === "pending") {
           return '<span class="badge bg-warning">Unverified</span>';
         }
+        if (status === "Removed" || status === "removed") {
+          return '<span class="badge bg-danger"><i class="fas fa-times-circle me-1"></i>Removed</span>';
+        }
         return `<span class="badge bg-secondary">${escapeHtml(status)}</span>`;
+      }
+
+      function openEditPendingOrg(pdId, nameVn, nameEn, status) {
+        document.getElementById("editPendingOrgId").value = pdId;
+        document.getElementById("editPendingOrgIdDisplay").value = pdId;
+        document.getElementById("editPendingOrgNameVn").value = nameVn || "";
+        document.getElementById("editPendingOrgNameEn").value = nameEn || "";
+
+        let normalizedStatus = (status || "pending").toLowerCase();
+        if (normalizedStatus === "unverified") normalizedStatus = "pending";
+        document.getElementById("editPendingOrgStatus").value = normalizedStatus;
+
+        const errEl = document.getElementById("editPendingOrgError");
+        if (errEl) {
+          errEl.innerText = "";
+          errEl.style.display = "none";
+        }
+        document.getElementById("editPendingOrgModal").classList.remove("hidden");
+      }
+
+      function closeEditPendingOrg() {
+        document.getElementById("editPendingOrgModal").classList.add("hidden");
+      }
+
+      async function submitEditPendingOrg() {
+        const token = getAdminToken();
+        if (!token) return;
+
+        const pd_id = document.getElementById("editPendingOrgId").value.trim();
+        const name = document.getElementById("editPendingOrgNameVn").value.trim();
+        const name_en = document.getElementById("editPendingOrgNameEn").value.trim();
+        const status = document.getElementById("editPendingOrgStatus").value;
+        const errEl = document.getElementById("editPendingOrgError");
+        const btn = document.getElementById("savePendingOrgBtn");
+
+        if (!name) {
+          if (errEl) {
+            errEl.innerText = "Company VN cannot be empty.";
+            errEl.style.display = "block";
+          }
+          return;
+        }
+
+        btn.disabled = true;
+        btn.innerText = "Saving...";
+
+        try {
+          await apiBearerPost("/api/admin/pending-orgs", token, { pd_id, name, name_en, status });
+          closeEditPendingOrg();
+          await loadPendingOrgs();
+        } catch (err) {
+          if (errEl) {
+            errEl.innerText = err.message || String(err);
+            errEl.style.display = "block";
+          }
+        } finally {
+          btn.disabled = false;
+          btn.innerText = "Save Changes";
+        }
       }
 // ---- End Pending Orgs Tab ----
 
@@ -2171,6 +2250,77 @@
         } catch (e) {}
       })();
     </script>
+
+    <div
+      id="editPendingOrgModal"
+      class="hidden"
+      style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(4px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+      "
+    >
+      <div
+        class="card"
+        style="
+          width: 440px;
+          max-width: 92vw;
+          padding: 24px;
+          border-top: 4px solid var(--pd-indigo) !important;
+          background: #fff;
+          border-radius: 12px;
+          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        "
+      >
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 16px;">
+          <h3 style="margin:0; font-family: var(--pd-heading-font); font-size: 18px; font-weight: 700;">
+            <i class="fas fa-building me-2"></i>Edit Organization
+          </h3>
+          <button class="light" style="border:none; background:none; cursor:pointer; font-size:20px; line-height:1; color:#64748b;" onclick="closeEditPendingOrg()">&times;</button>
+        </div>
+        
+        <input type="hidden" id="editPendingOrgId" />
+        
+        <div style="margin-bottom: 12px; text-align: left;">
+          <label class="small fw-bold" style="display:block; margin-bottom:4px;">PD ID</label>
+          <input type="text" id="editPendingOrgIdDisplay" disabled style="width:100%; background:#f8fafc; font-family:monospace; font-size:12px; padding: 6px 10px; border:1px solid #cbd5e1; border-radius:6px;" />
+        </div>
+
+        <div style="margin-bottom: 12px; text-align: left;">
+          <label class="small fw-bold" style="display:block; margin-bottom:4px;">Company VN <span style="color:red">*</span></label>
+          <input type="text" id="editPendingOrgNameVn" placeholder="Vietnamese Name" style="width:100%; padding: 7px 10px; border:1px solid #cbd5e1; border-radius:6px;" required />
+        </div>
+
+        <div style="margin-bottom: 12px; text-align: left;">
+          <label class="small fw-bold" style="display:block; margin-bottom:4px;">Company EN</label>
+          <input type="text" id="editPendingOrgNameEn" placeholder="English Name" style="width:100%; padding: 7px 10px; border:1px solid #cbd5e1; border-radius:6px;" />
+        </div>
+
+        <div style="margin-bottom: 16px; text-align: left;">
+          <label class="small fw-bold" style="display:block; margin-bottom:4px;">Status <span style="color:red">*</span></label>
+          <select id="editPendingOrgStatus" style="width:100%; padding: 7px 10px; border:1px solid #cbd5e1; border-radius:6px; background:#fff;">
+            <option value="pending">Unverified</option>
+            <option value="verified">Verified</option>
+            <option value="removed">Removed</option>
+          </select>
+        </div>
+
+        <div id="editPendingOrgError" class="small bad" style="margin-bottom: 12px; display: none; padding: 6px 10px; background: #fee2e2; color: #b91c1c; border-radius: 6px;"></div>
+
+        <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px;">
+          <button class="light" style="padding: 6px 14px; border-radius: 6px;" onclick="closeEditPendingOrg()">Cancel</button>
+          <button id="savePendingOrgBtn" onclick="submitEditPendingOrg()" style="background: var(--pd-indigo); color: #fff; border:none; padding: 6px 16px; border-radius: 6px; font-weight: 600;">Save Changes</button>
+        </div>
+      </div>
+    </div>
 
     <div
       id="setupPinModal"

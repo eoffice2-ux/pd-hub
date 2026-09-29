@@ -45,7 +45,7 @@ export async function searchPendingOrgsPsql(env, query, options = {}) {
     FROM ${tableName} p
     LEFT JOIN ${orgTableName} oce
       ON oce."company_id"::text = p."pd_id"
-    WHERE p."name" ILIKE $1
+    WHERE p."name" ILIKE $1 AND lower(p."status") != 'removed'
     ORDER BY p."name" ASC
     LIMIT ${limit}
   `;
