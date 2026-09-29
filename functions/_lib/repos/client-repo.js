@@ -3,17 +3,20 @@ import { cleanEmail, objectPick } from "./repo-utils.js";
 
 export async function getClientProfilePsql(env, email) {
   const clean = cleanEmail(email);
-  return psqlFindOne(env, "CLIENT_PROFILE", { "client representative email": clean });
+  return psqlFindOne(env, "CLIENT_PROFILE", { "client updater email": clean });
 }
 
 export async function updateClientProfilePsql(env, clientIdOrEmail, data = {}, options = {}) {
-  const allowed = [
-    "client representative", "client representative name", "client representative email",
-    "client phone", "client organization", "client position", "user updated datetime", "updated by"
-  ];
-  const update = objectPick(data, allowed);
+  const blocked = new Set([
+    "client id", "client updater email"
+  ]);
+  const update = {};
+  for (const [key, value] of Object.entries(data || {})) {
+    const cleanKey = String(key || "").toLowerCase().trim();
+    if (!blocked.has(cleanKey) && !cleanKey.startsWith("__")) update[cleanKey] = value;
+  }
   const key = String(clientIdOrEmail || "").trim();
-  const where = key.includes("@") ? { "client representative email": cleanEmail(key) } : { "client id": key };
+  const where = key.includes("@") ? { "client updater email": cleanEmail(key) } : { "client id": key };
   return psqlUpdateRows(env, "CLIENT_PROFILE", where, update, options);
 }
 

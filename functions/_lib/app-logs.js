@@ -1,6 +1,8 @@
 import { appendSheetValues, batchUpdateSheetValues, getCoreSpreadsheetId, getSheetValues, getSpreadsheetMetadata, quoteSheetName } from './google-sheets.js';
 import { normalizeEmail } from './security.js';
 import { nowVietnamLocal } from './repos/repo-utils.js';
+import { queryPostgres } from './postgres.js';
+import { getTableSource } from './data-source.js';
 
 const DEFAULT_LOG_SHEET = 'pdc_app_logs';
 export const APP_LOG_HEADERS = [
@@ -23,12 +25,33 @@ export function getAppLogSheetName(env = {}) {
 
 export async function appendAppLog(env, { event, scope = '', email = '', path = '', success = true, provider = '', messageId = '', detail = '', request = null } = {}) {
   try {
+    const ip = request?.headers?.get('cf-connecting-ip') || request?.headers?.get('x-forwarded-for') || '';
+    const ua = request?.headers?.get('user-agent') || '';
+
+    if (getTableSource(env, 'APP_LOG') === 'psql') {
+      const sql = `
+        INSERT INTO public.pdc_app_logs ("timestamp", "event", "scope", "email", "path", "success", "provider", "message_id", "detail", "ip", "user_agent")
+        VALUES (NOW(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      `;
+      await queryPostgres(env, sql, [
+        String(event || '').slice(0, 80),
+        String(scope || '').slice(0, 40),
+        normalizeEmail(email || ''),
+        String(path || request?.url || '').slice(0, 300),
+        success ? 'TRUE' : 'FALSE',
+        String(provider || '').slice(0, 80),
+        String(messageId || '').slice(0, 160),
+        stringifyDetail(detail).slice(0, 1000),
+        String(ip || '').slice(0, 120),
+        String(ua || '').slice(0, 400)
+      ]);
+      return { ok: true };
+    }
+
     const spreadsheetId = getCoreSpreadsheetId(env);
     if (!spreadsheetId) return { ok: false, skipped: true, reason: 'Missing core spreadsheet id.' };
     const sheetName = getAppLogSheetName(env);
     await ensureAppLogHeader(env, spreadsheetId, sheetName);
-    const ip = request?.headers?.get('cf-connecting-ip') || request?.headers?.get('x-forwarded-for') || '';
-    const ua = request?.headers?.get('user-agent') || '';
     const row = [
       nowVietnamLocal(),
       String(event || '').slice(0, 80),
@@ -51,6 +74,31 @@ export async function appendAppLog(env, { event, scope = '', email = '', path = 
 }
 
 export async function readAppLogs(env, { limit = 50 } = {}) {
+  const safeLimit = Math.max(1, Math.min(Number(limit) || 50, 200));
+
+  if (getTableSource(env, 'APP_LOG') === 'psql') {
+    try {
+      const countRes = await queryPostgres(env, `SELECT COUNT(*)::int AS total FROM public.pdc_app_logs`);
+      const totalRows = countRes.rows?.[0]?.total || 0;
+
+      const sql = `
+        SELECT "id", "timestamp", "event", "scope", "email", "path", "success", "provider", "message_id", "detail", "ip", "user_agent"
+        FROM public.pdc_app_logs
+        ORDER BY "timestamp" DESC
+        LIMIT $1
+      `;
+      const result = await queryPostgres(env, sql, [safeLimit]);
+      const rows = (result.rows || []).map((r, i) => ({
+        ...r,
+        rowNumber: i + 1,
+        timestamp: r.timestamp ? new Date(r.timestamp).toISOString() : ''
+      }));
+      return { ok: true, rows, totalRows };
+    } catch (err) {
+      return { ok: false, rows: [], error: err?.message || String(err) };
+    }
+  }
+
   const spreadsheetId = getCoreSpreadsheetId(env);
   if (!spreadsheetId) return { ok: false, rows: [], error: 'Missing core spreadsheet id.' };
   const sheetName = getAppLogSheetName(env);
@@ -60,7 +108,6 @@ export async function readAppLogs(env, { limit = 50 } = {}) {
   const headers = normalizeHeaders(values[0]);
   const rows = values.slice(1).map((row, i) => rowToObject(headers, row, i + 2));
   rows.sort((a, b) => Date.parse(b.timestamp || 0) - Date.parse(a.timestamp || 0));
-  const safeLimit = Math.max(1, Math.min(Number(limit) || 50, 200));
   return { ok: true, rows: rows.slice(0, safeLimit), totalRows: rows.length };
 }
 

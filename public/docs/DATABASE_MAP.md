@@ -25,13 +25,13 @@ Complete cross-reference of every database table/sheet, the web page(s) that con
 | 9 | `FB_SUBMISSIONS` | `public.pdc_fb_submissions` | `psql` / `gsheet` | `/trainee/index.html`, `/report.html` |
 | 10 | `FB_RESPONSES` | `public.pdc_fb_responses` | `psql` | `/trainee/index.html` |
 | 11 | `CLIENT_INQUIRY` | `public.pdc_inquiry management` | `psql` / `gsheet` | `/client/index.html` |
-| 12 | `CLIENT_PROFILE` | `pdc_client_contract_info` | `gsheet` | `/client/index.html` |
+| 12 | `CLIENT_PROFILE` | `public.pdc_client_contract_info` | `psql` | `/client/index.html` |
 | 13 | `ORGANIZATION` | `public.oce_industry_list` | `psql` | `/trainee/index.html` |
 | 14 | `VENUE` | `public.pdc_room lab management` | `psql` / `gsheet` | `/trainee/index.html`, `/report.html` |
-| 15 | `COURSE_MASTER` | `pdc_course master list` | `gsheet` | `/trainee/index.html`, `/report.html` |
-| 16 | `USER_ROLES` | `pdc_user_roles` | `gsheet` | `/admin/index.html` |
-| 17 | `temp_otp` | Transient OTP Sheet Tab | `gsheet` | `/index.html`, `/client/index.html`, `/admin/index.html` |
-| 18 | `pdc_app_logs` | Operational Event Log | `gsheet` | `/admin/index.html` |
+| 15 | `COURSE_MASTER` | `public.pdc_course master list` | `psql` | `/trainee/index.html`, `/report.html` |
+| 16 | `USER_ROLES` | `public.pdc_user_roles` | `psql` | `/admin/index.html` |
+| 17 | `temp_otp` | `public.temp_otp` | `psql` | `/index.html`, `/client/index.html`, `/admin/index.html` |
+| 18 | `pdc_app_logs` | `public.pdc_app_logs` | `psql` | `/admin/index.html` |
 | 19 | `PROPOSAL_DATEPROPOSAL`| `public.pdc_proposal dateproposal` | `psql` | Backend / Scheduling |
 | 20 | `LOGISTIC_LOG` | `public.pdc_logistic_log` | `psql` | Backend / Operational |
 | 21 | `SCHOOL_OFFICE` | `public.setting_school_office` | `psql` | `/trainee/index.html` |
@@ -106,7 +106,7 @@ Complete cross-reference of every database table/sheet, the web page(s) that con
 - **Inquiry Table:** `public.pdc_inquiry management`
   - `GET /api/client/inquiries` &rarr; Inquiries filtered by `client representative email`
   - `POST /api/client/inquiry/update` &rarr; Client status and requirement updates
-- **Profile Sheet:** `pdc_client_contract_info` (Google Sheets only)
+- **Profile Table:** `public.pdc_client_contract_info` (PostgreSQL)
   - `GET /api/client/profile` &rarr; Corporate and personal profile details
   - `POST /api/client/profile/update` &rarr; Update contact & representative info
 
@@ -115,6 +115,7 @@ Complete cross-reference of every database table/sheet, the web page(s) that con
 ### 7. MASTER METADATA & SYSTEM LOGS
 - **ORGANIZATION (`public.oce_industry_list`):** Autocomplete endpoint `GET /api/trainee/organizations/search?q=...`
 - **VENUE (`public.pdc_room lab management`):** Room titles, campus buildings, and capacities.
-- **COURSE_MASTER (`pdc_course master list`):** Canonical course names and descriptions.
-- **USER_ROLES (`pdc_user_roles`):** RBAC authorization matrix managed in Admin (`GET`, `POST`, `DELETE /api/admin/roles`).
-- **pdc_app_logs:** Audit trail capturing every user login, OTP send, and admin operational check.
+- **COURSE_MASTER (`public."pdc_course master list"`):** Canonical course names and descriptions.
+- **USER_ROLES (`public.pdc_user_roles`):** RBAC authorization matrix managed in Admin (`GET`, `POST`, `DELETE /api/admin/roles`).
+- **temp_otp (`public.temp_otp`):** Transient 6-digit login codes.
+- **pdc_app_logs (`public.pdc_app_logs`):** Audit trail capturing every user login, OTP send, and admin operational check.

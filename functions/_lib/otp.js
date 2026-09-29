@@ -3,6 +3,8 @@ import { normalizeEmail } from "./security.js";
 import { logEmailAttempt } from "./repos/email-log-repo.js";
 import { formatVietnamLocal, nowVietnamLocal } from "./repos/repo-utils.js";
 import { sendEmail } from "./email-sender.js";
+import { queryPostgres } from "./postgres.js";
+import { getTableSource } from "./data-source.js";
 
 const DEFAULT_OTP_TTL_SECONDS = 10 * 60;
 const DEFAULT_OTP_SHEET = "temp_otp";
@@ -47,20 +49,46 @@ export async function storeOtp(env, { email, otp, scope = "client", request }) {
   const now = new Date();
   const expires = new Date(now.getTime() + getOtpTtlSeconds(env) * 1000);
   const otpHash = await hashOtp(env, cleanEmail, otp);
+  const ip = request?.headers?.get("cf-connecting-ip") || request?.headers?.get("x-forwarded-for") || "";
+  const ua = request?.headers?.get("user-agent") || "";
+  const provider = getEmailProvider(env);
+  const cleanScope = String(scope || "client").toLowerCase();
+
+  if (getTableSource(env, "OTP") === "psql") {
+    const sql = `
+      INSERT INTO public.temp_otp ("email", "otp_hash", "scope", "created_at", "expires_at", "used_at", "send_provider", "request_ip", "user_agent")
+      VALUES ($1, $2, $3, NOW(), $4, NULL, $5, $6, $7)
+      ON CONFLICT ("email", "scope") DO UPDATE SET
+        "otp_hash" = EXCLUDED."otp_hash",
+        "created_at" = NOW(),
+        "expires_at" = EXCLUDED."expires_at",
+        "used_at" = NULL,
+        "send_provider" = EXCLUDED."send_provider",
+        "request_ip" = EXCLUDED."request_ip",
+        "user_agent" = EXCLUDED."user_agent"
+    `;
+    await queryPostgres(env, sql, [
+      cleanEmail,
+      otpHash,
+      cleanScope,
+      expires.toISOString(),
+      provider,
+      ip,
+      ua.slice(0, 300)
+    ]);
+    return { expiresAt: expires.toISOString(), expiresInSeconds: getOtpTtlSeconds(env), provider };
+  }
+
   const sheetName = getOtpSheetName(env);
   const spreadsheetId = getCoreSpreadsheetId(env);
   if (!spreadsheetId) throw new Error("Missing GOOGLE_SHEET_ID_CORE for OTP storage.");
 
   await ensureOtpHeader(env, spreadsheetId, sheetName);
 
-  const ip = request?.headers?.get("cf-connecting-ip") || request?.headers?.get("x-forwarded-for") || "";
-  const ua = request?.headers?.get("user-agent") || "";
-  const provider = getEmailProvider(env);
-
   const row = [
     cleanEmail,
     otpHash,
-    String(scope || "client").toLowerCase(),
+    cleanScope,
     formatVietnamLocal(now),
     formatVietnamLocal(expires),
     "",
@@ -77,6 +105,32 @@ export async function verifyStoredOtp(env, { email, otp, scope = "client" }) {
   const cleanEmail = normalizeEmail(email);
   const cleanOtp = String(otp || "").trim();
   if (!/^\d{6}$/.test(cleanOtp)) return { ok: false, error: "Invalid or expired OTP." };
+  const requestedScope = String(scope || "client").toLowerCase();
+
+  if (getTableSource(env, "OTP") === "psql") {
+    const expectedHash = await hashOtp(env, cleanEmail, cleanOtp);
+    const sql = `
+      SELECT "otp_hash", "expires_at", "used_at"
+      FROM public.temp_otp
+      WHERE "email" = $1 AND ("scope" = $2 OR "scope" = 'all')
+      ORDER BY "created_at" DESC
+      LIMIT 1
+    `;
+    const result = await queryPostgres(env, sql, [cleanEmail, requestedScope]);
+    const row = result.rows?.[0];
+    if (!row) return { ok: false, error: "Invalid or expired OTP." };
+
+    if (row.used_at) return { ok: false, error: "OTP has already been used." };
+
+    const expiresAt = new Date(row.expires_at).getTime();
+    if (!expiresAt || expiresAt < Date.now()) return { ok: false, error: "OTP has expired." };
+
+    const rowHash = String(row.otp_hash || "").trim();
+    if (rowHash !== expectedHash && rowHash !== cleanOtp) return { ok: false, error: "Invalid OTP." };
+
+    await queryPostgres(env, `UPDATE public.temp_otp SET "used_at" = NOW() WHERE "email" = $1 AND "scope" = $2`, [cleanEmail, requestedScope]);
+    return { ok: true };
+  }
 
   const sheetName = getOtpSheetName(env);
   const spreadsheetId = getCoreSpreadsheetId(env);
@@ -89,7 +143,6 @@ export async function verifyStoredOtp(env, { email, otp, scope = "client" }) {
   const idx = indexMap(headers);
   const expectedHash = await hashOtp(env, cleanEmail, cleanOtp);
   const nowMs = Date.now();
-  const requestedScope = String(scope || "client").toLowerCase();
 
   let best = null;
   for (let i = 1; i < values.length; i++) {

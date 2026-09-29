@@ -1,7 +1,8 @@
 import { assertEmailAllowed, jsonResponse, normalizeEmail, readJson, requireClientSession } from "../../../_lib/security.js";
 import { batchUpdateSheetValues, getCoreSpreadsheetId, getSheetValues, makeCellRange, quoteSheetName } from "../../../_lib/google-sheets.js";
-import { getTableSheetName } from "../../../_lib/data-source.js";
+import { getTableSheetName, getTableSource } from "../../../_lib/data-source.js";
 import { nowVietnamLocal } from "../../../_lib/repos/repo-utils.js";
+import { getClientProfilePsql, updateClientProfilePsql } from "../../../_lib/repos/client-repo.js";
 
 const TBL_CLIENT_CONTRACT = "pdc_client_contract_info";
 const SYSTEM_EXCLUDE_COLUMNS = new Set([
@@ -28,6 +29,64 @@ export async function onRequestPost(context) {
   const dbMode = String(env.DB_MODE || "gsheet").toLowerCase();
   if (dbMode === "mock") {
     return handleMockUpdate(formData, auth.session, dbMode);
+  }
+
+  const source = getTableSource(env, "CLIENT_PROFILE");
+  if (source === "psql") {
+    try {
+      const existing = await getClientProfilePsql(env, auth.session.email);
+      if (!existing || String(existing["client id"] || "").trim() !== clientId) {
+        return jsonResponse({
+          success: false,
+          source: "psql",
+          error: "Forbidden. This client profile does not belong to the authenticated session."
+        }, 403);
+      }
+
+      const sessionEmail = normalizeEmail(auth.session.email);
+      const emailCheck = assertEmailAllowed(formData["client updater email"] || sessionEmail, sessionEmail);
+      if (!emailCheck.ok) return emailCheck.response;
+
+      const now = formatVietnamDateTime(new Date());
+      const updatedFields = [];
+      const payload = {};
+      for (const [rawKey, rawValue] of Object.entries(formData)) {
+        const key = String(rawKey || "").toLowerCase().trim();
+        if (!key || key.startsWith("__") || SYSTEM_EXCLUDE_COLUMNS.has(key)) continue;
+        payload[key] = rawValue ?? "";
+        updatedFields.push(key);
+      }
+      payload["updated at"] = now;
+      payload["updated by"] = sessionEmail;
+      updatedFields.push("updated at", "updated by");
+
+      if (updatedFields.length === 0) {
+        return jsonResponse({ success: false, source: "psql", error: "No matching editable columns found to update." }, 400);
+      }
+
+      const dryRun = isTruthy(formData.__dryRun || new URL(context.request.url).searchParams.get("dryRun"));
+      if (!dryRun) {
+        await updateClientProfilePsql(env, clientId, payload);
+      }
+
+      return jsonResponse({
+        success: true,
+        source: "psql",
+        dbMode,
+        dryRun,
+        authenticatedEmail: auth.session.email,
+        message: dryRun ? "Dry run OK. No data was written." : "Cập nhật thành công!",
+        receivedClientId: clientId,
+        updatedFields: [...new Set(updatedFields)],
+        updatedCellCount: updatedFields.length
+      });
+    } catch (err) {
+      return jsonResponse({
+        success: false,
+        source: "psql",
+        error: err?.message || String(err)
+      }, 500);
+    }
   }
 
   try {

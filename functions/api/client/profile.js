@@ -1,6 +1,7 @@
 import { assertEmailAllowed, jsonResponse, normalizeEmail, requireClientSession } from "../../_lib/security.js";
 import { getCoreSpreadsheetId, getSheetValues, quoteSheetName } from "../../_lib/google-sheets.js";
-import { getTableSheetName } from "../../_lib/data-source.js";
+import { getTableSheetName, getTableSource } from "../../_lib/data-source.js";
+import { getClientProfilePsql } from "../../_lib/repos/client-repo.js";
 
 const TBL_CLIENT_CONTRACT = "pdc_client_contract_info";
 
@@ -25,6 +26,39 @@ export async function onRequestGet(context) {
       requestedEmail: email,
       data: buildMockProfile(email)
     });
+  }
+
+  const source = getTableSource(env, "CLIENT_PROFILE");
+  if (source === "psql") {
+    try {
+      const profile = await getClientProfilePsql(env, email);
+      if (!profile) {
+        return jsonResponse({
+          success: false,
+          source: "psql",
+          dbMode,
+          authenticatedEmail: auth.session.email,
+          requestedEmail: email,
+          code: "CLIENT_PROFILE_NOT_FOUND",
+          error: "Client profile not found for this email. Please contact the PD Team if you believe you should have access.",
+          detail: `No matching record for ${email} in PostgreSQL table pdc_client_contract_info.`
+        }, 404);
+      }
+      return jsonResponse({
+        success: true,
+        source: "psql",
+        dbMode,
+        authenticatedEmail: auth.session.email,
+        requestedEmail: email,
+        data: profile
+      });
+    } catch (err) {
+      return jsonResponse({
+        success: false,
+        source: "psql",
+        error: err?.message || String(err)
+      }, 500);
+    }
   }
 
   try {

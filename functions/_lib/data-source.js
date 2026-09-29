@@ -18,7 +18,7 @@ export const TABLES = Object.freeze({
   },
   CLIENT_PROFILE: {
     envKey: "CLIENT_PROFILE",
-    defaultSource: "gsheet",
+    defaultSource: "psql",
     gsheetName: "pdc_client_contract_info",
     psqlName: "public.pdc_client_contract_info"
   },
@@ -48,7 +48,7 @@ export const TABLES = Object.freeze({
   },
   COURSE_MASTER: {
     envKey: "COURSE_MASTER",
-    defaultSource: "gsheet",
+    defaultSource: "psql",
     gsheetName: "pdc_course master list",
     psqlName: "public.pdc_course master list"
   },
@@ -102,9 +102,21 @@ export const TABLES = Object.freeze({
   },
   USER_ROLES: {
     envKey: "USER_ROLES",
-    defaultSource: "gsheet",
+    defaultSource: "psql",
     gsheetName: "pdc_user_roles",
     psqlName: "public.pdc_user_roles"
+  },
+  OTP: {
+    envKey: "OTP",
+    defaultSource: "psql",
+    gsheetName: "temp_otp",
+    psqlName: "public.temp_otp"
+  },
+  APP_LOG: {
+    envKey: "APP_LOG",
+    defaultSource: "psql",
+    gsheetName: "pdc_app_logs",
+    psqlName: "public.pdc_app_logs"
   },
   LOGISTIC_LOG: {
     envKey: "LOGISTIC_LOG",

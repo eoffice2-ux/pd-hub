@@ -215,8 +215,9 @@ Rule: Keep in sync whenever a new table, page, or route is added.
 ---
 
 ## 12. CLIENT_PROFILE
-- **Source**: gsheet only (GOOGLE_SHEET_ID_CORE)
-- **Sheet**: `pdc_client_contract_info`
+- **Table**: `public.pdc_client_contract_info`
+- **Source**: psql (TAB_CLIENT_PROFILE_SOURCE)
+- **Sheet fallback**: `pdc_client_contract_info` tab in GOOGLE_SHEET_ID_CORE
 
 ### Columns
 | Read | Written |
@@ -226,9 +227,9 @@ Rule: Keep in sync whenever a new table, page, or route is added.
 ### Routes
 | Page | View/Panel | Route | File | Method | Function |
 |---|---|---|---|---|---|
-| `public/client/index.html` | viewCorporate | `GET /api/client/profile` | `functions/api/client/profile.js` | GET | `onRequestGet` (sheet scan by `client updater email`) |
+| `public/client/index.html` | viewCorporate | `GET /api/client/profile` | `functions/api/client/profile.js` | GET | `onRequestGet` → `getClientProfilePsql` / sheet scan |
 | `public/client/index.html` | viewPersonal | `GET /api/client/profile` | `functions/api/client/profile.js` | GET | same — personal view renders subset |
-| `public/client/index.html` | viewPersonal | `POST /api/client/profile/update` | `functions/api/client/profile/update.js` | POST | client profile update repo |
+| `public/client/index.html` | viewPersonal | `POST /api/client/profile/update` | `functions/api/client/profile/update.js` | POST | `updateClientProfilePsql` / sheet update |
 
 ---
 
@@ -267,30 +268,32 @@ Rule: Keep in sync whenever a new table, page, or route is added.
 ---
 
 ## 15. COURSE_MASTER
-- **Source**: gsheet only (GOOGLE_SHEET_ID_CORE)
-- **Sheet**: `pdc_course master list`
+- **Table**: `public."pdc_course master list"`
+- **Source**: psql (TAB_COURSE_MASTER_SOURCE)
+- **Sheet fallback**: `pdc_course master list` tab in GOOGLE_SHEET_ID_CORE
 
 ### Columns
 | Read | Written |
 |---|---|
-| `course id`, `course name en`, `course name`, description fields | none |
+| `course id`, `course name en`, `course name`, `course name vn`, `course objectives`, `course description` | none |
 
 ### Routes
 | Page | View/Panel | Route | File | Method | Function |
 |---|---|---|---|---|---|
-| `public/trainee/index.html` | ClassDetailModal | `GET /api/trainee/section/details` | `functions/api/trainee/section/details.js` | GET | `getSectionDetailsPsql` / `getTraineeSectionDetailsFromSheet` (resolves course name) |
-| `public/report.html` | reportApp | `GET /api/report/report-data` | `functions/api/report/report-data.js` | GET | `onRequestGet` (reads courseSheet for course name lookup) |
+| `public/trainee/index.html` | ClassDetailModal | `GET /api/trainee/section/details` | `functions/api/trainee/section/details.js` | GET | `getSectionDetailsPsql` / `getCourseHelper` (resolves course name) |
+| `public/report.html` | reportApp | `GET /api/report/report-data` | `functions/api/report/report-data.js` | GET | `onRequestGet` → `fetchTableAsMatrix` (reads from PostgreSQL) |
 
 ---
 
 ## 16. USER_ROLES
-- **Source**: gsheet only (GOOGLE_SHEET_ID_CORE)
-- **Sheet**: `pdc_user_roles`
+- **Table**: `public.pdc_user_roles`
+- **Source**: psql (TAB_USER_ROLES_SOURCE)
+- **Sheet fallback**: `pdc_user_roles` tab in GOOGLE_SHEET_ID_CORE
 
 ### Columns
 | Read | Written |
 |---|---|
-| `email`, `role` | `email`, `role`, `updated_by`, `updated_at` |
+| `email`, `role`, `assigned_by`, `assigned_at`, `pin number` | `email`, `role`, `assigned_by`, `assigned_at`, `pin number` |
 
 ### Routes
 | Page | View/Panel | Route | File | Method | Function |
@@ -302,13 +305,14 @@ Rule: Keep in sync whenever a new table, page, or route is added.
 ---
 
 ## 17. temp_otp (transient OTP)
-- **Source**: gsheet only (GOOGLE_SHEET_ID_CORE)
-- **Sheet**: tab name from `TAB_OTP_GSHEET` env var
+- **Table**: `public.temp_otp`
+- **Source**: psql (TAB_OTP_SOURCE)
+- **Sheet fallback**: `temp_otp` tab in GOOGLE_SHEET_ID_CORE
 
 ### Columns
 | Read | Written |
 |---|---|
-| `email`, `otp`, `scope`, `expires_at` | `email`, `otp`, `scope`, `expires_at` |
+| `email`, `otp_hash`, `scope`, `expires_at`, `used_at` | `email`, `otp_hash`, `scope`, `expires_at`, `send_provider`, `request_ip`, `user_agent` |
 
 ### Routes
 | Page | View/Panel | Route | File | Method | Function |
@@ -321,13 +325,14 @@ Rule: Keep in sync whenever a new table, page, or route is added.
 ---
 
 ## 18. pdc_app_logs (application event log)
-- **Source**: gsheet only (GOOGLE_SHEET_ID_CORE)
-- **Sheet**: tab name from `TAB_APP_LOG_GSHEET` env var
+- **Table**: `public.pdc_app_logs`
+- **Source**: psql (TAB_APP_LOG_SOURCE)
+- **Sheet fallback**: `pdc_app_logs` tab in GOOGLE_SHEET_ID_CORE
 
 ### Columns
 | Read | Written |
 |---|---|
-| `timestamp`, `event`, `scope`, `email`, `success`, `detail`, `provider`, `ip` | same (append-only) |
+| `id`, `timestamp`, `event`, `scope`, `email`, `path`, `success`, `detail`, `provider`, `ip`, `user_agent` | same (append-only) |
 
 ### Routes
 | Page | View/Panel | Route | File | Method | Function |

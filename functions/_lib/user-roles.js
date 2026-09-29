@@ -16,7 +16,8 @@ import {
   getSpreadsheetMetadata,
   quoteSheetName
 } from "./google-sheets.js";
-import { getTableSheetName } from "./data-source.js";
+import { getTableSheetName, getTableSource } from "./data-source.js";
+import { queryPostgres } from "./postgres.js";
 
 export const VALID_ROLES = ["admin", "report_viewer", "client"];
 const SHEET_HEADERS = ["email", "role", "assigned_by", "assigned_at", "pin number"];
@@ -122,6 +123,17 @@ async function _readAll(env) {
 export async function getUserRole(env, email) {
   const clean = normalizeEmail(email);
   if (!clean) return null;
+
+  if (getTableSource(env, "USER_ROLES") === "psql") {
+    try {
+      const res = await queryPostgres(env, `SELECT "role" FROM public.pdc_user_roles WHERE LOWER("email") = $1 LIMIT 1`, [clean]);
+      const role = String(res.rows?.[0]?.role || "").toLowerCase().trim();
+      return VALID_ROLES.includes(role) ? role : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
   try {
     const rows = await _readAll(env);
     const match = rows.find((r) => r.email === clean);
@@ -136,6 +148,26 @@ export async function getUserRole(env, email) {
  * List all role assignments.
  */
 export async function listUserRoles(env) {
+  if (getTableSource(env, "USER_ROLES") === "psql") {
+    try {
+      const res = await queryPostgres(env, `
+        SELECT "email", "role", "assigned_by" AS "assignedBy", "assigned_at" AS "assignedAt", "pin number" AS "pin"
+        FROM public.pdc_user_roles
+        WHERE LOWER("role") = ANY($1)
+        ORDER BY "assigned_at" DESC
+      `, [VALID_ROLES]);
+      return (res.rows || []).map((r, i) => ({
+        ...r,
+        email: normalizeEmail(r.email),
+        role: String(r.role || "").toLowerCase().trim(),
+        assignedAt: r.assignedAt ? (typeof r.assignedAt === "string" ? r.assignedAt : new Date(r.assignedAt).toISOString()) : "",
+        rowIndex: i + 1
+      }));
+    } catch (_) {
+      return [];
+    }
+  }
+
   try {
     const rows = await _readAll(env);
     return rows.filter((r) => VALID_ROLES.includes(r.role));
@@ -155,6 +187,23 @@ export async function setUserRole(env, targetEmail, role, callerEmail) {
   if (!target) throw new Error("Missing target email.");
   if (!VALID_ROLES.includes(cleanRole)) {
     throw new Error(`Invalid role '${cleanRole}'. Must be one of: ${VALID_ROLES.join(", ")}`);
+  }
+
+  if (getTableSource(env, "USER_ROLES") === "psql") {
+    const checkSql = `SELECT "email" FROM public.pdc_user_roles WHERE LOWER("email") = $1`;
+    const checkRes = await queryPostgres(env, checkSql, [target]);
+    const isUpdate = (checkRes.rows?.length || 0) > 0;
+
+    const sql = `
+      INSERT INTO public.pdc_user_roles ("email", "role", "assigned_by", "assigned_at")
+      VALUES ($1, $2, $3, NOW())
+      ON CONFLICT ("email") DO UPDATE SET
+        "role" = EXCLUDED."role",
+        "assigned_by" = EXCLUDED."assigned_by",
+        "assigned_at" = NOW()
+    `;
+    await queryPostgres(env, sql, [target, cleanRole, caller]);
+    return { action: isUpdate ? "updated" : "created", email: target, role: cleanRole };
   }
 
   await ensureRolesSheetExists(env);
@@ -186,6 +235,12 @@ export async function deleteUserRole(env, targetEmail) {
   const target = normalizeEmail(targetEmail);
   if (!target) throw new Error("Missing target email.");
 
+  if (getTableSource(env, "USER_ROLES") === "psql") {
+    const res = await queryPostgres(env, `DELETE FROM public.pdc_user_roles WHERE LOWER("email") = $1`, [target]);
+    if ((res.rowCount || 0) === 0) return { action: "not_found", email: target };
+    return { action: "deleted", email: target };
+  }
+
   const spreadsheetId = getCoreSpreadsheetId(env);
   const sheetName = getRolesSheetName(env);
   const rows = await _readAll(env);
@@ -204,6 +259,29 @@ export async function deleteUserRole(env, targetEmail) {
 export async function getUserInfo(env, email) {
   const clean = normalizeEmail(email);
   if (!clean) return null;
+
+  if (getTableSource(env, "USER_ROLES") === "psql") {
+    try {
+      const res = await queryPostgres(env, `
+        SELECT "email", "role", "assigned_by" AS "assignedBy", "assigned_at" AS "assignedAt", "pin number" AS "pin"
+        FROM public.pdc_user_roles
+        WHERE LOWER("email") = $1
+        LIMIT 1
+      `, [clean]);
+      const r = res.rows?.[0];
+      if (!r) return null;
+      return {
+        email: normalizeEmail(r.email),
+        role: String(r.role || "").toLowerCase().trim(),
+        assignedBy: r.assignedBy || "",
+        assignedAt: r.assignedAt ? String(r.assignedAt) : "",
+        pin: r.pin || ""
+      };
+    } catch (_) {
+      return null;
+    }
+  }
+
   try {
     const rows = await _readAll(env);
     return rows.find((r) => r.email === clean) || null;
@@ -216,6 +294,22 @@ export async function setUserPin(env, email, pin, defaultRole = "client") {
   const target = normalizeEmail(email);
   if (!target) throw new Error("Missing email.");
   if (!/^\d{4}$/.test(String(pin || ""))) throw new Error("PIN must be 4 digits.");
+
+  if (getTableSource(env, "USER_ROLES") === "psql") {
+    const checkRes = await queryPostgres(env, `SELECT "role" FROM public.pdc_user_roles WHERE LOWER("email") = $1`, [target]);
+    const existing = checkRes.rows?.[0];
+    const roleToUse = existing?.role || defaultRole;
+
+    const sql = `
+      INSERT INTO public.pdc_user_roles ("email", "role", "assigned_by", "assigned_at", "pin number")
+      VALUES ($1, $2, 'self', NOW(), $3)
+      ON CONFLICT ("email") DO UPDATE SET
+        "pin number" = EXCLUDED."pin number",
+        "assigned_at" = NOW()
+    `;
+    await queryPostgres(env, sql, [target, roleToUse, String(pin)]);
+    return { action: existing ? "updated" : "created", email: target, role: roleToUse };
+  }
 
   await ensureRolesSheetExists(env);
 
