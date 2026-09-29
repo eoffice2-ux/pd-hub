@@ -55,9 +55,10 @@ async function searchOrganizationsFromPostgres(env, query) {
     searchOrganizationsPsql(env, query, { limit: 12 }),
     searchPendingOrgsPsql(env, query, { limit: 5 })
   ]);
+  const pendingFiltered = pending.filter((p) => p.resolved_status !== "OCE List Updated");
   return [
     ...official.map((o) => ({ ...o, source: "official" })),
-    ...pending
+    ...pendingFiltered
   ];
 }
 

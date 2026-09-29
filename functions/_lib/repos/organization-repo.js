@@ -27,25 +27,38 @@ export async function searchOrganizationsPsql(env, query, options = {}) {
 
 export async function searchPendingOrgsPsql(env, query, options = {}) {
   const tableName = quoteIdentifierPath(getTablePsqlName(env, "PENDING_ORG") || "public.pdc_pending_organizations", "pending organization PostgreSQL table");
+  const orgTableName = quoteIdentifierPath(getTablePsqlName(env, "ORGANIZATION") || "public.oce_industry_list", "organization PostgreSQL table");
   const limit = Math.min(Math.max(Number(options.limit || 5), 1), 20);
   const q = String(query || "").trim();
   if (q.length < 2) return [];
 
   const sql = `
     SELECT
-      "pd_id"::text AS id,
-      "name"::text AS name,
-      'pending' AS source
-    FROM ${tableName}
-    WHERE "name" ILIKE $1 AND "status" = 'pending'
-    ORDER BY "name" ASC
+      p."pd_id"::text AS id,
+      p."name"::text AS name,
+      CASE
+        WHEN oce."company_id" IS NOT NULL THEN 'OCE List Updated'
+        WHEN lower(p."status") = 'pending'  THEN 'Unverified'
+        WHEN lower(p."status") = 'verified' THEN 'Verified'
+        ELSE p."status"
+      END AS resolved_status
+    FROM ${tableName} p
+    LEFT JOIN ${orgTableName} oce
+      ON oce."company_id"::text = p."pd_id"
+    WHERE p."name" ILIKE $1
+    ORDER BY p."name" ASC
     LIMIT ${limit}
   `;
   try {
     const result = await queryPostgres(env, sql, [`%${q}%`]);
     return (result.rows || [])
       .filter((row) => row && row.name)
-      .map((row) => ({ id: row.id || "", name: row.name || "", source: "pending" }));
+      .map((row) => ({
+        id: row.id || "",
+        name: row.name || "",
+        source: "pending",
+        resolved_status: row.resolved_status || "Unverified"
+      }));
   } catch (err) {
     console.warn("searchPendingOrgsPsql warning:", err?.message || err);
     return [];

@@ -2157,9 +2157,14 @@
                     items.forEach((item) => {
                       if (item.name) {
                         let safeName = item.name.replace(/'/g, "\\'");
-                        let badge = item.source === "pending"
-                          ? `<span class="badge bg-warning text-dark ms-2" style="font-size:10px; font-weight:600;">Unverified</span>`
-                          : "";
+                        let badge = "";
+                        if (item.source === "pending") {
+                          if (item.resolved_status === "Verified") {
+                            badge = `<span class="badge bg-success ms-2" style="font-size:10px; font-weight:600;">PD</span>`;
+                          } else if (item.resolved_status !== "OCE List Updated") {
+                            badge = `<span class="badge bg-warning text-dark ms-2" style="font-size:10px; font-weight:600;">PD</span>`;
+                          }
+                        }
                         h += `<div class="result-item d-flex justify-content-between align-items-center" onclick="selectOrg('${inputID}','${resultsID}','${safeName}', '${item.id}')">
                           <span>${escapeHtml(item.name)}</span>${badge}
                         </div>`;
