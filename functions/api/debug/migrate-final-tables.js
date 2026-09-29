@@ -58,6 +58,7 @@ const DDL_STATEMENTS = [
 
   `CREATE TABLE IF NOT EXISTS public."pdc_course master list" (
     "course id" VARCHAR(100) PRIMARY KEY,
+    "course code" VARCHAR(100),
     "course name" VARCHAR(255),
     "course name en" VARCHAR(255),
     "course name vn" VARCHAR(255),
@@ -288,6 +289,7 @@ async function migrateCourseMaster(env, spreadsheetId) {
         return idx !== -1 ? String(row[idx] ?? "").trim() : "";
       };
 
+      const courseCode = getVal("course code") || "";
       const courseName = getVal("course name") || getVal("course name en") || courseId;
       const courseNameEn = getVal("course name en") || courseName;
       const courseNameVn = getVal("course name vn") || getVal("course name");
@@ -296,10 +298,11 @@ async function migrateCourseMaster(env, spreadsheetId) {
 
       const sql = `
         INSERT INTO public."pdc_course master list" (
-          "course id", "course name", "course name en", "course name vn", "course objectives", "course description"
+          "course id", "course code", "course name", "course name en", "course name vn", "course objectives", "course description"
         )
-        VALUES ($1, $2, $3, $4, $5, $6)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
         ON CONFLICT ("course id") DO UPDATE SET
+          "course code" = EXCLUDED."course code",
           "course name" = EXCLUDED."course name",
           "course name en" = EXCLUDED."course name en",
           "course name vn" = EXCLUDED."course name vn",
@@ -308,7 +311,7 @@ async function migrateCourseMaster(env, spreadsheetId) {
       `;
 
       try {
-        await queryPostgres(env, sql, [courseId, courseName, courseNameEn, courseNameVn, courseObjectives, courseDesc]);
+        await queryPostgres(env, sql, [courseId, courseCode, courseName, courseNameEn, courseNameVn, courseObjectives, courseDesc]);
         result.transferred++;
       } catch (err) {
         result.errors.push({ courseId, error: err.message || String(err) });

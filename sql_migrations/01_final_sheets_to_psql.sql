@@ -62,6 +62,7 @@ CREATE TABLE IF NOT EXISTS public.pdc_client_contract_info (
 -- 5. pdc_course master list (Canonical course catalog)
 CREATE TABLE IF NOT EXISTS public."pdc_course master list" (
     "course id" VARCHAR(100) PRIMARY KEY,
+    "course code" VARCHAR(100),
     "course name" VARCHAR(255),
     "course name en" VARCHAR(255),
     "course name vn" VARCHAR(255),
