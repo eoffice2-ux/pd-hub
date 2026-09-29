@@ -1,4 +1,4 @@
-import { jsonResponse, normalizeEmail, requireAdminOrDebug } from "../../_lib/security.js";
+import { jsonResponse, normalizeEmail, requireAdminOrDebug, requireDebugToken } from "../../_lib/security.js";
 import { getCoreSpreadsheetId, getSheetValues, quoteSheetName } from "../../_lib/google-sheets.js";
 import { queryPostgres } from "../../_lib/postgres.js";
 
