@@ -135,6 +135,12 @@ export const TABLES = Object.freeze({
     defaultSource: "mock",
     gsheetName: "pdc_organization master list",
     psqlName: "public.oce_industry_list"
+  },
+  PENDING_ORG: {
+    envKey: "PENDING_ORG",
+    defaultSource: "psql",
+    gsheetName: "",
+    psqlName: "public.pdc_pending_organizations"
   }
 });
 

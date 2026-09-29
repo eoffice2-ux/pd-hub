@@ -1,6 +1,6 @@
 import { jsonResponse, requireTraineeSession } from "../../../_lib/security.js";
 import { getTableSource } from "../../../_lib/data-source.js";
-import { searchOrganizationsPsql } from "../../../_lib/repos/organization-repo.js";
+import { searchOrganizationsPsql, searchPendingOrgsPsql } from "../../../_lib/repos/organization-repo.js";
 
 const MOCK_ORGS = [
   { id: "EIU", name: "Eastern International University" },
@@ -51,7 +51,14 @@ export async function onRequestGet(context) {
 }
 
 async function searchOrganizationsFromPostgres(env, query) {
-  return searchOrganizationsPsql(env, query, { limit: 15 });
+  const [official, pending] = await Promise.all([
+    searchOrganizationsPsql(env, query, { limit: 12 }),
+    searchPendingOrgsPsql(env, query, { limit: 5 })
+  ]);
+  return [
+    ...official.map((o) => ({ ...o, source: "official" })),
+    ...pending
+  ];
 }
 
 function searchMockOrganizations(query) {

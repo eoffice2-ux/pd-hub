@@ -24,3 +24,30 @@ export async function searchOrganizationsPsql(env, query, options = {}) {
     .filter((row) => row && row.name)
     .map((row) => ({ id: row.id || "", name: row.name || "" }));
 }
+
+export async function searchPendingOrgsPsql(env, query, options = {}) {
+  const tableName = quoteIdentifierPath(getTablePsqlName(env, "PENDING_ORG") || "public.pdc_pending_organizations", "pending organization PostgreSQL table");
+  const limit = Math.min(Math.max(Number(options.limit || 5), 1), 20);
+  const q = String(query || "").trim();
+  if (q.length < 2) return [];
+
+  const sql = `
+    SELECT
+      "pd_id"::text AS id,
+      "name"::text AS name,
+      'pending' AS source
+    FROM ${tableName}
+    WHERE "name" ILIKE $1 AND "status" = 'pending'
+    ORDER BY "name" ASC
+    LIMIT ${limit}
+  `;
+  try {
+    const result = await queryPostgres(env, sql, [`%${q}%`]);
+    return (result.rows || [])
+      .filter((row) => row && row.name)
+      .map((row) => ({ id: row.id || "", name: row.name || "", source: "pending" }));
+  } catch (err) {
+    console.warn("searchPendingOrgsPsql warning:", err?.message || err);
+    return [];
+  }
+}

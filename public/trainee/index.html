@@ -2141,24 +2141,45 @@
             api.run
               .withSuccessHandler((data) => {
                 if (data && data.error) {
-                  //res.innerHTML = `<div class="result-item text-danger small"><b>DB Error:</b> ${data.error}</div>`;
-                  res.innerHTML = `<div class="result-item text-danger small" style="line-height: 1.4;">${data.error}</div>`;
+                  res.innerHTML = `<div class="result-item text-danger small" style="line-height: 1.4;">${escapeHtml(data.error)}</div>`;
                   currentSearchTerm = ""; // Reset so they can try again
-                } else if (!data || data.length === 0) {
+                } else {
+                  let h = "";
                   const note = window.__lastOrgSearchWarning
                     ? `<div class="result-item text-warning small" style="line-height:1.4;">${window.__lastOrgSearchWarning}</div>`
                     : "";
-                  res.innerHTML =
-                    note +
-                    `<div class="result-item text-muted">No matches found.</div>`;
-                } else {
-                  let h = "";
-                  data.forEach((item) => {
-                    if (item.name) {
-                      let safeName = item.name.replace(/'/g, "\\'");
-                      h += `<div class="result-item" onclick="selectOrg('${inputID}','${resultsID}','${safeName}', '${item.id}')">${item.name}</div>`;
-                    }
-                  });
+                  if (note) h += note;
+
+                  const items = Array.isArray(data) ? data : [];
+                  if (items.length === 0) {
+                    h += `<div class="result-item text-muted">No matches found.</div>`;
+                  } else {
+                    items.forEach((item) => {
+                      if (item.name) {
+                        let safeName = item.name.replace(/'/g, "\\'");
+                        let badge = item.source === "pending"
+                          ? `<span class="badge bg-warning text-dark ms-2" style="font-size:10px; font-weight:600;">Unverified</span>`
+                          : "";
+                        h += `<div class="result-item d-flex justify-content-between align-items-center" onclick="selectOrg('${inputID}','${resultsID}','${safeName}', '${item.id}')">
+                          <span>${escapeHtml(item.name)}</span>${badge}
+                        </div>`;
+                      }
+                    });
+                  }
+
+                  const hasExactMatch = items.some(
+                    (it) => String(it.name || "").trim().toLowerCase() === val.toLowerCase()
+                  );
+
+                  if (!hasExactMatch && val.length >= 2) {
+                    let safeVal = val.replace(/'/g, "\\'");
+                    h += `<div class="result-item text-primary fw-semibold" id="useThisNameBtn"
+                            onclick="submitCustomOrg('${inputID}','${resultsID}','${safeVal}')"
+                            style="cursor:pointer; border-top:1px solid #eee; margin-top:4px; padding-top:8px;">
+                            <i class="fas fa-plus-circle me-1"></i> Dùng tên này / Use "<b>${escapeHtml(val)}</b>"
+                          </div>`;
+                  }
+
                   res.innerHTML = h;
                 }
               })
@@ -2169,6 +2190,45 @@
         document.addEventListener("click", (e) => {
           if (e.target !== inp) res.style.display = "none";
         });
+      }
+
+      function escapeHtml(s) {
+        return String(s ?? "").replace(/[&<>"']/g, (c) => ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#39;"
+        }[c]));
+      }
+
+      async function submitCustomOrg(inpID, resID, name) {
+        const btn = document.getElementById("useThisNameBtn");
+        if (btn) {
+          btn.style.pointerEvents = "none";
+          btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Đang đăng ký / Registering...';
+        }
+
+        try {
+          const res = await pdcFetch("/api/trainee/organizations/register-pending", {
+            method: "POST",
+            body: JSON.stringify({ name })
+          });
+          if (res && res.success && res.pd_id) {
+            selectOrg(inpID, resID, res.name || name, res.pd_id);
+          } else {
+            const err = res?.error || "Không thể đăng ký tổ chức mới / Could not register new organization.";
+            if (btn) {
+              btn.style.pointerEvents = "auto";
+              btn.innerHTML = `<span class="text-danger small"><i class="fas fa-exclamation-circle me-1"></i>${escapeHtml(err)}</span>`;
+            }
+          }
+        } catch (err) {
+          if (btn) {
+            btn.style.pointerEvents = "auto";
+            btn.innerHTML = `<span class="text-danger small"><i class="fas fa-exclamation-circle me-1"></i>${escapeHtml(err.message || String(err))}</span>`;
+          }
+        }
       }
 
       // Update selectOrg to accept and store the orgId

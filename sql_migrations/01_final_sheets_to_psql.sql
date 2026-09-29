@@ -102,3 +102,12 @@ CREATE TABLE IF NOT EXISTS public."pdc_course master list" (
     "updated by" VARCHAR(255),
     "updated at" VARCHAR(255)
 );
+
+-- 02. pdc_pending_organizations (User-submitted orgs awaiting admin review)
+CREATE TABLE IF NOT EXISTS public.pdc_pending_organizations (
+  "pd_id"        VARCHAR(255) PRIMARY KEY,
+  "name"         TEXT NOT NULL,
+  "submitted_by" VARCHAR(255),
+  "created_at"   TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  "status"       VARCHAR(50) DEFAULT 'pending'  -- pending | verified | promoted | rejected
+);

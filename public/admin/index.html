@@ -679,6 +679,9 @@
           <button class="tab" id="tabVersions" onclick="showTab('versions')">
             <i class="fas fa-code-branch me-2"></i>Version changes
           </button>
+          <button class="tab" id="tabPendingOrgs" onclick="showTab('pendingOrgs')">
+            <i class="fas fa-building me-2"></i>Pending Orgs
+          </button>
         </div>
 
         <section id="panelStatus" class="panel active">
@@ -907,6 +910,42 @@
             </div>
             <div id="changelogBody" class="markdown-body">
               <div class="empty">Loading version history...</div>
+            </div>
+          </div>
+        </section>
+
+        <section id="panelPendingOrgs" class="panel">
+          <div class="card">
+            <div class="status-actions">
+              <div>
+                <h2><i class="fas fa-building me-2"></i>Pending Organizations</h2>
+                <p class="small muted">
+                  Organizations submitted by trainees that could not be found in the official OCE list.
+                  <b>OCE List Updated</b> = this <code>pd_*</code> ID now exists in <code>oce_industry_list</code>.
+                </p>
+              </div>
+              <div class="toolbar action-toolbar">
+                <button onclick="loadPendingOrgs()">&#8635; Refresh</button>
+              </div>
+            </div>
+
+            <!-- Summary metrics -->
+            <div id="pendingOrgsSummary" class="grid" style="margin-top: 14px;"></div>
+
+            <!-- Sort toolbar -->
+            <div class="toolbar" style="margin-top: 14px; gap: 8px;">
+              <span class="small muted"><b>Sort by:</b></span>
+              <button class="light" id="sortPendingOrgs_name"
+                onclick="setPendingOrgsSort('name')">Name</button>
+              <button class="light" id="sortPendingOrgs_created_at"
+                onclick="setPendingOrgsSort('created_at')">Date Submitted</button>
+              <button class="light" id="sortPendingOrgs_status"
+                onclick="setPendingOrgsSort('status')">Status</button>
+            </div>
+
+            <!-- Table -->
+            <div id="pendingOrgsTable" style="margin-top: 14px;">
+              <div class="empty muted">Click Refresh to load.</div>
             </div>
           </div>
         </section>
@@ -1415,6 +1454,7 @@
           "docs",
           "logs",
           "versions",
+          "pendingOrgs",
           "profile",
         ]) {
           const panel = document.getElementById("panel" + cap(n));
@@ -1428,6 +1468,9 @@
         }
         if (name === "versions") {
           loadChangelog();
+        }
+        if (name === "pendingOrgs") {
+          loadPendingOrgs();
         }
         if (name === "docs") {
           if (!docCache[currentDoc]) {
@@ -2003,6 +2046,108 @@
             btn.innerText = "Resend OTP";
           });
       }
+
+// ---- Pending Orgs Tab ----
+      let pendingOrgsSort  = "created_at";
+      let pendingOrgsOrder = "desc";
+
+      function setPendingOrgsSort(col) {
+        if (pendingOrgsSort === col) {
+          pendingOrgsOrder = pendingOrgsOrder === "asc" ? "desc" : "asc";
+        } else {
+          pendingOrgsSort  = col;
+          pendingOrgsOrder = col === "created_at" ? "desc" : "asc";
+        }
+        loadPendingOrgs();
+      }
+
+      async function loadPendingOrgs() {
+        const token = getAdminToken();
+        if (!token) return;
+
+        const tableEl   = document.getElementById("pendingOrgsTable");
+        const summaryEl = document.getElementById("pendingOrgsSummary");
+        if (tableEl) tableEl.innerHTML = '<div class="empty muted">Loading...</div>';
+
+        // Update sort button visual state
+        for (const col of ["name", "created_at", "status"]) {
+          const btn = document.getElementById("sortPendingOrgs_" + col);
+          if (!btn) continue;
+          const isActive = col === pendingOrgsSort;
+          btn.style.background = isActive ? "linear-gradient(135deg, var(--c-navy), var(--c-deep-navy))" : "";
+          btn.style.color = isActive ? "#fff" : "";
+          btn.title = isActive ? (pendingOrgsOrder === "asc" ? "? Ascending" : "? Descending") : "";
+        }
+
+        try {
+          const url = `/api/admin/pending-orgs?sort=${encodeURIComponent(pendingOrgsSort)}&order=${encodeURIComponent(pendingOrgsOrder)}`;
+          const json = await apiBearerGet(url, token);
+          const rows = json.data || [];
+
+          // Summary metrics
+          const total      = rows.length;
+          const oceUpdated = rows.filter(r => r.resolved_status === "OCE List Updated").length;
+          const unverified = rows.filter(r => r.resolved_status === "Unverified").length;
+          const verified   = rows.filter(r => r.resolved_status === "Verified").length;
+
+          if (summaryEl) {
+            summaryEl.innerHTML = [
+              metric("Total pending orgs", String(total),      "ok"),
+              metric("OCE List Updated",   String(oceUpdated), oceUpdated > 0 ? "ok" : ""),
+              metric("Unverified",         String(unverified), unverified > 0 ? "warn" : ""),
+              metric("Verified",           String(verified),   "ok"),
+            ].join("");
+          }
+
+          if (!rows.length) {
+            tableEl.innerHTML = '<div class="empty ok"><i class="fas fa-check-circle me-1"></i>No pending organizations submitted yet.</div>';
+            return;
+          }
+
+          const arrowFor = (col) => pendingOrgsSort === col ? (pendingOrgsOrder === "asc" ? " ?" : " ?") : "";
+
+          const headerCells = [
+            `<th style="cursor:pointer" onclick="setPendingOrgsSort('name')">#&nbsp; Name${arrowFor("name")}</th>`,
+            `<th>PD ID</th>`,
+            `<th>Submitted by</th>`,
+            `<th style="cursor:pointer" onclick="setPendingOrgsSort('created_at')">Date Submitted${arrowFor("created_at")}</th>`,
+            `<th style="cursor:pointer" onclick="setPendingOrgsSort('status')">Status${arrowFor("status")}</th>`,
+          ].join("");
+
+          const bodyRows = rows.map((r, i) => {
+            const statusBadge = renderPendingOrgStatus(r.resolved_status);
+            return `<tr>
+              <td><b>${i + 1}</b>&nbsp; ${escapeHtml(r.name)}</td>
+              <td><code class="small">${escapeHtml(r.pd_id)}</code></td>
+              <td class="muted small">${escapeHtml(r.submitted_by || "-")}</td>
+              <td class="muted small">${formatTime(r.created_at)}</td>
+              <td>${statusBadge}</td>
+            </tr>`;
+          }).join("");
+
+          tableEl.innerHTML = `<table>
+            <thead><tr>${headerCells}</tr></thead>
+            <tbody>${bodyRows}</tbody>
+          </table>`;
+
+        } catch (err) {
+          if (tableEl) tableEl.innerHTML = `<div class="empty bad">${escapeHtml(err.message)}</div>`;
+        }
+      }
+
+      function renderPendingOrgStatus(status) {
+        if (status === "OCE List Updated") {
+          return '<span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>OCE List Updated</span>';
+        }
+        if (status === "Verified") {
+          return '<span class="badge bg-primary"><i class="fas fa-shield-alt me-1"></i>Verified</span>';
+        }
+        if (status === "Unverified" || status === "pending") {
+          return '<span class="badge bg-warning">Unverified</span>';
+        }
+        return `<span class="badge bg-secondary">${escapeHtml(status)}</span>`;
+      }
+// ---- End Pending Orgs Tab ----
 
       boot();
     </script>
