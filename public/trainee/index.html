@@ -451,15 +451,6 @@
           max-height: calc(100vh - 140px);
           overflow-y: auto;
         }
-        .search-results {
-          position: fixed;
-          left: 10px;
-          right: 10px;
-          top: auto;
-          bottom: 12px;
-          max-height: 45vh;
-          border-radius: 16px;
-        }
         table {
           display: block;
           overflow-x: auto;
@@ -1109,6 +1100,11 @@
 
             <label class="small fw-bold"
               >Organization <span class="text-danger">*</span></label
+            >
+            <small
+              class="text-muted d-block mb-2 fst-italic"
+              style="font-size: 11px"
+              >Vui lòng gõ và chọn tổ chức từ danh sách gợi ý / Please type and select organization from the dropdown list.</small
             >
             <div class="search-container mb-3">
               <input type="hidden" id="profOrgId" name="organizationId" />
