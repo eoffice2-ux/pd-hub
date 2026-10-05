@@ -812,6 +812,7 @@
             </div>
             <div id="logSummary" class="grid"></div>
             <h3 style="margin-top: 24px;"><i class="fas fa-chart-bar me-2 text-primary"></i>Top access pages, last 7 days</h3>
+            <div id="logPages" class="card"></div>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 28px; margin-bottom: 10px; flex-wrap: wrap; gap: 10px;">
               <h3 style="margin: 0;"><i class="fas fa-table me-2 text-primary"></i>Recent Operational Logs (PostgreSQL)</h3>
               <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
@@ -1620,6 +1621,7 @@
       }
       async function loadArchitecture() {
         const el = document.getElementById("architectureContent");
+        if (!el) return;
         if (el.innerText !== "Loading architecture documentation...") return; // already loaded
         try {
           const res = await fetch("/MAP_TABLE_PAGE_FUNCTION.md");
@@ -1810,76 +1812,85 @@
         const isStale = !isNaN(genDate.getTime()) && (Date.now() - genDate.getTime() > 15 * 60 * 1000);
         const checkTypeLabel = window.lastStatusIsDeep ? "Deep check" : "Quick check";
 
-        document.getElementById("summary").innerHTML = [
-          metric(
-            "Overall",
-            summary.overall || "unknown",
-            statusClass(summary.overall),
-          ),
-          metric(
-            "OTP",
-            summary.otp || "unknown",
-            summary.otp === "email" ? "ok" : "warn",
-          ),
-          metric(
-            "GAS 1 Active",
-            c.otp?.gas1Present ? "Yes" : "No",
-            c.otp?.gas1Present ? "ok" : "warn",
-          ),
-          metric(
-            "GAS 2 Active",
-            c.otp?.gas2Present ? "Yes" : "No",
-            c.otp?.gas2Present ? "ok" : "warn",
-          ),
-          metric(
-            "Brevo Active",
-            c.otp?.brevoApiKeyPresent ? "Yes" : "No",
-            c.otp?.brevoApiKeyPresent ? "ok" : "warn",
-          ),
-          metric(
-            "API Keep-Alive",
-            c.otp?.keepaliveConfigured ? "Yes" : "No",
-            c.otp?.keepaliveConfigured ? "ok" : "warn",
-          ),
-          metric(
-            "PostgreSQL tables",
-            String(summary.activePsqlTables ?? 0),
-            "ok",
-          ),
-          metric(
-            "Google Sheet tables",
-            String(summary.activeGsheetTables ?? 0),
-            "ok",
-          ),
-          metric(
-            "User access 24h",
-            String(summary.userAccessLast24h ?? 0),
-            "ok",
-          ),
-          metric(
-            "OTP sent 24h",
-            String(summary.otpEmailSentLast24h ?? 0),
-            "ok",
-          ),
-          metric("OTP verify 24h", String(summary.otpVerifyLast24h ?? 0), "ok"),
-          metric("Admin auth", data.environment?.authMethod || "unknown", "ok"),
-          metric("Check mode", checkTypeLabel, "ok"),
-          metric("Generated (ICT)", vnTimeStr + (isStale ? " ⚠️ Stale" : ""), isStale ? "warn" : ""),
-        ].join("");
+        const sumEl = document.getElementById("summary");
+        if (sumEl) {
+          sumEl.innerHTML = [
+            metric(
+              "Overall",
+              summary.overall || "unknown",
+              statusClass(summary.overall),
+            ),
+            metric(
+              "OTP",
+              summary.otp || "unknown",
+              summary.otp === "email" ? "ok" : "warn",
+            ),
+            metric(
+              "GAS 1 Active",
+              c.otp?.gas1Present ? "Yes" : "No",
+              c.otp?.gas1Present ? "ok" : "warn",
+            ),
+            metric(
+              "GAS 2 Active",
+              c.otp?.gas2Present ? "Yes" : "No",
+              c.otp?.gas2Present ? "ok" : "warn",
+            ),
+            metric(
+              "Brevo Active",
+              c.otp?.brevoApiKeyPresent ? "Yes" : "No",
+              c.otp?.brevoApiKeyPresent ? "ok" : "warn",
+            ),
+            metric(
+              "API Keep-Alive",
+              c.otp?.keepaliveConfigured ? "Yes" : "No",
+              c.otp?.keepaliveConfigured ? "ok" : "warn",
+            ),
+            metric(
+              "PostgreSQL tables",
+              String(summary.activePsqlTables ?? 0),
+              "ok",
+            ),
+            metric(
+              "Google Sheet tables",
+              String(summary.activeGsheetTables ?? 0),
+              "ok",
+            ),
+            metric(
+              "User access 24h",
+              String(summary.userAccessLast24h ?? 0),
+              "ok",
+            ),
+            metric(
+              "OTP sent 24h",
+              String(summary.otpEmailSentLast24h ?? 0),
+              "ok",
+            ),
+            metric("OTP verify 24h", String(summary.otpVerifyLast24h ?? 0), "ok"),
+            metric("Admin auth", data.environment?.authMethod || "unknown", "ok"),
+            metric("Check mode", checkTypeLabel, "ok"),
+            metric("Generated (ICT)", vnTimeStr + (isStale ? " ⚠️ Stale" : ""), isStale ? "warn" : ""),
+          ].join("");
+        }
 
-        document.getElementById("details").innerHTML = [
-          component("Google Sheets", c.googleSheets),
-          component("OTP Email", c.otp),
-          component("PostgreSQL / Hyperdrive", c.postgres),
-          component("Active Sources", c.sources),
-        ].join("");
+        const detEl = document.getElementById("details");
+        if (detEl) {
+          detEl.innerHTML = [
+            component("Google Sheets", c.googleSheets),
+            component("OTP Email", c.otp),
+            component("PostgreSQL / Hyperdrive", c.postgres),
+            component("Active Sources", c.sources),
+          ].join("");
+        }
         renderTables(data.tables || []);
         renderLogs(data.logs || data.components?.logs || {});
         renderEmailOtpLogs(data.emailOtpLogs || []);
-        document.getElementById("raw").innerHTML =
-          "<h2>Raw JSON</h2><pre>" +
-          escapeHtml(JSON.stringify(data, null, 2)) +
-          "</pre>";
+        const rawEl = document.getElementById("raw");
+        if (rawEl) {
+          rawEl.innerHTML =
+            "<h2>Raw JSON</h2><pre>" +
+            escapeHtml(JSON.stringify(data, null, 2)) +
+            "</pre>";
+        }
       }
       function metric(label, value, cls) {
         return `<div class="metric"><div class="label">${escapeHtml(label)}</div><div class="value ${cls || ""}">${escapeHtml(value)}</div></div>`;
@@ -1922,33 +1933,39 @@
         const sum = logs.summary || {};
         const d1 = sum.last24h || {};
         const d7 = sum.last7d || {};
-        document.getElementById("logSummary").innerHTML = [
-          metric(
-            "Log rows",
-            String(logs.totalRows ?? 0),
-            logs.configured === false ? "warn" : "ok",
-          ),
-          metric("Access 24h", String(d1.userAccess ?? 0), "ok"),
-          metric("Trainee Login 24h", String(d1.traineeLoginOk ?? 0), "ok"),
-          metric("Client Login 24h", String(d1.clientLoginOk ?? 0), "ok"),
-          metric("Admin Login 24h", String(d1.adminLoginOk ?? 0), "ok"),
-          metric("Course Reg 24h", String(d1.courseRegistered ?? 0), "ok"),
-          metric("Check-in 24h", String(d1.checkinOk ?? 0), "ok"),
-          metric("OTP sent 24h", String(d1.otpSendOk ?? 0), "ok"),
-          metric(
-            "OTP sent fail 24h",
-            String(d1.otpSendFailed ?? 0),
-            (d1.otpSendFailed || 0) > 0 ? "warn" : "ok",
-          ),
-          metric("OTP verified 24h", String(d1.otpVerifyOk ?? 0), "ok"),
-        ].join("");
+        const logSummaryEl = document.getElementById("logSummary");
+        if (logSummaryEl) {
+          logSummaryEl.innerHTML = [
+            metric(
+              "Log rows",
+              String(logs.totalRows ?? 0),
+              logs.configured === false ? "warn" : "ok",
+            ),
+            metric("Access 24h", String(d1.userAccess ?? 0), "ok"),
+            metric("Trainee Login 24h", String(d1.traineeLoginOk ?? 0), "ok"),
+            metric("Client Login 24h", String(d1.clientLoginOk ?? 0), "ok"),
+            metric("Admin Login 24h", String(d1.adminLoginOk ?? 0), "ok"),
+            metric("Course Reg 24h", String(d1.courseRegistered ?? 0), "ok"),
+            metric("Check-in 24h", String(d1.checkinOk ?? 0), "ok"),
+            metric("OTP sent 24h", String(d1.otpSendOk ?? 0), "ok"),
+            metric(
+              "OTP sent fail 24h",
+              String(d1.otpSendFailed ?? 0),
+              (d1.otpSendFailed || 0) > 0 ? "warn" : "ok",
+            ),
+            metric("OTP verified 24h", String(d1.otpVerifyOk ?? 0), "ok"),
+          ].join("");
+        }
         const pages = sum.byPageLast7d || [];
-        document.getElementById("logPages").innerHTML = pages.length
-          ? renderSmallTable(
-              ["Page", "Count"],
-              pages.map((p) => [p.name, p.count]),
-            )
-          : '<div class="empty">No page access logged yet.</div>';
+        const logPagesEl = document.getElementById("logPages");
+        if (logPagesEl) {
+          logPagesEl.innerHTML = pages.length
+            ? renderSmallTable(
+                ["Page", "Count"],
+                pages.map((p) => [p.name, p.count]),
+              )
+            : '<div class="empty">No page access logged yet.</div>';
+        }
         
         cachedRecentLogs = logs.recent || [];
         filterAndRenderRecentLogs();
@@ -2014,7 +2031,9 @@
         container.innerHTML = `<table><thead><tr>${headers.map(h => `<th>${escapeHtml(h)}</th>`).join("")}</tr></thead><tbody>${rows.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
       }
       function renderEmailOtpLogs(logs) {
-        document.getElementById("logEmailOtp").innerHTML =
+        const logEmailOtpEl = document.getElementById("logEmailOtp");
+        if (!logEmailOtpEl) return;
+        logEmailOtpEl.innerHTML =
           logs && logs.length
             ? renderSmallTable(
                 ["Time (ICT)", "App", "Email", "OTP", "Service", "Status", "Detail"],
@@ -2043,13 +2062,15 @@
       }
 
       function renderTables(tables) {
+        const tablesEl = document.getElementById("tables");
+        if (!tablesEl) return;
         const rows = tables
           .map(
             (t) =>
               `<tr><td><b>${escapeHtml(t.tableKey)}</b></td><td>${escapeHtml(t.source)}</td><td>${escapeHtml(t.gsheetName)}</td><td>${escapeHtml(t.psqlName)}</td></tr>`,
           )
           .join("");
-        document.getElementById("tables").innerHTML =
+        tablesEl.innerHTML =
           `<h2>Table sources</h2><table><thead><tr><th>Key</th><th>Source</th><th>GSheet</th><th>PSQL</th></tr></thead><tbody>${rows}</tbody></table>`;
       }
       function statusClass(v) {
