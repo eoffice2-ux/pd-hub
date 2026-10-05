@@ -1,4 +1,4 @@
-import { psqlFindOne, psqlInsertRow, psqlSelectRows } from "../psql-adapter.js";
+import { psqlFindOne, psqlInsertRow, psqlSelectRows, eqTrimLower } from "../psql-adapter.js";
 import { cleanEmail, nowVietnamLocal } from "./repo-utils.js";
 import { getRegistrationPsql } from "./registration-repo.js";
 
@@ -15,14 +15,14 @@ export async function getCheckinSlotPsql(env, slotId) {
 }
 
 export async function listCheckinLogsForTraineePsql(env, email, sectionId, options = {}) {
-  const where = { "trainee id": cleanEmail(email) };
+  const where = { "trainee id": eqTrimLower(cleanEmail(email)) };
   if (sectionId) where["section id"] = String(sectionId || "").trim();
   return psqlSelectRows(env, "CHECKIN_LOG", { where, limit: options.limit || 500 });
 }
 
 export async function getCheckinLogPsql(env, email, slotId, options = {}) {
   return psqlFindOne(env, "CHECKIN_LOG", {
-    "trainee id": cleanEmail(email),
+    "trainee id": eqTrimLower(cleanEmail(email)),
     "checkin slot id": String(slotId || "").trim()
   }, options);
 }

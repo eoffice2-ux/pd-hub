@@ -1,4 +1,4 @@
-import { psqlFindOne, psqlInsertRow, psqlSelectRows } from "../psql-adapter.js";
+import { psqlFindOne, psqlInsertRow, psqlSelectRows, eqTrimLower } from "../psql-adapter.js";
 import { cleanEmail, formatVietnamDateTime, nowVietnamLocal, parsePsqlVietnamDate, calculateSlotEndTimestamp } from "./repo-utils.js";
 import { getSectionPsql, getSectionDetailsPsql } from "./section-repo.js";
 import { getUserType } from "../trainee-gsheet.js";
@@ -22,14 +22,14 @@ function isProfileComplete(row) {
 
 export async function getRegistrationPsql(env, email, sectionId, options = {}) {
   return psqlFindOne(env, "SECTION_ATTENDEE", {
-    "trainee id": cleanEmail(email),
+    "trainee id": eqTrimLower(cleanEmail(email)),
     "section id": String(sectionId || "").trim()
   }, options);
 }
 
 export async function listRegistrationsForTraineePsql(env, email, options = {}) {
   return psqlSelectRows(env, "SECTION_ATTENDEE", {
-    where: { "trainee id": cleanEmail(email) },
+    where: { "trainee id": eqTrimLower(cleanEmail(email)) },
     limit: options.limit || 500
   });
 }

@@ -1,4 +1,4 @@
-import { psqlFindOne, psqlSelectRows } from "../psql-adapter.js";
+import { psqlFindOne, psqlSelectRows, eqTrimLower } from "../psql-adapter.js";
 import { cleanEmail, parsePsqlVietnamDate, isPsql } from "./repo-utils.js";
 
 export async function getSectionPsql(env, sectionId) {
@@ -22,7 +22,7 @@ export async function getVenuePsql(env, venueId) {
 
 export async function getRegisteredSectionsForTraineePsql(env, email, options = {}) {
   return psqlSelectRows(env, "SECTION_ATTENDEE", {
-    where: { "trainee id": cleanEmail(email) },
+    where: { "trainee id": eqTrimLower(cleanEmail(email)) },
     limit: options.limit || 500
   });
 }

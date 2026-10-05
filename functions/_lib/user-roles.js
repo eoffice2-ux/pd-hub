@@ -190,7 +190,7 @@ export async function setUserRole(env, targetEmail, role, callerEmail) {
   }
 
   if (getTableSource(env, "USER_ROLES") === "psql") {
-    const checkSql = `SELECT "email" FROM public.pdc_user_roles WHERE LOWER("email") = $1`;
+    const checkSql = `SELECT "email" FROM public.pdc_user_roles WHERE LOWER(TRIM("email")) = $1`;
     const checkRes = await queryPostgres(env, checkSql, [target]);
     const isUpdate = (checkRes.rows?.length || 0) > 0;
 
@@ -236,7 +236,7 @@ export async function deleteUserRole(env, targetEmail) {
   if (!target) throw new Error("Missing target email.");
 
   if (getTableSource(env, "USER_ROLES") === "psql") {
-    const res = await queryPostgres(env, `DELETE FROM public.pdc_user_roles WHERE LOWER("email") = $1`, [target]);
+    const res = await queryPostgres(env, `DELETE FROM public.pdc_user_roles WHERE LOWER(TRIM("email")) = $1`, [target]);
     if ((res.rowCount || 0) === 0) return { action: "not_found", email: target };
     return { action: "deleted", email: target };
   }
@@ -265,7 +265,7 @@ export async function getUserInfo(env, email) {
       const res = await queryPostgres(env, `
         SELECT "email", "role", "assigned_by" AS "assignedBy", "assigned_at" AS "assignedAt", "pin number" AS "pin"
         FROM public.pdc_user_roles
-        WHERE LOWER("email") = $1
+        WHERE LOWER(TRIM("email")) = $1
         LIMIT 1
       `, [clean]);
       const r = res.rows?.[0];

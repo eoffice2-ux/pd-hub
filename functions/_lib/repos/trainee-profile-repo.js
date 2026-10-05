@@ -1,12 +1,12 @@
-import { psqlFindOne, psqlInsertRow, psqlUpdateRows, psqlUpsertByKey } from "../psql-adapter.js";
+import { psqlFindOne, psqlInsertRow, psqlUpdateRows, psqlUpsertByKey, eqTrimLower } from "../psql-adapter.js";
 import { cleanEmail, objectPick, nowVietnamLocal } from "./repo-utils.js";
 import { queryPostgres } from "../postgres.js";
 
 export async function getTraineeProfilePsql(env, email, options = {}) {
   const clean = cleanEmail(email);
-  const byEmail = await psqlFindOne(env, "TRAINEE_PROFILE", { "trainee email": clean }, options);
+  const byEmail = await psqlFindOne(env, "TRAINEE_PROFILE", { "trainee email": eqTrimLower(clean) }, options);
   if (byEmail) return byEmail;
-  return psqlFindOne(env, "TRAINEE_PROFILE", { "trainee id": clean }, options);
+  return psqlFindOne(env, "TRAINEE_PROFILE", { "trainee id": eqTrimLower(clean) }, options);
 }
 
 export async function getTraineeAccessTypePsql(env, email) {
@@ -29,6 +29,8 @@ export async function verifyTraineePinPsql(env, email, pin) {
 
 export async function setTraineePinPsql(env, email, pin, options = {}) {
   const clean = cleanEmail(email);
+  const existing = await getTraineeProfilePsql(env, clean, { bypassCache: true });
+  const keyVal = existing ? (existing["trainee id"] || clean) : clean;
   
   const updateFields = {
     "trainee pin": String(pin || "").trim(),
@@ -36,11 +38,14 @@ export async function setTraineePinPsql(env, email, pin, options = {}) {
     "user updated datetime": options.updatedAt || nowVietnamLocal()
   };
 
-  return psqlUpsertByKey(env, "TRAINEE_PROFILE", "trainee id", clean, updateFields, options);
+  return psqlUpsertByKey(env, "TRAINEE_PROFILE", "trainee id", keyVal, updateFields, options);
 }
 
 export async function updateTraineeProfilePsql(env, email, data = {}, options = {}) {
   const clean = cleanEmail(email);
+  const existing = await getTraineeProfilePsql(env, clean, { bypassCache: true });
+  const keyVal = existing ? (existing["trainee id"] || clean) : clean;
+
   const allowed = [
     "trainee full name", "trainee phone", "trainee gender", "trainee organization new",
     "trainee organization id", "trainee position", "trainee type", "user updated datetime",
@@ -51,7 +56,7 @@ export async function updateTraineeProfilePsql(env, email, data = {}, options = 
   // Also ensure the trainee email is included in case it's a completely new row.
   updateFields["trainee email"] = clean;
 
-  return psqlUpsertByKey(env, "TRAINEE_PROFILE", "trainee id", clean, updateFields, options);
+  return psqlUpsertByKey(env, "TRAINEE_PROFILE", "trainee id", keyVal, updateFields, options);
 }
 
 export async function updateTraineeProfileFromUiPsql(env, email, data = {}, options = {}) {

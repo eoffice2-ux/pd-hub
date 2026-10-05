@@ -48,6 +48,10 @@ export function buildWhereClause(where = {}, startIndex = 1) {
       parts.push(`${quoteColumn(column)} IN (${placeholders.join(", ")})`);
     } else if (value === null) {
       parts.push(`${quoteColumn(column)} IS NULL`);
+    } else if (value && typeof value === "object" && ("eqTrimLower" in value || "ci" in value || "lower" in value)) {
+      const v = value.eqTrimLower ?? value.ci ?? value.lower;
+      values.push(String(v ?? "").trim().toLowerCase());
+      parts.push(`LOWER(TRIM(${quoteColumn(column)})) = $${idx++}`);
     } else {
       values.push(value);
       parts.push(`${quoteColumn(column)} = $${idx++}`);
@@ -55,6 +59,10 @@ export function buildWhereClause(where = {}, startIndex = 1) {
   }
 
   return { sql: `WHERE ${parts.join(" AND ")}`, values, nextIndex: idx };
+}
+
+export function eqTrimLower(val) {
+  return { eqTrimLower: val };
 }
 
 export function buildOrderBy(orderBy = []) {

@@ -44,6 +44,17 @@ export function generateOtp() {
   return String(value).padStart(6, "0");
 }
 
+let otpTableMigrated = false;
+async function ensureOtpTableSupportsMultiple(env) {
+  if (otpTableMigrated) return;
+  try {
+    await queryPostgres(env, `ALTER TABLE public.temp_otp DROP CONSTRAINT IF EXISTS temp_otp_pkey`);
+    otpTableMigrated = true;
+  } catch (e) {
+    console.warn("OTP safety migration warning:", e?.message || e);
+  }
+}
+
 export async function storeOtp(env, { email, otp, scope = "client", request }) {
   const cleanEmail = normalizeEmail(email);
   const now = new Date();
@@ -55,27 +66,45 @@ export async function storeOtp(env, { email, otp, scope = "client", request }) {
   const cleanScope = String(scope || "client").toLowerCase();
 
   if (getTableSource(env, "OTP") === "psql") {
+    await ensureOtpTableSupportsMultiple(env);
     const sql = `
       INSERT INTO public.temp_otp ("email", "otp_hash", "scope", "created_at", "expires_at", "used_at", "send_provider", "request_ip", "user_agent")
       VALUES ($1, $2, $3, NOW(), $4, NULL, $5, $6, $7)
-      ON CONFLICT ("email", "scope") DO UPDATE SET
-        "otp_hash" = EXCLUDED."otp_hash",
-        "created_at" = NOW(),
-        "expires_at" = EXCLUDED."expires_at",
-        "used_at" = NULL,
-        "send_provider" = EXCLUDED."send_provider",
-        "request_ip" = EXCLUDED."request_ip",
-        "user_agent" = EXCLUDED."user_agent"
     `;
-    await queryPostgres(env, sql, [
-      cleanEmail,
-      otpHash,
-      cleanScope,
-      expires.toISOString(),
-      provider,
-      ip,
-      ua.slice(0, 300)
-    ]);
+    try {
+      await queryPostgres(env, sql, [
+        cleanEmail,
+        otpHash,
+        cleanScope,
+        expires.toISOString(),
+        provider,
+        ip,
+        ua.slice(0, 300)
+      ]);
+    } catch (insertErr) {
+      // Graceful fallback to upsert if unique constraint remains
+      const upsertSql = `
+        INSERT INTO public.temp_otp ("email", "otp_hash", "scope", "created_at", "expires_at", "used_at", "send_provider", "request_ip", "user_agent")
+        VALUES ($1, $2, $3, NOW(), $4, NULL, $5, $6, $7)
+        ON CONFLICT ("email", "scope") DO UPDATE SET
+          "otp_hash" = EXCLUDED."otp_hash",
+          "created_at" = NOW(),
+          "expires_at" = EXCLUDED."expires_at",
+          "used_at" = NULL,
+          "send_provider" = EXCLUDED."send_provider",
+          "request_ip" = EXCLUDED."request_ip",
+          "user_agent" = EXCLUDED."user_agent"
+      `;
+      await queryPostgres(env, upsertSql, [
+        cleanEmail,
+        otpHash,
+        cleanScope,
+        expires.toISOString(),
+        provider,
+        ip,
+        ua.slice(0, 300)
+      ]);
+    }
     return { expiresAt: expires.toISOString(), expiresInSeconds: getOtpTtlSeconds(env), provider };
   }
 
@@ -110,25 +139,26 @@ export async function verifyStoredOtp(env, { email, otp, scope = "client" }) {
   if (getTableSource(env, "OTP") === "psql") {
     const expectedHash = await hashOtp(env, cleanEmail, cleanOtp);
     const sql = `
-      SELECT "otp_hash", "expires_at", "used_at"
+      SELECT "otp_hash", "expires_at", "used_at", "created_at"
       FROM public.temp_otp
-      WHERE "email" = $1 AND ("scope" = $2 OR "scope" = 'all')
+      WHERE LOWER(TRIM("email")) = $1 
+        AND ("scope" = $2 OR "scope" = 'all')
+        AND "used_at" IS NULL
+        AND "expires_at" > NOW()
       ORDER BY "created_at" DESC
-      LIMIT 1
     `;
     const result = await queryPostgres(env, sql, [cleanEmail, requestedScope]);
-    const row = result.rows?.[0];
-    if (!row) return { ok: false, error: "Invalid or expired OTP." };
+    const rows = result.rows || [];
+    if (rows.length === 0) return { ok: false, error: "Invalid or expired OTP." };
 
-    if (row.used_at) return { ok: false, error: "OTP has already been used." };
+    const matchedRow = rows.find((r) => {
+      const rowHash = String(r.otp_hash || "").trim();
+      return rowHash === expectedHash || rowHash === cleanOtp;
+    });
 
-    const expiresAt = new Date(row.expires_at).getTime();
-    if (!expiresAt || expiresAt < Date.now()) return { ok: false, error: "OTP has expired." };
+    if (!matchedRow) return { ok: false, error: "Invalid OTP." };
 
-    const rowHash = String(row.otp_hash || "").trim();
-    if (rowHash !== expectedHash && rowHash !== cleanOtp) return { ok: false, error: "Invalid OTP." };
-
-    await queryPostgres(env, `UPDATE public.temp_otp SET "used_at" = NOW() WHERE "email" = $1 AND "scope" = $2`, [cleanEmail, requestedScope]);
+    await queryPostgres(env, `UPDATE public.temp_otp SET "used_at" = NOW() WHERE LOWER(TRIM("email")) = $1 AND ("scope" = $2 OR "scope" = 'all')`, [cleanEmail, requestedScope]);
     return { ok: true };
   }
 

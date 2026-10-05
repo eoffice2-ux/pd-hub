@@ -1,4 +1,4 @@
-import { psqlFindOne, psqlInsertRow, psqlSelectRows } from "../psql-adapter.js";
+import { psqlFindOne, psqlInsertRow, psqlSelectRows, eqTrimLower } from "../psql-adapter.js";
 import { cleanEmail, nowVietnamLocal, parsePsqlVietnamDate } from "./repo-utils.js";
 import { getRegistrationPsql } from "./registration-repo.js";
 
@@ -25,7 +25,7 @@ export async function getFeedbackSubmissionPsql(env, formId, mappingId, email, o
   return psqlFindOne(env, "FB_SUBMISSIONS", {
     "form_id": String(formId || "").trim(),
     "mapping_id": String(mappingId || "").trim(),
-    "trainee_id": cleanEmail(email)
+    "trainee_id": eqTrimLower(cleanEmail(email))
   }, options);
 }
 
