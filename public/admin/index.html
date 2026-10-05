@@ -2060,6 +2060,12 @@
           ? d.toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh", hour12: false })
           : String(value || "");
       }
+      function boolish(v) {
+        if (typeof v === "boolean") return v;
+        return ["true", "1", "yes", "ok", "success"].includes(
+          String(v ?? "").trim().toLowerCase(),
+        );
+      }
 
       function renderTables(tables) {
         const tablesEl = document.getElementById("tables");
