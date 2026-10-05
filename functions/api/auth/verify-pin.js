@@ -1,5 +1,6 @@
 import { jsonResponse, normalizeEmail, isAdminEmail, issueSessionToken } from "../../_lib/security.js";
 import { getUserInfo } from "../../_lib/user-roles.js";
+import { appendAppLog } from "../../_lib/app-logs.js";
 
 export async function onRequestPost(context) {
   const env = context.env || {};
@@ -26,12 +27,15 @@ export async function onRequestPost(context) {
   // Handle Mock Mode
   if (dbMode === "mock") {
     const isMockPinOk = pin === String(env.MOCK_PIN || "1234");
+    const eventType = portal === "client" ? "client_login" : "admin_login";
     if (!isMockPinOk) {
+      await appendAppLog(env, { event: eventType, scope: "auth", email, success: false, detail: "Invalid PIN (mock)", request: context.request });
       return jsonResponse({ success: true, source: "mock", data: { ok: false } });
     }
     const scope = portal === "client" ? "client" : "admin";
     const session = await issueSessionToken(email, env, scope);
     const role = portal === "client" ? "client" : (email.includes("viewer") ? "report_viewer" : "admin");
+    await appendAppLog(env, { event: eventType, scope: "auth", email, success: true, detail: `PIN verified (mock). Role: ${role}`, request: context.request });
     return jsonResponse({
       success: true,
       source: "mock",
@@ -55,6 +59,7 @@ export async function onRequestPost(context) {
 
     let authorized = false;
     let resolvedRole = sheetRole;
+    const eventType = portal === "client" ? "client_login" : "admin_login";
 
     if (portal === "client") {
       authorized = true;
@@ -70,16 +75,19 @@ export async function onRequestPost(context) {
     }
 
     if (!authorized) {
+      await appendAppLog(env, { event: eventType, scope: "auth", email, success: false, detail: `This email is not authorized for ${portal} access.`, request: context.request });
       return jsonResponse({ success: false, error: `This email is not authorized for ${portal} access.` }, 403);
     }
 
     const ok = realPin !== "" && realPin === pin;
     if (!ok) {
+      await appendAppLog(env, { event: eventType, scope: "auth", email, success: false, detail: "Invalid PIN", request: context.request });
       return jsonResponse({ success: true, source: "gsheet", dbMode, data: { ok: false } });
     }
 
     const scope = portal === "client" ? "client" : "admin";
     const session = await issueSessionToken(email, env, scope);
+    await appendAppLog(env, { event: eventType, scope: "auth", email, success: true, detail: `PIN verified. Role: ${resolvedRole}`, request: context.request });
 
     return jsonResponse({
       success: true,
@@ -96,6 +104,8 @@ export async function onRequestPost(context) {
       }
     });
   } catch (err) {
+    const eventType = portal === "client" ? "client_login" : "admin_login";
+    await appendAppLog(env, { event: eventType, scope: "auth", email, success: false, detail: err?.message || String(err), request: context.request });
     return jsonResponse({ success: false, source: "gsheet", error: err?.message || String(err) }, 500);
   }
 }

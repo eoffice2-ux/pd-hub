@@ -3,6 +3,7 @@ import { batchUpdateSheetValues, getCoreSpreadsheetId, getSheetValues, makeCellR
 import { getTableSheetName } from "../../../_lib/data-source.js";
 import { isPsql, nowVietnamLocal } from "../../../_lib/repos/repo-utils.js";
 import { getClientInquiryPsql, updateClientInquiryPsql } from "../../../_lib/repos/client-repo.js";
+import { appendAppLog } from "../../../_lib/app-logs.js";
 
 const TBL_INQUIRY = "pdc-inquiry management";
 const SYSTEM_EXCLUDE_COLUMNS = new Set([
@@ -78,6 +79,8 @@ export async function onRequestPost(context) {
         await updateClientInquiryPsql(env, inquiryId, updates);
       }
 
+      await appendAppLog(env, { event: "inquiry_updated", scope: "client", email: auth.session.email, success: true, detail: JSON.stringify({ inquiryId, updatedFields, dryRun }), request: context.request });
+
       return jsonResponse({
         success: true,
         source: "psql",
@@ -91,6 +94,7 @@ export async function onRequestPost(context) {
         googleUpdatedCells: dryRun ? 0 : 1
       });
     } catch (err) {
+      await appendAppLog(env, { event: "inquiry_updated", scope: "client", email: auth.session.email, success: false, detail: err?.message || String(err), request: context.request });
       return jsonResponse({
         success: false,
         source: "psql",
@@ -178,6 +182,8 @@ export async function onRequestPost(context) {
       googleResult = await batchUpdateSheetValues(env, spreadsheetId, updates);
     }
 
+    await appendAppLog(env, { event: "inquiry_updated", scope: "client", email: auth.session.email, success: true, detail: JSON.stringify({ inquiryId, updatedFields, dryRun }), request: context.request });
+
     return jsonResponse({
       success: true,
       source: "gsheet",
@@ -192,6 +198,7 @@ export async function onRequestPost(context) {
       googleUpdatedCells: googleResult?.totalUpdatedCells ?? 0
     });
   } catch (err) {
+    await appendAppLog(env, { event: "inquiry_updated", scope: "client", email: auth.session.email, success: false, detail: err?.message || String(err), request: context.request });
     return jsonResponse({
       success: false,
       source: "gsheet",

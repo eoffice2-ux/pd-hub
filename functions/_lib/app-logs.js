@@ -129,7 +129,13 @@ export function summarizeAppLogs(rows = []) {
       otpVerifyOk: okCount(within24h, 'otp_verify'),
       otpVerifyFailed: failCount(within24h, 'otp_verify'),
       adminLoginOk: okCount(within24h, 'admin_login'),
-      adminLoginFailed: failCount(within24h, 'admin_login')
+      adminLoginFailed: failCount(within24h, 'admin_login'),
+      traineeLoginOk: okCount(within24h, 'trainee_login'),
+      traineeLoginFailed: failCount(within24h, 'trainee_login'),
+      clientLoginOk: okCount(within24h, 'client_login'),
+      clientLoginFailed: failCount(within24h, 'client_login'),
+      courseRegistered: count(within24h, 'course_registered'),
+      checkinOk: okCount(within24h, 'attendance_checkin')
     },
     last7d: {
       total: within7d.length,
@@ -139,7 +145,13 @@ export function summarizeAppLogs(rows = []) {
       otpVerifyOk: okCount(within7d, 'otp_verify'),
       otpVerifyFailed: failCount(within7d, 'otp_verify'),
       adminLoginOk: okCount(within7d, 'admin_login'),
-      adminLoginFailed: failCount(within7d, 'admin_login')
+      adminLoginFailed: failCount(within7d, 'admin_login'),
+      traineeLoginOk: okCount(within7d, 'trainee_login'),
+      traineeLoginFailed: failCount(within7d, 'trainee_login'),
+      clientLoginOk: okCount(within7d, 'client_login'),
+      clientLoginFailed: failCount(within7d, 'client_login'),
+      courseRegistered: count(within7d, 'course_registered'),
+      checkinOk: okCount(within7d, 'attendance_checkin')
     },
     byPageLast7d: groupCount(within7d, 'path'),
     byScopeLast7d: groupCount(within7d, 'scope')

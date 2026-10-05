@@ -3,6 +3,7 @@ import { batchUpdateSheetValues, getCoreSpreadsheetId, getSheetValues, makeCellR
 import { getTableSheetName, getTableSource } from "../../../_lib/data-source.js";
 import { nowVietnamLocal } from "../../../_lib/repos/repo-utils.js";
 import { getClientProfilePsql, updateClientProfilePsql } from "../../../_lib/repos/client-repo.js";
+import { appendAppLog } from "../../../_lib/app-logs.js";
 
 const TBL_CLIENT_CONTRACT = "pdc_client_contract_info";
 const SYSTEM_EXCLUDE_COLUMNS = new Set([
@@ -69,6 +70,8 @@ export async function onRequestPost(context) {
         await updateClientProfilePsql(env, clientId, payload);
       }
 
+      await appendAppLog(env, { event: "client_profile_updated", scope: "client", email: auth.session.email, success: true, detail: JSON.stringify({ clientId, updatedFields, dryRun }), request: context.request });
+
       return jsonResponse({
         success: true,
         source: "psql",
@@ -81,6 +84,7 @@ export async function onRequestPost(context) {
         updatedCellCount: updatedFields.length
       });
     } catch (err) {
+      await appendAppLog(env, { event: "client_profile_updated", scope: "client", email: auth.session.email, success: false, detail: err?.message || String(err), request: context.request });
       return jsonResponse({
         success: false,
         source: "psql",
@@ -167,6 +171,8 @@ export async function onRequestPost(context) {
       googleResult = await batchUpdateSheetValues(env, spreadsheetId, updates);
     }
 
+    await appendAppLog(env, { event: "client_profile_updated", scope: "client", email: auth.session.email, success: true, detail: JSON.stringify({ clientId, updatedFields, dryRun }), request: context.request });
+
     return jsonResponse({
       success: true,
       source: "gsheet",
@@ -181,6 +187,7 @@ export async function onRequestPost(context) {
       googleUpdatedCells: googleResult?.totalUpdatedCells ?? 0
     });
   } catch (err) {
+    await appendAppLog(env, { event: "client_profile_updated", scope: "client", email: auth.session.email, success: false, detail: err?.message || String(err), request: context.request });
     return jsonResponse({
       success: false,
       source: "gsheet",

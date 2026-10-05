@@ -2,6 +2,7 @@ import { assertEmailAllowed, jsonResponse, readJson, requireTraineeSession } fro
 import { submitTraineeCheckinToSheet } from "../../../_lib/trainee-gsheet.js";
 import { isPsql } from "../../../_lib/repos/repo-utils.js";
 import { submitTraineeCheckinPsql } from "../../../_lib/repos/checkin-repo.js";
+import { appendAppLog } from "../../../_lib/app-logs.js";
 
 export async function onRequestPost(context) {
   const env = context.env || {};
@@ -28,8 +29,10 @@ export async function onRequestPost(context) {
   try {
     if (dbMode === "mock") {
       if (String(inputCode).toLowerCase().trim() !== "demo1") {
+        await appendAppLog(env, { event: "attendance_checkin", scope: "trainee", email: auth.session.email, success: false, detail: JSON.stringify({ sectionId, slotId, reason: "Incorrect Code", mode: "mock" }), request: context.request });
         return jsonResponse({ success: false, source: "mock", dbMode, status: "Incorrect Code", message: "Incorrect check-in code.", sectionId, slotId }, 400);
       }
+      await appendAppLog(env, { event: "attendance_checkin", scope: "trainee", email: auth.session.email, success: true, detail: JSON.stringify({ sectionId, slotId, dryRun, mode: "mock" }), request: context.request });
       return jsonResponse({
         success: true,
         source: "mock",
@@ -53,6 +56,8 @@ export async function onRequestPost(context) {
         result.status === "Invalid Time Window" ? 400 :
         result.status === "Slot Not Found" ? 404 : 200;
 
+      await appendAppLog(env, { event: "attendance_checkin", scope: "trainee", email: auth.session.email, success: statusCode === 200, detail: JSON.stringify({ sectionId, slotId, status: result.status, dryRun }), request: context.request });
+
       return jsonResponse({
         success: statusCode === 200,
         source: "psql",
@@ -70,6 +75,8 @@ export async function onRequestPost(context) {
       result.status === "Invalid Time Window" ? 400 :
       result.status === "Slot Not Found" ? 404 : 200;
 
+    await appendAppLog(env, { event: "attendance_checkin", scope: "trainee", email: auth.session.email, success: statusCode === 200, detail: JSON.stringify({ sectionId, slotId, status: result.status, dryRun }), request: context.request });
+
     return jsonResponse({
       success: statusCode === 200,
       source: "gsheet",
@@ -79,6 +86,7 @@ export async function onRequestPost(context) {
       ...result
     }, statusCode);
   } catch (err) {
+    await appendAppLog(env, { event: "attendance_checkin", scope: "trainee", email: auth.session.email, success: false, detail: err?.message || String(err), request: context.request });
     return jsonResponse({
       success: false,
       source: isPsql(env, "CHECKIN_LOG") ? "psql" : "gsheet",

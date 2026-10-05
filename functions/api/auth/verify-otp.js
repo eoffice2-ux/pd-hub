@@ -14,26 +14,26 @@ export async function onRequestPost(context) {
   const scope = ["client", "trainee", "all"].includes(requestedScope) ? requestedScope : "client";
 
   if (!email || !email.includes("@")) {
-    await appendAppLog(env, { event: "otp_verify", scope, email, success: false, detail: "Missing or invalid email.", request: context.request });
+    await appendAppLog(env, { event: "otp_verify", scope: "auth", email, success: false, detail: `Missing or invalid email (${scope}).`, request: context.request });
     return jsonResponse({ success: false, error: "Missing or invalid email." }, 400);
   }
 
   if (isRealOtpEnabled(env)) {
     const verified = await verifyStoredOtp(env, { email, otp, scope });
     if (!verified.ok) {
-      await appendAppLog(env, { event: "otp_verify", scope, email, success: false, detail: verified.error || "Invalid or expired OTP.", request: context.request });
+      await appendAppLog(env, { event: "otp_verify", scope: "auth", email, success: false, detail: `${verified.error || "Invalid or expired OTP."} (${scope})`, request: context.request });
       return jsonResponse({ success: false, error: verified.error || "Invalid or expired OTP." }, 401);
     }
   } else {
     const expectedOtp = String(env.MOCK_OTP || "123456");
     if (otp !== expectedOtp) {
-      await appendAppLog(env, { event: "otp_verify", scope, email, success: false, provider: "mock", detail: "Invalid mock OTP.", request: context.request });
+      await appendAppLog(env, { event: "otp_verify", scope: "auth", email, success: false, provider: "mock", detail: `Invalid mock OTP (${scope}).`, request: context.request });
       return jsonResponse({ success: false, error: "Invalid or expired OTP." }, 401);
     }
   }
 
   const session = await issueSessionToken(email, env, scope);
-  await appendAppLog(env, { event: "otp_verify", scope, email, success: true, provider: isRealOtpEnabled(env) ? "email" : "mock", detail: "OTP verified and session issued.", request: context.request });
+  await appendAppLog(env, { event: "otp_verify", scope: "auth", email, success: true, provider: isRealOtpEnabled(env) ? "email" : "mock", detail: `OTP verified and session issued (${scope}).`, request: context.request });
 
   let hasPin = false;
   if (String(env.DB_MODE || "gsheet").toLowerCase() === "mock") {

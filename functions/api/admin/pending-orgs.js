@@ -2,6 +2,7 @@ import { jsonResponse, requireAdminOrDebug, requireAdminSession } from "../../_l
 import { getUserRole } from "../../_lib/user-roles.js";
 import { listPendingOrgs, updatePendingOrg } from "../../_lib/repos/pending-org-repo.js";
 import { queryPostgres } from "../../_lib/postgres.js";
+import { appendAppLog } from "../../_lib/app-logs.js";
 
 async function verifyAdminAuth(request, env) {
   let adminAuth = await requireAdminOrDebug(request, env);
@@ -78,8 +79,11 @@ export async function onRequestPost(context) {
       return jsonResponse({ success: false, error: "Organization not found" }, 404);
     }
 
+    await appendAppLog(env, { event: "admin_org_update", scope: "admin", email: adminAuth.session?.email || "admin", success: true, detail: JSON.stringify({ pd_id, name, name_en, status }), request });
+
     return jsonResponse({ success: true, message: "Organization updated successfully", data: updated });
   } catch (err) {
+    await appendAppLog(env, { event: "admin_org_update", scope: "admin", email: adminAuth.session?.email || "admin", success: false, detail: err?.message || String(err), request });
     return jsonResponse({
       success: false,
       error: "Failed to update pending organization: " + (err?.message || String(err))

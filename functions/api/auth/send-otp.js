@@ -10,12 +10,12 @@ export async function onRequestPost(context) {
   const email = normalizeEmail(parsed.data.email);
   const scope = String(parsed.data.scope || parsed.data.audience || "client").toLowerCase();
   if (!email || !email.includes("@")) {
-    await appendAppLog(env, { event: "otp_send", scope, email, success: false, detail: "Missing or invalid email.", request: context.request });
+    await appendAppLog(env, { event: "otp_send", scope: "auth", email, success: false, detail: `Missing or invalid email (${scope}).`, request: context.request });
     return jsonResponse({ success: false, error: "Missing or invalid email." }, 400);
   }
 
   if (!isRealOtpEnabled(env)) {
-    await appendAppLog(env, { event: "otp_send", scope, email, success: true, provider: "mock", detail: "Mock OTP request accepted.", request: context.request });
+    await appendAppLog(env, { event: "otp_send", scope: "auth", email, success: true, provider: "mock", detail: `Mock OTP request accepted (${scope}).`, request: context.request });
     return jsonResponse({
       success: true,
       source: "mock",
@@ -28,7 +28,7 @@ export async function onRequestPost(context) {
   try {
     const stored = await storeOtp(env, { email, otp, scope, request: context.request });
     const sent = await sendOtpEmail(env, { to: email, otp, scope });
-    await appendAppLog(env, { event: "otp_send", scope, email, success: true, provider: sent.provider, messageId: sent.id, detail: "OTP email sent.", request: context.request });
+    await appendAppLog(env, { event: "otp_send", scope: "auth", email, success: true, provider: sent.provider, messageId: sent.id, detail: `OTP email sent (${scope}).`, request: context.request });
 
     return jsonResponse({
     success: true,
@@ -43,7 +43,7 @@ export async function onRequestPost(context) {
       }
     });
   } catch (err) {
-    await appendAppLog(env, { event: "otp_send", scope, email, success: false, detail: err?.message || String(err), request: context.request });
+    await appendAppLog(env, { event: "otp_send", scope: "auth", email, success: false, detail: `${err?.message || String(err)} (${scope})`, request: context.request });
     throw err;
   }
 }

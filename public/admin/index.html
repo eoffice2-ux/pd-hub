@@ -690,9 +690,8 @@
               <h2>Operational status</h2>
               <p class="small muted">
                 <b>Check status</b> loads configuration, active sources, and
-                recent log summaries. <b>Deep check</b> additionally runs live
-                PostgreSQL and Google Sheet metadata checks, so it is slower but
-                stronger for go-live verification.
+                recent log summaries. <b>Deep check</b> additionally runs live PostgreSQL
+                and Google Sheet metadata checks, so it is slower but stronger for go-live verification.
               </p>
             </div>
             <div class="toolbar action-toolbar">
@@ -813,8 +812,20 @@
             </div>
             <div id="logSummary" class="grid"></div>
             <h3 style="margin-top: 24px;"><i class="fas fa-chart-bar me-2 text-primary"></i>Top access pages, last 7 days</h3>
-            <div id="logPages" class="card"></div>
-            <h3 style="margin-top: 24px;"><i class="fas fa-table me-2 text-primary"></i>Recent operational log entries (Google Sheets)</h3>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 28px; margin-bottom: 10px; flex-wrap: wrap; gap: 10px;">
+              <h3 style="margin: 0;"><i class="fas fa-table me-2 text-primary"></i>Recent Operational Logs (PostgreSQL)</h3>
+              <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                <select id="logScopeFilter" onchange="filterAndRenderRecentLogs()" style="padding: 6px 10px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background: #fff;">
+                  <option value="">All Event Groups</option>
+                  <option value="auth">Auth & Security (auth)</option>
+                  <option value="trainee">Trainee Actions (trainee)</option>
+                  <option value="client">Client Actions (client)</option>
+                  <option value="admin">Admin Actions (admin)</option>
+                  <option value="system">System / Access (system)</option>
+                </select>
+                <input type="text" id="logSearchInput" oninput="filterAndRenderRecentLogs()" placeholder="Search email, event, IP..." style="padding: 6px 10px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; width: 220px; background: #fff;" />
+              </div>
+            </div>
             <div id="logRecent" class="card"></div>
             <h3 style="margin-top: 24px;"><i class="fas fa-envelope-open-text me-2 text-primary"></i>Recent Email OTP logs (PostgreSQL)</h3>
             <div id="logEmailOtp" class="card"></div>
@@ -1906,6 +1917,7 @@
           </details>
         </div>`;
       }
+      let cachedRecentLogs = [];
       function renderLogs(logs) {
         const sum = logs.summary || {};
         const d1 = sum.last24h || {};
@@ -1917,7 +1929,11 @@
             logs.configured === false ? "warn" : "ok",
           ),
           metric("Access 24h", String(d1.userAccess ?? 0), "ok"),
-          metric("Access 7d", String(d7.userAccess ?? 0), "ok"),
+          metric("Trainee Login 24h", String(d1.traineeLoginOk ?? 0), "ok"),
+          metric("Client Login 24h", String(d1.clientLoginOk ?? 0), "ok"),
+          metric("Admin Login 24h", String(d1.adminLoginOk ?? 0), "ok"),
+          metric("Course Reg 24h", String(d1.courseRegistered ?? 0), "ok"),
+          metric("Check-in 24h", String(d1.checkinOk ?? 0), "ok"),
           metric("OTP sent 24h", String(d1.otpSendOk ?? 0), "ok"),
           metric(
             "OTP sent fail 24h",
@@ -1933,23 +1949,69 @@
               pages.map((p) => [p.name, p.count]),
             )
           : '<div class="empty">No page access logged yet.</div>';
-        const recent = logs.recent || [];
-        document.getElementById("logRecent").innerHTML = recent.length
-          ? renderSmallTable(
-              ["Time (ICT)", "Event", "Scope", "Email", "Path", "OK", "Detail"],
-              recent
-                .slice(0, 30)
-                .map((r) => [
-                  formatTime(r.timestamp),
-                  r.event,
-                  r.scope,
-                  r.email,
-                  r.path,
-                  r.success,
-                  r.detail,
-                ]),
-            )
-          : '<div class="empty">No recent logs yet.</div>';
+        
+        cachedRecentLogs = logs.recent || [];
+        filterAndRenderRecentLogs();
+      }
+
+      function filterAndRenderRecentLogs() {
+        const scopeFilter = (document.getElementById("logScopeFilter")?.value || "").toLowerCase().trim();
+        const search = (document.getElementById("logSearchInput")?.value || "").toLowerCase().trim();
+
+        let filtered = cachedRecentLogs;
+        if (scopeFilter) {
+          filtered = filtered.filter((r) => {
+            const sc = String(r.scope || "").toLowerCase();
+            return sc === scopeFilter || (scopeFilter === "system" && (sc === "system" || sc === "portal" || sc === "report"));
+          });
+        }
+        if (search) {
+          filtered = filtered.filter((r) => {
+            return (
+              String(r.email || "").toLowerCase().includes(search) ||
+              String(r.event || "").toLowerCase().includes(search) ||
+              String(r.detail || "").toLowerCase().includes(search) ||
+              String(r.ip || "").toLowerCase().includes(search) ||
+              String(r.path || "").toLowerCase().includes(search)
+            );
+          });
+        }
+
+        const container = document.getElementById("logRecent");
+        if (!container) return;
+        if (!filtered.length) {
+          container.innerHTML = '<div class="empty">No matching operational logs found.</div>';
+          return;
+        }
+
+        const headers = ["Time (ICT)", "Event Group", "Event", "Email", "Status", "IP", "Provider", "Detail"];
+        const rows = filtered.slice(0, 50).map((r) => {
+          const emailHtml = r.email ? escapeHtml(r.email) : '<span style="color:#94a3b8; font-style:italic;">(Guest/System)</span>';
+          const scopeBadge = `<span class="pill" style="background:#f1f5f9; color:#475569; padding:2px 8px; border-radius:12px; font-size:11px; font-weight:600;">${escapeHtml(r.scope || 'general')}</span>`;
+          const statusBadge = boolish(r.success)
+            ? '<span style="color:#16a34a; font-weight:600; font-size:12px;">OK</span>'
+            : '<span style="color:#dc2626; font-weight:600; font-size:12px;">FAIL</span>';
+          const ipVal = r.ip ? `<span style="font-family:monospace; font-size:11px;">${escapeHtml(r.ip)}</span>` : '<span style="color:#cbd5e1;">-</span>';
+          const providerVal = r.provider ? escapeHtml(r.provider) : '<span style="color:#cbd5e1;">-</span>';
+          
+          let detailFormatted = escapeHtml(r.detail || "");
+          if (detailFormatted.length > 80) {
+            detailFormatted = `<span title="${escapeHtml(r.detail)}" style="cursor:help;">${detailFormatted.slice(0, 80)}...</span>`;
+          }
+
+          return [
+            `<span style="white-space:nowrap; font-size:12px;">${formatTime(r.timestamp)}</span>`,
+            scopeBadge,
+            `<b>${escapeHtml(r.event)}</b>`,
+            emailHtml,
+            statusBadge,
+            ipVal,
+            providerVal,
+            `<span style="font-size:12px; word-break:break-word;">${detailFormatted}</span>`
+          ];
+        });
+
+        container.innerHTML = `<table><thead><tr>${headers.map(h => `<th>${escapeHtml(h)}</th>`).join("")}</tr></thead><tbody>${rows.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
       }
       function renderEmailOtpLogs(logs) {
         document.getElementById("logEmailOtp").innerHTML =

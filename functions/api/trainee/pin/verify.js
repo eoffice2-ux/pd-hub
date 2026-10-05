@@ -2,6 +2,7 @@ import { assertEmailAllowed, issueSessionToken, jsonResponse, normalizeEmail, re
 import { findTraineeRow, getPinValue, readTraineeTable } from "../../../_lib/trainee-gsheet.js";
 import { isPsql } from "../../../_lib/repos/repo-utils.js";
 import { verifyTraineePinPsql } from "../../../_lib/repos/trainee-profile-repo.js";
+import { appendAppLog } from "../../../_lib/app-logs.js";
 
 export async function onRequestPost(context) {
   const env = context.env || {};
@@ -24,8 +25,12 @@ export async function onRequestPost(context) {
   const dbMode = String(env.DB_MODE || "gsheet").toLowerCase();
   if (dbMode === "mock") {
     const ok = String(body.pin || "") === String(env.MOCK_PIN || "1234");
-    if (!ok) return jsonResponse({ success: true, source: "mock", data: { ok: false } });
+    if (!ok) {
+      await appendAppLog(env, { event: "trainee_login", scope: "auth", email, success: false, detail: "Invalid PIN (mock)", request: context.request });
+      return jsonResponse({ success: true, source: "mock", data: { ok: false } });
+    }
     const session = await issueSessionToken(email, env, "trainee");
+    await appendAppLog(env, { event: "trainee_login", scope: "auth", email, success: true, detail: "Trainee PIN login succeeded (mock)", request: context.request });
     return jsonResponse({ success: true, source: "mock", data: { ok: true, token: session.token, expiresAt: session.expiresAt, expiresInSeconds: session.expiresInSeconds } });
   }
 
@@ -33,9 +38,11 @@ export async function onRequestPost(context) {
     try {
       const result = await verifyTraineePinPsql(env, email, body.pin);
       if (!result.ok) {
+        await appendAppLog(env, { event: "trainee_login", scope: "auth", email, success: false, detail: "Invalid PIN (psql)", request: context.request });
         return jsonResponse({ success: true, source: "psql", dbMode, row: null, data: { ok: false } });
       }
       const session = await issueSessionToken(email, env, "trainee");
+      await appendAppLog(env, { event: "trainee_login", scope: "auth", email, success: true, detail: "Trainee PIN login succeeded (psql)", request: context.request });
       return jsonResponse({
         success: true,
         source: "psql",
@@ -44,6 +51,7 @@ export async function onRequestPost(context) {
         data: { ok: true, token: session.token, expiresAt: session.expiresAt, expiresInSeconds: session.expiresInSeconds }
       });
     } catch (err) {
+      await appendAppLog(env, { event: "trainee_login", scope: "auth", email, success: false, detail: err?.message || String(err), request: context.request });
       return jsonResponse({ success: false, source: "psql", error: err?.message || String(err) }, 500);
     }
   }
@@ -53,9 +61,13 @@ export async function onRequestPost(context) {
     const found = findTraineeRow(values, headers, email);
     const realPin = found ? String(getPinValue(found.row, headers) || "").padStart(4, "0") : "";
     const ok = realPin !== "" && realPin === String(body.pin || "");
-    if (!ok) return jsonResponse({ success: true, source: "gsheet", dbMode, row: found?.sheetRowNumber || null, data: { ok: false } });
+    if (!ok) {
+      await appendAppLog(env, { event: "trainee_login", scope: "auth", email, success: false, detail: "Invalid PIN (gsheet)", request: context.request });
+      return jsonResponse({ success: true, source: "gsheet", dbMode, row: found?.sheetRowNumber || null, data: { ok: false } });
+    }
 
     const session = await issueSessionToken(email, env, "trainee");
+    await appendAppLog(env, { event: "trainee_login", scope: "auth", email, success: true, detail: "Trainee PIN login succeeded (gsheet)", request: context.request });
     return jsonResponse({
       success: true,
       source: "gsheet",
@@ -64,6 +76,7 @@ export async function onRequestPost(context) {
       data: { ok: true, token: session.token, expiresAt: session.expiresAt, expiresInSeconds: session.expiresInSeconds }
     });
   } catch (err) {
+    await appendAppLog(env, { event: "trainee_login", scope: "auth", email, success: false, detail: err?.message || String(err), request: context.request });
     return jsonResponse({ success: false, source: "gsheet", error: err?.message || String(err) }, 500);
   }
 }

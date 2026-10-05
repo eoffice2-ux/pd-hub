@@ -11,24 +11,24 @@ export async function onRequestPost(context) {
   const email = normalizeEmail(parsed.data.email);
   const otp = String(parsed.data.otp || "").trim();
   if (!email || !email.includes("@")) {
-    await appendAppLog(env, { event: "admin_login", scope: "admin", email, success: false, detail: "Missing or invalid email.", request: context.request });
+    await appendAppLog(env, { event: "admin_login", scope: "auth", email, success: false, detail: "Missing or invalid email.", request: context.request });
     return jsonResponse({ success: false, error: "Missing or invalid email." }, 400);
   }
   // Allow: in ADMIN_EMAILS env OR has a valid role in pdc_user_roles sheet
   const isEnvAdmin = isAdminEmail(email, env);
   const sheetRole = isEnvAdmin ? null : await getUserRole(env, email);
   if (!isEnvAdmin && !sheetRole) {
-    await appendAppLog(env, { event: "admin_login", scope: "admin", email, success: false, detail: "Email not authorized for admin/report access.", request: context.request });
+    await appendAppLog(env, { event: "admin_login", scope: "auth", email, success: false, detail: "Email not authorized for admin/report access.", request: context.request });
     return jsonResponse({ success: false, error: "This email is not authorized for admin or report access." }, 403);
   }
   if (!isRealOtpEnabled(env)) {
-    await appendAppLog(env, { event: "admin_login", scope: "admin", email, success: false, detail: "Admin OTP requires OTP_MODE=email.", request: context.request });
+    await appendAppLog(env, { event: "admin_login", scope: "auth", email, success: false, detail: "Admin OTP requires OTP_MODE=email.", request: context.request });
     return jsonResponse({ success: false, error: "Admin OTP requires OTP_MODE=email." }, 503);
   }
 
   const verified = await verifyStoredOtp(env, { email, otp, scope: "admin" });
   if (!verified.ok) {
-    await appendAppLog(env, { event: "admin_login", scope: "admin", email, success: false, detail: verified.error || "Invalid or expired OTP.", request: context.request });
+    await appendAppLog(env, { event: "admin_login", scope: "auth", email, success: false, detail: verified.error || "Invalid or expired OTP.", request: context.request });
     return jsonResponse({ success: false, error: verified.error || "Invalid or expired OTP." }, 401);
   }
 
@@ -48,7 +48,7 @@ export async function onRequestPost(context) {
     } catch (_) {}
   }
 
-  await appendAppLog(env, { event: "admin_login", scope: "admin", email, success: true, detail: `Admin OTP verified. Role: ${resolvedRole}.`, request: context.request });
+  await appendAppLog(env, { event: "admin_login", scope: "auth", email, success: true, detail: `Admin OTP verified. Role: ${resolvedRole}.`, request: context.request });
   return jsonResponse({
     success: true,
     source: "email",

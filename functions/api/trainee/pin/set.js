@@ -2,6 +2,7 @@ import { assertEmailAllowed, jsonResponse, readJson, requireTraineeSession } fro
 import { setTraineePinInSheet } from "../../../_lib/trainee-gsheet.js";
 import { isPsql } from "../../../_lib/repos/repo-utils.js";
 import { setTraineePinPsql } from "../../../_lib/repos/trainee-profile-repo.js";
+import { appendAppLog } from "../../../_lib/app-logs.js";
 
 export async function onRequestPost(context) {
   const env = context.env || {};
@@ -20,6 +21,7 @@ export async function onRequestPost(context) {
 
   const dbMode = String(env.DB_MODE || "gsheet").toLowerCase();
   if (dbMode === "mock") {
+    await appendAppLog(env, { event: "pin_changed", scope: "auth", email: emailCheck.email, success: true, detail: "Mock trainee PIN update", request: context.request });
     return jsonResponse({ success: true, source: "mock", dryRun: body.__dryRun !== false, authenticatedEmail: auth.session.email, message: "Mock PIN update OK. No Google Sheet data was written." });
   }
 
@@ -30,6 +32,7 @@ export async function onRequestPost(context) {
       if (!dryRun) {
         result = await setTraineePinPsql(env, emailCheck.email, body.pin);
       }
+      await appendAppLog(env, { event: "pin_changed", scope: "auth", email: emailCheck.email, success: true, detail: dryRun ? "Dry run PIN update (psql)" : "Trainee PIN successfully updated (psql)", request: context.request });
       return jsonResponse({
         success: true,
         source: "psql",
@@ -40,6 +43,7 @@ export async function onRequestPost(context) {
         ...result
       });
     } catch (err) {
+      await appendAppLog(env, { event: "pin_changed", scope: "auth", email: emailCheck.email, success: false, detail: err?.message || String(err), request: context.request });
       return jsonResponse({ success: false, source: "psql", error: err?.message || String(err) }, 500);
     }
   }
@@ -47,6 +51,7 @@ export async function onRequestPost(context) {
   try {
     const dryRun = isTruthy(body.__dryRun || new URL(context.request.url).searchParams.get("dryRun"));
     const result = await setTraineePinInSheet(env, emailCheck.email, body.pin, dryRun);
+    await appendAppLog(env, { event: "pin_changed", scope: "auth", email: emailCheck.email, success: true, detail: dryRun ? "Dry run PIN update (gsheet)" : "Trainee PIN successfully updated (gsheet)", request: context.request });
     return jsonResponse({
       success: true,
       source: "gsheet",
@@ -57,6 +62,7 @@ export async function onRequestPost(context) {
       ...result
     });
   } catch (err) {
+    await appendAppLog(env, { event: "pin_changed", scope: "auth", email: emailCheck.email, success: false, detail: err?.message || String(err), request: context.request });
     return jsonResponse({ success: false, source: "gsheet", error: err?.message || String(err) }, 500);
   }
 }

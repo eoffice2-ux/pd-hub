@@ -2,6 +2,7 @@ import { jsonResponse, readJson, requireTraineeSession } from "../../../../_lib/
 import { submitFeedbackFormToSheet } from "../../../../_lib/trainee-gsheet.js";
 import { isPsql } from "../../../../_lib/repos/repo-utils.js";
 import { submitFeedbackFormPsql } from "../../../../_lib/repos/feedback-repo.js";
+import { appendAppLog } from "../../../../_lib/app-logs.js";
 
 export async function onRequestPost(context) {
   const env = context.env || {};
@@ -22,6 +23,7 @@ export async function onRequestPost(context) {
   if (!mappingId) return jsonResponse({ success: false, error: "Missing mappingId." }, 400);
 
   if (dbMode === "mock") {
+    await appendAppLog(env, { event: "feedback_submitted", scope: "trainee", email: auth.session.email, success: true, detail: JSON.stringify({ formId, mappingId, answersCount: answers.length, dryRun, mode: "mock" }), request: context.request });
     return jsonResponse({
       success: true,
       source: "mock",
@@ -47,6 +49,9 @@ export async function onRequestPost(context) {
         if (result.status === "Forbidden") statusCode = 403;
         else statusCode = 400;
       }
+
+      await appendAppLog(env, { event: "feedback_submitted", scope: "trainee", email: auth.session.email, success, detail: JSON.stringify({ formId, mappingId, status: result.status, dryRun }), request: context.request });
+
       return jsonResponse({
         success,
         source: "psql",
@@ -56,6 +61,7 @@ export async function onRequestPost(context) {
         ...result
       }, statusCode);
     } catch (err) {
+      await appendAppLog(env, { event: "feedback_submitted", scope: "trainee", email: auth.session.email, success: false, detail: err.message || String(err), request: context.request });
       return jsonResponse({ success: false, source: "psql", dbMode, error: err.message || String(err) }, 500);
     }
   }
@@ -69,6 +75,9 @@ export async function onRequestPost(context) {
       if (result.status === "Forbidden") statusCode = 403;
       else statusCode = 400;
     }
+
+    await appendAppLog(env, { event: "feedback_submitted", scope: "trainee", email: auth.session.email, success, detail: JSON.stringify({ formId, mappingId, status: result.status, dryRun }), request: context.request });
+
     return jsonResponse({
       success,
       source: "gsheet",
@@ -78,6 +87,7 @@ export async function onRequestPost(context) {
       ...result
     }, statusCode);
   } catch (err) {
+    await appendAppLog(env, { event: "feedback_submitted", scope: "trainee", email: auth.session.email, success: false, detail: err.message || String(err), request: context.request });
     return jsonResponse({ success: false, source: "gsheet", dbMode, error: err.message || String(err) }, 500);
   }
 }

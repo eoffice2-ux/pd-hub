@@ -1,5 +1,6 @@
 import { jsonResponse, requireSessionScope } from "../../_lib/security.js";
 import { setUserPin } from "../../_lib/user-roles.js";
+import { appendAppLog } from "../../_lib/app-logs.js";
 
 export async function onRequestPost(context) {
   const env = context.env || {};
@@ -23,6 +24,7 @@ export async function onRequestPost(context) {
 
   // In mock mode, we just return success
   if (dbMode === "mock") {
+    await appendAppLog(env, { event: "pin_changed", scope: "auth", email, success: true, detail: `Mock PIN update (${auth.session.scope})`, request: context.request });
     return jsonResponse({
       success: true,
       source: "mock",
@@ -34,6 +36,7 @@ export async function onRequestPost(context) {
     // defaultRole depends on scope
     const defaultRole = auth.session.scope === "admin" ? "admin" : "client";
     const result = await setUserPin(env, email, pin, defaultRole);
+    await appendAppLog(env, { event: "pin_changed", scope: "auth", email, success: true, detail: `PIN updated (${auth.session.scope})`, request: context.request });
 
     return jsonResponse({
       success: true,
@@ -43,6 +46,7 @@ export async function onRequestPost(context) {
       data: result
     });
   } catch (err) {
+    await appendAppLog(env, { event: "pin_changed", scope: "auth", email, success: false, detail: err?.message || String(err), request: context.request });
     return jsonResponse({ success: false, source: "gsheet", error: err?.message || String(err) }, 500);
   }
 }

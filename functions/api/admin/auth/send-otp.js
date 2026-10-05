@@ -10,18 +10,18 @@ export async function onRequestPost(context) {
 
   const email = normalizeEmail(parsed.data.email);
   if (!email || !email.includes("@")) {
-    await appendAppLog(env, { event: "otp_send", scope: "admin", email, success: false, detail: "Missing or invalid email.", request: context.request });
+    await appendAppLog(env, { event: "otp_send", scope: "auth", email, success: false, detail: "Missing or invalid email.", request: context.request });
     return jsonResponse({ success: false, error: "Missing or invalid email." }, 400);
   }
   // Allow: in ADMIN_EMAILS env OR has a valid role in pdc_user_roles sheet
   const isEnvAdmin = isAdminEmail(email, env);
   const sheetRole = isEnvAdmin ? null : await getUserRole(env, email);
   if (!isEnvAdmin && !sheetRole) {
-    await appendAppLog(env, { event: "otp_send", scope: "admin", email, success: false, detail: "Email not authorized for admin/report access.", request: context.request });
+    await appendAppLog(env, { event: "otp_send", scope: "auth", email, success: false, detail: "Email not authorized for admin/report access.", request: context.request });
     return jsonResponse({ success: false, error: "This email is not authorized for admin or report access." }, 403);
   }
   if (!isRealOtpEnabled(env)) {
-    await appendAppLog(env, { event: "otp_send", scope: "admin", email, success: false, detail: "Admin OTP requires OTP_MODE=email.", request: context.request });
+    await appendAppLog(env, { event: "otp_send", scope: "auth", email, success: false, detail: "Admin OTP requires OTP_MODE=email.", request: context.request });
     return jsonResponse({ success: false, error: "Admin OTP requires OTP_MODE=email." }, 503);
   }
 
@@ -29,7 +29,7 @@ export async function onRequestPost(context) {
   try {
     const stored = await storeOtp(env, { email, otp, scope: "admin", request: context.request });
     const sent = await sendOtpEmail(env, { to: email, otp, scope: "admin" });
-    await appendAppLog(env, { event: "otp_send", scope: "admin", email, success: true, provider: sent.provider, messageId: sent.id, detail: "Admin OTP email sent.", request: context.request });
+    await appendAppLog(env, { event: "otp_send", scope: "auth", email, success: true, provider: sent.provider, messageId: sent.id, detail: "Admin OTP email sent.", request: context.request });
 
     return jsonResponse({
     success: true,
@@ -38,7 +38,7 @@ export async function onRequestPost(context) {
     data: { email, provider: sent.provider, messageId: sent.id, expiresAt: stored.expiresAt, expiresInSeconds: getOtpTtlSeconds(env) }
   });
   } catch (err) {
-    await appendAppLog(env, { event: "otp_send", scope: "admin", email, success: false, detail: err?.message || String(err), request: context.request });
+    await appendAppLog(env, { event: "otp_send", scope: "auth", email, success: false, detail: err?.message || String(err), request: context.request });
     throw err;
   }
 }

@@ -2,6 +2,7 @@ import { jsonResponse, readJson, requireTraineeSession, normalizeEmail } from ".
 import { updateTraineeProfileInSheet, getUserType } from "../../../_lib/trainee-gsheet.js";
 import { isPsql } from "../../../_lib/repos/repo-utils.js";
 import { updateTraineeProfileFromUiPsql } from "../../../_lib/repos/trainee-profile-repo.js";
+import { appendAppLog } from "../../../_lib/app-logs.js";
 
 const ALLOWED_FIELDS = ["fullName", "phone", "gender", "organization", "organizationId", "position", "school", "department"];
 
@@ -29,6 +30,7 @@ export async function onRequestPost(context) {
 
   const dbMode = String(env.DB_MODE || "gsheet").toLowerCase();
   if (dbMode === "mock") {
+    await appendAppLog(env, { event: "profile_updated", scope: "trainee", email: auth.session.email, success: true, detail: JSON.stringify({ fields: Object.keys(sanitized), dryRun: data.__dryRun !== false, mode: "mock" }), request: context.request });
     return jsonResponse({
       success: true,
       source: "mock",
@@ -48,6 +50,7 @@ export async function onRequestPost(context) {
       if (!dryRun) {
         result = await updateTraineeProfileFromUiPsql(env, auth.session.email, sanitized);
       }
+      await appendAppLog(env, { event: "profile_updated", scope: "trainee", email: auth.session.email, success: true, detail: JSON.stringify({ fields: Object.keys(sanitized), dryRun }), request: context.request });
       return jsonResponse({
         success: true,
         source: "psql",
@@ -58,6 +61,7 @@ export async function onRequestPost(context) {
         ...result
       });
     } catch (err) {
+      await appendAppLog(env, { event: "profile_updated", scope: "trainee", email: auth.session.email, success: false, detail: err?.message || String(err), request: context.request });
       return jsonResponse({ success: false, source: "psql", error: err?.message || String(err) }, 500);
     }
   }
@@ -65,6 +69,7 @@ export async function onRequestPost(context) {
   try {
     const dryRun = isTruthy(data.__dryRun || new URL(context.request.url).searchParams.get("dryRun"));
     const result = await updateTraineeProfileInSheet(env, auth.session.email, sanitized, dryRun);
+    await appendAppLog(env, { event: "profile_updated", scope: "trainee", email: auth.session.email, success: true, detail: JSON.stringify({ fields: Object.keys(sanitized), dryRun }), request: context.request });
     return jsonResponse({
       success: true,
       source: "gsheet",
@@ -75,6 +80,7 @@ export async function onRequestPost(context) {
       ...result
     });
   } catch (err) {
+    await appendAppLog(env, { event: "profile_updated", scope: "trainee", email: auth.session.email, success: false, detail: err?.message || String(err), request: context.request });
     return jsonResponse({ success: false, source: "gsheet", error: err?.message || String(err) }, 500);
   }
 }

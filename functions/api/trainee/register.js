@@ -3,6 +3,7 @@ import { registerTraineeForSectionInSheet } from "../../_lib/trainee-gsheet.js";
 import { isPsql } from "../../_lib/repos/repo-utils.js";
 import { registerTraineeForSectionPsql } from "../../_lib/repos/registration-repo.js";
 import { sendRegistrationConfirmation } from "../../_lib/registration-mailer.js";
+import { appendAppLog } from "../../_lib/app-logs.js";
 
 export async function onRequestPost(context) {
   const env = context.env || {};
@@ -23,6 +24,7 @@ export async function onRequestPost(context) {
   const dryRun = isTruthy(data.__dryRun || new URL(context.request.url).searchParams.get("dryRun"));
 
   if (dbMode === "mock") {
+    await appendAppLog(env, { event: "course_registered", scope: "trainee", email: emailCheck.email, success: true, detail: JSON.stringify({ sectionId, dryRun, mode: "mock" }), request: context.request });
     return jsonResponse({
       success: true,
       source: "mock",
@@ -43,6 +45,8 @@ export async function onRequestPost(context) {
       const success = ["Success", "Already Registered"].includes(result.status);
       const statusCode = success ? 200 : (result.status === "Forbidden" ? 403 : 400);
 
+      await appendAppLog(env, { event: "course_registered", scope: "trainee", email: emailCheck.email, success, detail: JSON.stringify({ sectionId, status: result.status, dryRun }), request: context.request });
+
       if (result.status === "Success" && !dryRun) {
         context.waitUntil(
           sendRegistrationConfirmation(env, {
@@ -62,6 +66,7 @@ export async function onRequestPost(context) {
         ...result
       }, statusCode);
     } catch (err) {
+      await appendAppLog(env, { event: "course_registered", scope: "trainee", email: emailCheck.email, success: false, detail: err?.message || String(err), request: context.request });
       return jsonResponse({ success: false, source: "psql", error: err?.message || String(err) }, 500);
     }
   }
@@ -70,6 +75,8 @@ export async function onRequestPost(context) {
     const result = await registerTraineeForSectionInSheet(env, emailCheck.email, sectionId, dryRun);
     const success = ["Success", "Already Registered"].includes(result.status);
     const statusCode = success ? 200 : (result.status === "Forbidden" ? 403 : 400);
+
+    await appendAppLog(env, { event: "course_registered", scope: "trainee", email: emailCheck.email, success, detail: JSON.stringify({ sectionId, status: result.status, dryRun }), request: context.request });
 
     if (result.status === "Success" && !dryRun) {
       context.waitUntil(
@@ -90,6 +97,7 @@ export async function onRequestPost(context) {
       ...result
     }, statusCode);
   } catch (err) {
+    await appendAppLog(env, { event: "course_registered", scope: "trainee", email: emailCheck.email, success: false, detail: err?.message || String(err), request: context.request });
     return jsonResponse({ success: false, source: "gsheet", error: err?.message || String(err) }, 500);
   }
 }

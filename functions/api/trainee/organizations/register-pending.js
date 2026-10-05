@@ -1,6 +1,7 @@
 import { jsonResponse, requireTraineeSession, readJson } from "../../../_lib/security.js";
 import { queryPostgres } from "../../../_lib/postgres.js";
 import { getTablePsqlName, quoteIdentifierPath } from "../../../_lib/data-source.js";
+import { appendAppLog } from "../../../_lib/app-logs.js";
 
 export function generatePendingOrgId(name) {
   const slug = String(name || "")
@@ -50,6 +51,8 @@ export async function onRequestPost(context) {
       ON CONFLICT ("pd_id") DO NOTHING
     `, [pdId, name, auth.session.email || ""]);
 
+    await appendAppLog(env, { event: "org_declared", scope: "trainee", email: auth.session.email || "", success: true, detail: JSON.stringify({ pdId, name }), request });
+
     return jsonResponse({
       success: true,
       pd_id: pdId,
@@ -57,6 +60,7 @@ export async function onRequestPost(context) {
     });
   } catch (err) {
     console.error("Failed to register pending organization:", err);
+    await appendAppLog(env, { event: "org_declared", scope: "trainee", email: auth.session.email || "", success: false, detail: err?.message || String(err), request });
     return jsonResponse({
       success: false,
       error: "Failed to register organization: " + (err?.message || String(err))

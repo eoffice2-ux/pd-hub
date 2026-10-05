@@ -9,6 +9,7 @@
 
 import { jsonResponse, normalizeEmail, readJson, requireAdminSession, isAdminEmail } from "../../_lib/security.js";
 import { getUserRole, listUserRoles, setUserRole, deleteUserRole, VALID_ROLES } from "../../_lib/user-roles.js";
+import { appendAppLog } from "../../_lib/app-logs.js";
 
 async function isAuthorizedRoleManager(request, env) {
   // Must have a valid admin session first
@@ -61,8 +62,10 @@ export async function onRequestPost(context) {
 
   try {
     const result = await setUserRole(env, targetEmail, role, auth.email);
+    await appendAppLog(env, { event: "admin_role_assign", scope: "admin", email: auth.email, success: true, detail: JSON.stringify({ targetEmail, role }), request: context.request });
     return jsonResponse({ success: true, ...result });
   } catch (err) {
+    await appendAppLog(env, { event: "admin_role_assign", scope: "admin", email: auth.email, success: false, detail: err.message || String(err), request: context.request });
     return jsonResponse({ success: false, error: err.message || String(err) }, 500);
   }
 }
@@ -80,8 +83,10 @@ export async function onRequestDelete(context) {
 
   try {
     const result = await deleteUserRole(env, targetEmail);
+    await appendAppLog(env, { event: "admin_role_delete", scope: "admin", email: auth.email, success: true, detail: JSON.stringify({ targetEmail }), request: context.request });
     return jsonResponse({ success: true, ...result });
   } catch (err) {
+    await appendAppLog(env, { event: "admin_role_delete", scope: "admin", email: auth.email, success: false, detail: err.message || String(err), request: context.request });
     return jsonResponse({ success: false, error: err.message || String(err) }, 500);
   }
 }
