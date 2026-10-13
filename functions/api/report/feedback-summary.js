@@ -284,13 +284,11 @@ export async function onRequestGet(context) {
         }
 
         if (kind === "scale") {
-          const { min, max } = parseScaleRange(q.options);
+          let { min, max } = parseScaleRange(q.options);
           const countMap = {};
-          for (let lvl = min; lvl <= max; lvl++) {
-            countMap[lvl] = 0;
-          }
           let ratingSum = 0;
           let ratingCount = 0;
+          const observedRatings = [];
 
           for (const sub of mappingSubs) {
             const subAnswers = responsesBySubmission[sub.submissionId] || {};
@@ -302,14 +300,25 @@ export async function onRequestGet(context) {
               ratingSum += num;
               ratingCount++;
               const key = Math.round(num);
+              observedRatings.push(key);
               countMap[key] = (countMap[key] || 0) + 1;
             }
+          }
+
+          if (observedRatings.length > 0) {
+            min = Math.min(min, ...observedRatings);
+            max = Math.max(max, ...observedRatings);
+          }
+          if (max < 5 && min >= 1) {
+            max = 5;
           }
 
           const levels = [];
           for (let lvl = min; lvl <= max; lvl++) {
             levels.push(lvl);
+            if (countMap[lvl] === undefined) countMap[lvl] = 0;
           }
+
           const average = ratingCount > 0 ? Math.round((ratingSum / ratingCount) * 10) / 10 : 0;
           const options = levels.map((lvl) => ({
             label: `${lvl} sao`,
@@ -457,15 +466,16 @@ function parseScaleRange(optionsStr) {
   let min = 1;
   let max = 5;
   if (optionsStr) {
-    const parts = String(optionsStr)
-      .split(/[;,\-\/\s]+/)
-      .map((s) => parseInt(s.trim(), 10))
-      .filter((n) => Number.isFinite(n));
-    if (parts.length >= 2) {
-      min = Math.min(parts[0], parts[1]);
-      max = Math.max(parts[0], parts[1]);
-    } else if (parts.length === 1 && parts[0] > 1) {
-      max = parts[0];
+    const nums = String(optionsStr)
+      .match(/\b\d+\b/g)
+      ?.map((s) => parseInt(s, 10))
+      .filter((n) => Number.isFinite(n) && n >= 0 && n <= 100);
+    if (nums && nums.length >= 2) {
+      min = Math.min(...nums);
+      max = Math.max(...nums);
+    } else if (nums && nums.length === 1 && nums[0] > 1) {
+      min = 1;
+      max = nums[0];
     }
   }
   return { min, max };
