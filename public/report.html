@@ -2560,9 +2560,21 @@
           const round = (currentFeedbackSummary?.rounds || []).find((r) => r.mappingId === selectedMappingId) || (currentFeedbackSummary?.rounds || [])[0];
           if (round) {
             (round.questions || []).forEach((q) => {
-              if (q.type === "rating" || q.type === "choice") {
-                Object.entries(q.distribution || {}).forEach(([opt, count]) => {
-                  const row = [round.formTitle, q.text, q.type, `${opt}: ${count} lượt`];
+              if (q.kind === "single" || q.kind === "multi" || q.kind === "scale") {
+                (q.options || []).forEach((opt) => {
+                  const row = [round.formTitle, q.text, q.type, `${opt.label}: ${opt.count} lượt (${opt.percent}%)`];
+                  if (showEmail) row.push("");
+                  rows.push(row);
+                });
+              } else if (q.kind === "nps") {
+                const groups = q.groups || {};
+                const npsSummary = `NPS: ${q.npsScore > 0 ? "+" : ""}${q.npsScore} | Điểm TB: ${q.average}/10 (Promoters: ${groups.promoters?.percent || 0}%, Passives: ${groups.passives?.percent || 0}%, Detractors: ${groups.detractors?.percent || 0}%)`;
+                const summaryRow = [round.formTitle, q.text, q.type, npsSummary];
+                if (showEmail) summaryRow.push("");
+                rows.push(summaryRow);
+
+                (q.options || []).forEach((opt) => {
+                  const row = [round.formTitle, q.text, q.type, `Điểm ${opt.label}: ${opt.count} lượt (${opt.percent}%)`];
                   if (showEmail) row.push("");
                   rows.push(row);
                 });
@@ -2892,6 +2904,19 @@
         }
       }
 
+      function getQuestionTypeBadge(q) {
+        const t = (q.type || "").toLowerCase();
+        const k = q.kind || "";
+        if (k === "single" || t === "radio") return { label: "Chọn 1 / Single choice", cls: "bg-primary-subtle text-primary border-primary-subtle" };
+        if (k === "multi" || t === "checkbox") return { label: "Chọn nhiều / Multiple choice", cls: "bg-info-subtle text-info-emphasis border-info-subtle" };
+        if (k === "scale" || t === "scale" || t === "rating") return { label: "Thang điểm / Rating scale", cls: "bg-warning-subtle text-warning-emphasis border-warning-subtle" };
+        if (k === "nps" || t === "nps") return { label: "Chỉ số NPS", cls: "bg-success-subtle text-success-emphasis border-success-subtle" };
+        if (t === "short_text") return { label: "Văn bản ngắn / Short text", cls: "bg-light text-secondary border" };
+        if (t === "long_text") return { label: "Văn bản dài / Long text", cls: "bg-light text-secondary border" };
+        if (t === "text") return { label: "Ý kiến / Text", cls: "bg-light text-secondary border" };
+        return { label: `Ý kiến / ${escapeHTML(q.type || "Text")}`, cls: "bg-light text-secondary border" };
+      }
+
       function renderReportFeedbackDetails() {
         const detailsContainer = document.getElementById("reportFeedbackDetails");
         if (!detailsContainer) return;
@@ -2910,12 +2935,12 @@
         const currentRound = rounds.find((r) => r.mappingId === selectedMappingId) || rounds[0];
         const showEmail = document.getElementById("reportShowEmail")?.checked || false;
 
-        // Calculate average satisfaction for this round across all rating questions
-        const ratingQuestions = (currentRound.questions || []).filter((q) => q.type === "rating" && q.average > 0);
+        // Calculate average satisfaction for this round across scale/rating questions
+        const scaleQuestions = (currentRound.questions || []).filter((q) => (q.kind === "scale" || q.type === "scale" || q.type === "rating") && q.average > 0);
         const ratingKpiEl = document.getElementById("reportKpiRating");
         if (ratingKpiEl) {
-          if (ratingQuestions.length > 0) {
-            const overallAvg = ratingQuestions.reduce((acc, q) => acc + q.average, 0) / ratingQuestions.length;
+          if (scaleQuestions.length > 0) {
+            const overallAvg = scaleQuestions.reduce((acc, q) => acc + q.average, 0) / scaleQuestions.length;
             ratingKpiEl.innerHTML = `${Math.round(overallAvg * 10) / 10} <span style="font-size: 0.9rem; color: #f59e0b;">⭐</span>`;
           } else {
             ratingKpiEl.innerText = "--";
@@ -2938,39 +2963,10 @@
 
         const questionsHtml = currentRound.questions.map((q, qIdx) => {
           let bodyHtml = "";
-          if (q.type === "rating") {
-            const slices = Object.entries(q.distribution || {}).map(([opt, count]) => ({
-              label: `${opt} sao`,
-              value: count,
-              color: ratingColors[opt] || "#6366f1"
-            }));
-            bodyHtml = `
-              <div class="row align-items-center g-3">
-                <div class="col-12 col-md-5 d-flex justify-content-center">
-                  ${svgPie({ slices, size: 150, isDonut: false })}
-                </div>
-                <div class="col-12 col-md-7">
-                  <div class="d-flex align-items-center gap-2 mb-2">
-                    <span class="badge bg-warning text-dark px-3 py-2 fs-6 fw-bold">
-                      ⭐ Điểm TB: ${q.average || 0} / 5
-                    </span>
-                    <span class="text-muted small">(${q.answered || 0} lượt trả lời)</span>
-                  </div>
-                  <div class="d-flex flex-wrap gap-2">
-                    ${slices.map((s) => `
-                      <div class="rpt-legend-item">
-                        <span class="rpt-legend-color" style="background:${s.color}"></span>
-                        <span class="small"><b>${escapeHTML(s.label)}:</b> ${s.value}</span>
-                      </div>
-                    `).join("")}
-                  </div>
-                </div>
-              </div>
-            `;
-          } else if (q.type === "choice") {
-            const slices = Object.entries(q.distribution || {}).map(([opt, count], i) => ({
-              label: opt,
-              value: count,
+          if (q.kind === "single" || q.type === "radio" || q.type === "choice") {
+            const slices = (q.options || []).map((opt, i) => ({
+              label: opt.label,
+              value: opt.count,
               color: choiceColors[i % choiceColors.length]
             }));
             bodyHtml = `
@@ -2981,18 +2977,156 @@
                 <div class="col-12 col-md-7">
                   <div class="text-muted small mb-2">${q.answered || 0} lượt trả lời</div>
                   <div class="d-flex flex-wrap gap-2">
-                    ${slices.map((s) => `
+                    ${(q.options || []).map((opt, i) => `
                       <div class="rpt-legend-item">
-                        <span class="rpt-legend-color" style="background:${s.color}"></span>
-                        <span class="small"><b>${escapeHTML(s.label)}:</b> ${s.value}</span>
+                        <span class="rpt-legend-color" style="background:${choiceColors[i % choiceColors.length]}"></span>
+                        <span class="small"><b>${escapeHTML(opt.label)}:</b> ${opt.count} (${opt.percent}%)</span>
                       </div>
                     `).join("")}
                   </div>
                 </div>
               </div>
             `;
+          } else if (q.kind === "scale" || q.type === "scale" || q.type === "rating") {
+            const slices = (q.options || []).map((opt) => ({
+              label: opt.label,
+              value: opt.count,
+              color: ratingColors[String(opt.level)] || ratingColors[String(opt.label).replace(/[^\d]/g, "")] || "#6366f1"
+            }));
+            bodyHtml = `
+              <div class="row align-items-center g-3">
+                <div class="col-12 col-md-5 d-flex justify-content-center">
+                  ${svgPie({ slices, size: 150, isDonut: false })}
+                </div>
+                <div class="col-12 col-md-7">
+                  <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+                    <span class="badge bg-warning text-dark px-3 py-2 fs-6 fw-bold">
+                      ⭐ Điểm TB: ${q.average || 0} / ${q.max || 5}
+                    </span>
+                    <span class="text-muted small">(${q.answered || 0} lượt trả lời)</span>
+                  </div>
+                  <div class="d-flex flex-wrap gap-2">
+                    ${(q.options || []).map((opt) => {
+                      const col = ratingColors[String(opt.level)] || ratingColors[String(opt.label).replace(/[^\d]/g, "")] || "#6366f1";
+                      return `
+                        <div class="rpt-legend-item">
+                          <span class="rpt-legend-color" style="background:${col}"></span>
+                          <span class="small"><b>${escapeHTML(opt.label)}:</b> ${opt.count} (${opt.percent}%)</span>
+                        </div>
+                      `;
+                    }).join("")}
+                  </div>
+                </div>
+              </div>
+            `;
+          } else if (q.kind === "multi" || q.type === "checkbox") {
+            const opts = q.options || [];
+            if (opts.length === 0) {
+              bodyHtml = '<div class="text-muted small italic">Chưa có lựa chọn nào được ghi nhận.</div>';
+            } else {
+              const barsHtml = opts.map((opt, i) => {
+                const color = choiceColors[i % choiceColors.length];
+                return `
+                  <div class="mb-2">
+                    <div class="d-flex justify-content-between align-items-center small mb-1">
+                      <span class="fw-semibold text-dark">${escapeHTML(opt.label)}</span>
+                      <span class="text-secondary fw-bold">${opt.percent}% <span class="text-muted fw-normal">(${opt.count}/${q.answered || 0})</span></span>
+                    </div>
+                    <div class="progress" style="height: 10px; background: #e2e8f0; border-radius: 6px;">
+                      <div class="progress-bar" style="width: ${opt.percent}%; background-color: ${color}; border-radius: 6px;"></div>
+                    </div>
+                  </div>
+                `;
+              }).join("");
+
+              bodyHtml = `
+                <div>
+                  <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-1">
+                    <span class="text-muted small">${q.answered || 0} người trả lời (chọn nhiều đáp án)</span>
+                    <span class="text-muted small fst-italic">% tính trên tổng số người trả lời</span>
+                  </div>
+                  <div class="rpt-bars-container mt-1">
+                    ${barsHtml}
+                  </div>
+                </div>
+              `;
+            }
+          } else if (q.kind === "nps" || q.type === "nps") {
+            const groups = q.groups || {
+              promoters: { count: 0, percent: 0 },
+              passives: { count: 0, percent: 0 },
+              detractors: { count: 0, percent: 0 }
+            };
+            const npsVal = q.npsScore ?? 0;
+            const npsBadgeCls = npsVal > 30 ? "bg-success" : npsVal > 0 ? "bg-info text-dark" : npsVal === 0 ? "bg-secondary" : "bg-danger";
+
+            bodyHtml = `
+              <div>
+                <div class="d-flex align-items-center gap-3 flex-wrap mb-3">
+                  <span class="badge ${npsBadgeCls} px-3 py-2 fs-6 fw-bold">
+                    NPS Score: ${npsVal > 0 ? "+" : ""}${npsVal}
+                  </span>
+                  <span class="badge bg-light text-dark border px-3 py-2 fw-semibold">
+                    Điểm TB: ${q.average || 0} / 10
+                  </span>
+                  <span class="text-muted small">(${q.answered || 0} lượt đánh giá)</span>
+                </div>
+
+                <!-- 3-tier NPS group distribution -->
+                <div class="row g-2 mb-3">
+                  <div class="col-12 col-md-4">
+                    <div class="p-2 rounded border bg-light">
+                      <div class="d-flex justify-content-between small mb-1">
+                        <span class="fw-bold text-success"><i class="fas fa-smile me-1"></i> Promoters (9-10)</span>
+                        <span class="fw-bold text-success">${groups.promoters.percent}% (${groups.promoters.count})</span>
+                      </div>
+                      <div class="progress" style="height: 6px;">
+                        <div class="progress-bar bg-success" style="width: ${groups.promoters.percent}%"></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-12 col-md-4">
+                    <div class="p-2 rounded border bg-light">
+                      <div class="d-flex justify-content-between small mb-1">
+                        <span class="fw-bold text-warning"><i class="fas fa-meh me-1"></i> Passives (7-8)</span>
+                        <span class="fw-bold text-warning">${groups.passives.percent}% (${groups.passives.count})</span>
+                      </div>
+                      <div class="progress" style="height: 6px;">
+                        <div class="progress-bar bg-warning" style="width: ${groups.passives.percent}%"></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-12 col-md-4">
+                    <div class="p-2 rounded border bg-light">
+                      <div class="d-flex justify-content-between small mb-1">
+                        <span class="fw-bold text-danger"><i class="fas fa-frown me-1"></i> Detractors (0-6)</span>
+                        <span class="fw-bold text-danger">${groups.detractors.percent}% (${groups.detractors.count})</span>
+                      </div>
+                      <div class="progress" style="height: 6px;">
+                        <div class="progress-bar bg-danger" style="width: ${groups.detractors.percent}%"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Detailed 0-10 score chips -->
+                <div class="small fw-semibold text-secondary mb-1">Phân bố chi tiết thang điểm 0 - 10:</div>
+                <div class="d-flex flex-wrap gap-1">
+                  ${(q.options || []).map((opt) => {
+                    const score = opt.level;
+                    const col = score >= 9 ? "#10b981" : score >= 7 ? "#f59e0b" : "#ef4444";
+                    return `
+                      <span class="badge border bg-white text-dark py-1 px-2" style="font-size: 11px;">
+                        <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${col};margin-right:4px;"></span>
+                        <b>${score}:</b> ${opt.count} (${opt.percent}%)
+                      </span>
+                    `;
+                  }).join("")}
+                </div>
+              </div>
+            `;
           } else {
-            // Text quotes
+            // Text quotes (text, short_text, long_text, and unknown types)
             const texts = q.texts || [];
             if (texts.length === 0) {
               bodyHtml = '<div class="text-muted small italic">Chưa có ý kiến phản hồi nào.</div>';
@@ -3025,11 +3159,12 @@
             }
           }
 
+          const badge = getQuestionTypeBadge(q);
           return `
             <div class="rpt-card rpt-avoid-break mb-3">
-              <div class="d-flex justify-content-between align-items-center mb-2">
+              <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-1">
                 <h6 class="fw-bold mb-0 text-dark">Câu ${qIdx + 1}: ${escapeHTML(q.text)}</h6>
-                <span class="badge bg-light text-secondary border small">${escapeHTML(q.type.toUpperCase())}</span>
+                <span class="badge ${badge.cls} small">${escapeHTML(badge.label)}</span>
               </div>
               ${bodyHtml}
             </div>
@@ -3184,6 +3319,16 @@
               .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; }
               .bg-light { background-color: #f1f5f9 !important; }
               .bg-warning { background-color: #fef3c7 !important; color: #92400e !important; }
+              .bg-danger { background-color: #fee2e2 !important; color: #991b1b !important; }
+              .bg-secondary { background-color: #f1f5f9 !important; color: #475569 !important; }
+              .bg-white { background-color: #ffffff !important; }
+              .col-md-4 { width: 33.333%; }
+              .p-2 { padding: 8px; }
+              .rounded { border-radius: 6px; }
+              .fst-italic { font-style: italic; }
+              .gap-1 { gap: 4px; }
+              .gap-2 { gap: 8px; }
+              .gap-3 { gap: 12px; }
               .border { border: 1px solid #cbd5e1; }
               hr { border: 0; border-top: 1px solid #e2e8f0; margin: 12px 0; }
               .rpt-footer-note { font-size: 10px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 8px; margin-top: 16px; text-align: center; }

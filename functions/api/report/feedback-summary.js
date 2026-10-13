@@ -180,73 +180,244 @@ export async function onRequestGet(context) {
       const formQuestions = questionsByForm[m.formId] || [];
 
       const questions = formQuestions.map((q) => {
-        const isRating = q.type === "rating";
-        const isChoice = q.type === "choice" || q.type === "select" || q.type === "radio";
-        
-        let answeredCount = 0;
-        let ratingSum = 0;
-        let ratingCount = 0;
-        const distribution = {};
-        const texts = [];
+        const normType = normalizeQuestionType(q.type);
+        let kind = "text";
+        if (normType === "radio") kind = "single";
+        else if (normType === "checkbox") kind = "multi";
+        else if (normType === "scale" || normType === "rating") kind = "scale";
+        else if (normType === "nps") kind = "nps";
+        else if (normType === "text" || normType === "short_text" || normType === "long_text") kind = "text";
+        else kind = "text"; // unknown types fallback to text
 
-        // Pre-populate distribution for predefined options if present
-        if (isRating) {
-          const ratingOpts = q.options ? parseOptionsList(q.options) : ["1", "2", "3", "4", "5"];
-          ratingOpts.forEach(opt => distribution[opt] = 0);
-        } else if (isChoice && q.options) {
-          const choiceOpts = parseOptionsList(q.options);
-          choiceOpts.forEach(opt => distribution[opt] = 0);
+        let answeredCount = 0;
+
+        if (kind === "single") {
+          const declaredOptions = parseSemicolonOptions(q.options);
+          const countMap = {};
+          declaredOptions.forEach((opt) => { countMap[opt] = 0; });
+
+          for (const sub of mappingSubs) {
+            const subAnswers = responsesBySubmission[sub.submissionId] || {};
+            const rawAns = subAnswers[q.questionId];
+            if (rawAns === undefined || rawAns === null || String(rawAns).trim() === "") continue;
+            answeredCount++;
+            const ansStr = String(rawAns).trim();
+            countMap[ansStr] = (countMap[ansStr] || 0) + 1;
+          }
+
+          const allOptions = Array.from(new Set([...declaredOptions, ...Object.keys(countMap)]));
+          const options = allOptions.map((opt) => ({
+            label: opt,
+            count: countMap[opt] || 0,
+            percent: answeredCount > 0 ? Math.round(((countMap[opt] || 0) / answeredCount) * 1000) / 10 : 0
+          }));
+
+          return {
+            questionId: q.questionId,
+            text: q.text,
+            type: normType || "radio",
+            kind: "single",
+            optionsStr: q.options,
+            answered: answeredCount,
+            options,
+            distribution: countMap
+          };
         }
 
+        if (kind === "multi") {
+          const declaredOptions = parseSemicolonOptions(q.options);
+          const countMap = {};
+          declaredOptions.forEach((opt) => { countMap[opt] = 0; });
+
+          for (const sub of mappingSubs) {
+            const subAnswers = responsesBySubmission[sub.submissionId] || {};
+            const rawAns = subAnswers[q.questionId];
+            if (rawAns === undefined || rawAns === null || String(rawAns).trim() === "") continue;
+            answeredCount++;
+            const ansStr = String(rawAns).trim();
+
+            const selectedThisSub = new Set();
+            const tokens = ansStr.split(/,\s*|;\s*/).map((s) => s.trim()).filter(Boolean);
+
+            for (const opt of declaredOptions) {
+              if (tokens.includes(opt) || ansStr === opt) {
+                selectedThisSub.add(opt);
+              }
+            }
+
+            for (const token of tokens) {
+              let matched = false;
+              for (const opt of declaredOptions) {
+                if (opt.toLowerCase() === token.toLowerCase()) {
+                  selectedThisSub.add(opt);
+                  matched = true;
+                  break;
+                }
+              }
+              if (!matched && token) {
+                selectedThisSub.add(token);
+              }
+            }
+
+            for (const chosen of selectedThisSub) {
+              countMap[chosen] = (countMap[chosen] || 0) + 1;
+            }
+          }
+
+          const allOptions = Array.from(new Set([...declaredOptions, ...Object.keys(countMap)]));
+          const options = allOptions.map((opt) => ({
+            label: opt,
+            count: countMap[opt] || 0,
+            percent: answeredCount > 0 ? Math.round(((countMap[opt] || 0) / answeredCount) * 1000) / 10 : 0
+          }));
+
+          return {
+            questionId: q.questionId,
+            text: q.text,
+            type: normType || "checkbox",
+            kind: "multi",
+            optionsStr: q.options,
+            answered: answeredCount,
+            options,
+            distribution: countMap
+          };
+        }
+
+        if (kind === "scale") {
+          const { min, max } = parseScaleRange(q.options);
+          const countMap = {};
+          for (let lvl = min; lvl <= max; lvl++) {
+            countMap[lvl] = 0;
+          }
+          let ratingSum = 0;
+          let ratingCount = 0;
+
+          for (const sub of mappingSubs) {
+            const subAnswers = responsesBySubmission[sub.submissionId] || {};
+            const rawAns = subAnswers[q.questionId];
+            if (rawAns === undefined || rawAns === null || String(rawAns).trim() === "") continue;
+            answeredCount++;
+            const num = parseFloat(String(rawAns).trim());
+            if (Number.isFinite(num)) {
+              ratingSum += num;
+              ratingCount++;
+              const key = Math.round(num);
+              countMap[key] = (countMap[key] || 0) + 1;
+            }
+          }
+
+          const levels = [];
+          for (let lvl = min; lvl <= max; lvl++) {
+            levels.push(lvl);
+          }
+          const average = ratingCount > 0 ? Math.round((ratingSum / ratingCount) * 10) / 10 : 0;
+          const options = levels.map((lvl) => ({
+            label: `${lvl} sao`,
+            level: lvl,
+            count: countMap[lvl] || 0,
+            percent: answeredCount > 0 ? Math.round(((countMap[lvl] || 0) / answeredCount) * 1000) / 10 : 0
+          }));
+
+          return {
+            questionId: q.questionId,
+            text: q.text,
+            type: normType || "scale",
+            kind: "scale",
+            optionsStr: q.options,
+            min,
+            max,
+            average,
+            answered: answeredCount,
+            options,
+            distribution: countMap
+          };
+        }
+
+        if (kind === "nps") {
+          const countMap = {};
+          for (let lvl = 0; lvl <= 10; lvl++) {
+            countMap[lvl] = 0;
+          }
+          let sum = 0;
+          let npsCount = 0;
+          let promoterCount = 0;
+          let passiveCount = 0;
+          let detractorCount = 0;
+
+          for (const sub of mappingSubs) {
+            const subAnswers = responsesBySubmission[sub.submissionId] || {};
+            const rawAns = subAnswers[q.questionId];
+            if (rawAns === undefined || rawAns === null || String(rawAns).trim() === "") continue;
+            answeredCount++;
+            const num = parseInt(String(rawAns).trim(), 10);
+            if (Number.isFinite(num) && num >= 0 && num <= 10) {
+              sum += num;
+              npsCount++;
+              countMap[num] = (countMap[num] || 0) + 1;
+              if (num >= 9) promoterCount++;
+              else if (num >= 7) passiveCount++;
+              else detractorCount++;
+            }
+          }
+
+          const promoterPct = answeredCount > 0 ? Math.round((promoterCount / answeredCount) * 1000) / 10 : 0;
+          const passivePct = answeredCount > 0 ? Math.round((passiveCount / answeredCount) * 1000) / 10 : 0;
+          const detractorPct = answeredCount > 0 ? Math.round((detractorCount / answeredCount) * 1000) / 10 : 0;
+          const npsScore = Math.round(promoterPct - detractorPct);
+          const average = npsCount > 0 ? Math.round((sum / npsCount) * 10) / 10 : 0;
+
+          const options = Array.from({ length: 11 }, (_, i) => ({
+            label: String(i),
+            level: i,
+            count: countMap[i] || 0,
+            percent: answeredCount > 0 ? Math.round(((countMap[i] || 0) / answeredCount) * 1000) / 10 : 0
+          }));
+
+          return {
+            questionId: q.questionId,
+            text: q.text,
+            type: normType || "nps",
+            kind: "nps",
+            optionsStr: q.options,
+            npsScore,
+            average,
+            answered: answeredCount,
+            groups: {
+              promoters: { count: promoterCount, percent: promoterPct },
+              passives: { count: passiveCount, percent: passivePct },
+              detractors: { count: detractorCount, percent: detractorPct }
+            },
+            options,
+            distribution: countMap
+          };
+        }
+
+        // Default: text quotes (for text, short_text, long_text, and unknown types)
+        const texts = [];
         for (const sub of mappingSubs) {
           const subAnswers = responsesBySubmission[sub.submissionId] || {};
           const rawAns = subAnswers[q.questionId];
           if (rawAns === undefined || rawAns === null || String(rawAns).trim() === "") continue;
-
           answeredCount++;
           const ansStr = String(rawAns).trim();
-
-          if (isRating) {
-            const num = parseFloat(ansStr);
-            if (Number.isFinite(num)) {
-              ratingSum += num;
-              ratingCount++;
-            }
-            const key = ansStr;
-            distribution[key] = (distribution[key] || 0) + 1;
-          } else if (isChoice) {
-            distribution[ansStr] = (distribution[ansStr] || 0) + 1;
-          } else {
-            // Text or fallback
-            texts.push({
-              text: ansStr,
-              email: sub.email || "",
-              submittedAt: sub.submittedAt || ""
-            });
-          }
+          texts.push({
+            text: ansStr,
+            email: sub.email || "",
+            submittedAt: sub.submittedAt || ""
+          });
         }
 
-        // Sort text quotes by submittedAt descending
         texts.sort((a, b) => Date.parse(b.submittedAt || 0) - Date.parse(a.submittedAt || 0));
 
-        const qResult = {
+        return {
           questionId: q.questionId,
           text: q.text,
-          type: isRating ? "rating" : isChoice ? "choice" : "text",
-          options: q.options,
-          answered: answeredCount
+          type: normType || "text",
+          kind: "text",
+          optionsStr: q.options,
+          answered: answeredCount,
+          texts
         };
-
-        if (isRating) {
-          qResult.average = ratingCount > 0 ? Math.round((ratingSum / ratingCount) * 10) / 10 : 0;
-          qResult.distribution = distribution;
-        } else if (isChoice) {
-          qResult.distribution = distribution;
-        } else {
-          qResult.texts = texts;
-        }
-
-        return qResult;
       });
 
       return {
@@ -270,12 +441,34 @@ export async function onRequestGet(context) {
   }
 }
 
-function parseOptionsList(optionsStr) {
+function normalizeQuestionType(raw) {
+  return String(raw || "").trim().toLowerCase().replace(/[\s-]+/g, "_");
+}
+
+function parseSemicolonOptions(optionsStr) {
   if (!optionsStr) return [];
   return String(optionsStr)
-    .split(/[\r\n,]+/)
-    .map(s => s.trim())
+    .split(/[;\r\n]+/)
+    .map((s) => s.trim())
     .filter(Boolean);
+}
+
+function parseScaleRange(optionsStr) {
+  let min = 1;
+  let max = 5;
+  if (optionsStr) {
+    const parts = String(optionsStr)
+      .split(/[;,\-\/\s]+/)
+      .map((s) => parseInt(s.trim(), 10))
+      .filter((n) => Number.isFinite(n));
+    if (parts.length >= 2) {
+      min = Math.min(parts[0], parts[1]);
+      max = Math.max(parts[0], parts[1]);
+    } else if (parts.length === 1 && parts[0] > 1) {
+      max = parts[0];
+    }
+  }
+  return { min, max };
 }
 
 function normalizeHeader(h) {
