@@ -464,6 +464,74 @@
           border-radius: 18px !important;
         }
       }
+
+      /* Class Detail Report Tab Styles */
+      .rpt-card {
+        background: #ffffff;
+        border: 1px solid rgba(55, 48, 163, 0.08);
+        border-radius: 16px;
+        padding: 18px;
+        margin-bottom: 16px;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.025);
+      }
+      .rpt-kpi-card {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 14px 16px;
+        text-align: center;
+      }
+      .rpt-kpi-val {
+        font-size: 1.45rem;
+        font-weight: 700;
+        color: #1e293b;
+        line-height: 1.2;
+      }
+      .rpt-kpi-lbl {
+        font-size: 0.75rem;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        font-weight: 600;
+        margin-top: 4px;
+      }
+      .rpt-quote {
+        border-left: 3px solid #6366f1;
+        background: #f8fafc;
+        padding: 10px 14px;
+        border-radius: 8px;
+        margin-bottom: 8px;
+        font-size: 13px;
+        line-height: 1.5;
+        color: #334155;
+      }
+      .rpt-email {
+        font-size: 11px;
+        color: #64748b;
+        font-weight: 600;
+        margin-left: 6px;
+      }
+      .rpt-legend-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        margin-right: 14px;
+        margin-bottom: 6px;
+      }
+      .rpt-legend-color {
+        width: 12px;
+        height: 12px;
+        border-radius: 3px;
+        display: inline-block;
+        flex-shrink: 0;
+      }
+      @media print {
+        @page { size: A4; margin: 12mm; }
+        * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        .rpt-no-print { display: none !important; }
+        .rpt-avoid-break { break-inside: avoid; page-break-inside: avoid; }
+      }
     </style>
   </head>
   <body>
@@ -1064,6 +1132,18 @@
                   Feedback Details
                 </button>
               </li>
+              <li class="nav-item" role="presentation">
+                <button
+                  class="nav-link"
+                  id="tabReport-tab"
+                  data-bs-toggle="tab"
+                  data-bs-target="#tabReport"
+                  type="button"
+                  role="tab"
+                >
+                  <i class="fas fa-chart-pie me-1"></i> Report
+                </button>
+              </li>
             </ul>
 
             <div class="tab-content" id="detailTabsContent">
@@ -1113,6 +1193,49 @@
                       <!-- Rendered via JS -->
                     </tbody>
                   </table>
+                </div>
+              </div>
+
+              <!-- TAB: Report -->
+              <div class="tab-pane fade" id="tabReport" role="tabpanel">
+                <div class="rpt-toolbar d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3 p-3 bg-white rounded-4 border rpt-no-print">
+                  <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <label class="form-label mb-0 fw-semibold small text-secondary" for="reportRoundSelect">
+                      <i class="fas fa-filter me-1 text-primary"></i> Đợt khảo sát / Round:
+                    </label>
+                    <select
+                      id="reportRoundSelect"
+                      class="form-select form-select-sm"
+                      style="min-width: 220px; max-width: 340px;"
+                      onchange="onReportRoundChange(this.value)"
+                    >
+                      <option value="">(Chọn đợt khảo sát...)</option>
+                    </select>
+                  </div>
+                  <div class="d-flex align-items-center gap-3 flex-wrap">
+                    <div class="form-check form-switch mb-0">
+                      <input
+                        class="form-check-input"
+                        type="checkbox"
+                        role="switch"
+                        id="reportShowEmail"
+                        onchange="onReportToggleEmail(this.checked)"
+                      />
+                      <label class="form-check-label small user-select-none" for="reportShowEmail">
+                        Hiện email học viên / Show email
+                      </label>
+                    </div>
+                    <button class="btn btn-sm btn-outline-primary" onclick="printClassReport()">
+                      <i class="fas fa-print me-1"></i> In báo cáo / Print
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" title="Tải lại khảo sát / Refresh" onclick="loadReportFeedbackSummary(true)">
+                      <i class="fas fa-sync-alt"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <div id="reportContent">
+                  <!-- Rendered via renderReportTab() and renderReportFeedbackDetails() -->
                 </div>
               </div>
             </div>
@@ -1811,6 +1934,11 @@
         document.getElementById("modalClassFbCount").innerText =
           sec.feedbackCount;
 
+        // Reset report tab state on modal open
+        const reportEmailSwitch = document.getElementById("reportShowEmail");
+        if (reportEmailSwitch) reportEmailSwitch.checked = false;
+        if (typeof currentSessionLoggedReveals !== "undefined") currentSessionLoggedReveals.clear();
+
         renderModalTrainees(sec);
 
         // Open modal
@@ -2197,6 +2325,7 @@
         renderRegTab();
         renderCheckinTab();
         renderFeedbackTab();
+        renderReportTab();
       }
 
       function parseDate(dateStr) {
@@ -2341,7 +2470,11 @@
               updatedSec.registeredCount;
             document.getElementById("modalClassFbCount").innerText =
               updatedSec.feedbackCount;
+            currentFeedbackSummary = null;
             renderModalTrainees(updatedSec);
+            if (document.getElementById("tabReport")?.classList.contains("active")) {
+              loadReportFeedbackSummary(true);
+            }
           } else {
             bootstrap.Modal.getInstance(
               document.getElementById("classDetailModal"),
@@ -2414,6 +2547,34 @@
               `${rate}%`
             ];
           });
+        } else if (tabTarget === "#tabReport") {
+          filename = `report_${sec.sectionId}.csv`;
+          const showEmail = document.getElementById("reportShowEmail")?.checked || false;
+          if (showEmail) {
+            logEmailReveal("csv_export");
+          }
+          headers = ["Đợt khảo sát", "Câu hỏi", "Loại", "Câu trả lời"];
+          if (showEmail) headers.push("Email");
+
+          const selectedMappingId = document.getElementById("reportRoundSelect")?.value;
+          const round = (currentFeedbackSummary?.rounds || []).find((r) => r.mappingId === selectedMappingId) || (currentFeedbackSummary?.rounds || [])[0];
+          if (round) {
+            (round.questions || []).forEach((q) => {
+              if (q.type === "rating" || q.type === "choice") {
+                Object.entries(q.distribution || {}).forEach(([opt, count]) => {
+                  const row = [round.formTitle, q.text, q.type, `${opt}: ${count} lượt`];
+                  if (showEmail) row.push("");
+                  rows.push(row);
+                });
+              } else {
+                (q.texts || []).forEach((t) => {
+                  const row = [round.formTitle, q.text, q.type, t.text || ""];
+                  if (showEmail) row.push(t.email || "");
+                  rows.push(row);
+                });
+              }
+            });
+          }
         }
 
         const csvContent =
@@ -2433,6 +2594,629 @@
         link.click();
         document.body.removeChild(link);
       }
+
+      // ==========================================
+      // CLASS DETAIL: REPORT TAB LOGIC
+      // ==========================================
+      let currentFeedbackSummary = null;
+      const currentSessionLoggedReveals = new Set();
+      const reportExpandedQuotes = new Set();
+
+      function onReportToggleEmail(checked) {
+        if (checked) {
+          logEmailReveal("show");
+        }
+        renderReportFeedbackDetails();
+      }
+
+      function onReportRoundChange(mappingId) {
+        const showEmail = document.getElementById("reportShowEmail")?.checked;
+        if (showEmail) {
+          logEmailReveal("show");
+        }
+        renderReportFeedbackDetails();
+      }
+
+      function logEmailReveal(action = "show") {
+        if (!currentModalSection) return;
+        const selectedMappingId = document.getElementById("reportRoundSelect")?.value || "";
+        const revealKey = `${currentModalSection.sectionId}_${selectedMappingId}_${action}`;
+        if (currentSessionLoggedReveals.has(revealKey)) return;
+        currentSessionLoggedReveals.add(revealKey);
+
+        const token = getReportToken();
+        fetch("/api/report/log-email-view", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: "Bearer " + token } : {})
+          },
+          body: JSON.stringify({
+            sectionId: currentModalSection.sectionId,
+            mappingId: selectedMappingId,
+            action
+          })
+        }).catch((err) => console.warn("Failed to log email view:", err));
+      }
+
+      function toggleShowAllQuotes(questionId) {
+        if (reportExpandedQuotes.has(questionId)) {
+          reportExpandedQuotes.delete(questionId);
+        } else {
+          reportExpandedQuotes.add(questionId);
+        }
+        renderReportFeedbackDetails();
+      }
+
+      function renderReportTab() {
+        if (!currentModalSection) return;
+        const sec = currentModalSection;
+        const regCount = sec.registeredCount || 0;
+        const checkinCount = sec.checkinCount || 0;
+        const checkinRate = Math.round((sec.checkinRate || 0) * 100);
+        const feedbackCount = sec.feedbackCount || 0;
+        const feedbackRate = Math.round((sec.feedbackRate || 0) * 100);
+
+        // 1. Calculate checkin breakdown
+        let totalChecked = 0;
+        let totalAbsent = 0;
+        let totalUpcoming = 0;
+        currentTrainees.forEach((t) => {
+          (t.checkinStatus || []).forEach((st) => {
+            if (st.status === "checked") totalChecked++;
+            else if (st.status === "absent") totalAbsent++;
+            else totalUpcoming++;
+          });
+        });
+
+        const checkinDonutSlices = [
+          { label: "Có mặt / Present", value: totalChecked, color: "#10b981" },
+          { label: "Vắng mặt / Absent", value: totalAbsent, color: "#ef4444" },
+          { label: "Chưa diễn ra / Upcoming", value: totalUpcoming, color: "#94a3b8" }
+        ];
+
+        const slotBarsHtml = (currentSlots || []).map((s, idx) => {
+          let slotDone = 0;
+          currentTrainees.forEach((t) => {
+            const st = (t.checkinStatus || []).find((x) => x.slotId === s.slotId);
+            if (st && st.status === "checked") slotDone++;
+          });
+          const slotRate = regCount > 0 ? Math.round((slotDone / regCount) * 100) : 0;
+          const displayDate = formatTimestampDisplay(s.dateStr).split(" ")[0] || "Ca";
+          return `
+            <div class="mb-2">
+              <div class="d-flex justify-content-between small mb-1">
+                <span class="fw-semibold">Ca ${idx + 1} (${escapeHTML(displayDate)})</span>
+                <span class="text-primary fw-bold">${slotRate}% (${slotDone}/${regCount})</span>
+              </div>
+              <div class="progress" style="height: 8px;">
+                <div class="progress-bar bg-success" style="width: ${slotRate}%"></div>
+              </div>
+            </div>
+          `;
+        }).join("") || '<div class="text-muted small">Lớp học này chưa cấu hình buổi điểm danh.</div>';
+
+        // 2. Calculate feedback breakdown
+        let totalFbSubmitted = 0;
+        let totalFbAbsent = 0;
+        let totalFbUpcoming = 0;
+        currentTrainees.forEach((t) => {
+          (t.feedbackStatus || []).forEach((st) => {
+            if (st.status === "submitted") totalFbSubmitted++;
+            else if (st.status === "absent") totalFbAbsent++;
+            else totalFbUpcoming++;
+          });
+        });
+
+        const feedbackDonutSlices = [
+          { label: "Đã nộp / Submitted", value: totalFbSubmitted, color: "#3b82f6" },
+          { label: "Bỏ lỡ / Missed", value: totalFbAbsent, color: "#f59e0b" },
+          { label: "Chưa mở / Upcoming", value: totalFbUpcoming, color: "#94a3b8" }
+        ];
+
+        const roundBarsHtml = (currentMappings || []).map((m, idx) => {
+          let roundDone = 0;
+          currentTrainees.forEach((t) => {
+            const st = (t.feedbackStatus || []).find((x) => x.mappingId === m.mappingId);
+            if (st && st.status === "submitted") roundDone++;
+          });
+          const roundRate = regCount > 0 ? Math.round((roundDone / regCount) * 100) : 0;
+          return `
+            <div class="mb-2">
+              <div class="d-flex justify-content-between small mb-1">
+                <span class="fw-semibold">Đợt ${idx + 1}: ${escapeHTML(m.formTitle || "Khảo sát")}</span>
+                <span class="text-info fw-bold">${roundRate}% (${roundDone}/${regCount})</span>
+              </div>
+              <div class="progress" style="height: 8px;">
+                <div class="progress-bar bg-info" style="width: ${roundRate}%"></div>
+              </div>
+            </div>
+          `;
+        }).join("") || '<div class="text-muted small">Lớp học này chưa cấu hình đợt khảo sát.</div>';
+
+        const nowVN = new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh", hour12: false });
+
+        const html = `
+          <!-- Report Header -->
+          <div class="rpt-card rpt-avoid-break mb-3">
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+              <div>
+                <h4 class="fw-bold mb-1 text-primary">${escapeHTML(sec.courseName)}</h4>
+                <div class="text-muted small d-flex flex-wrap gap-3">
+                  <span><b>Mã lớp / ID:</b> ${escapeHTML(sec.sectionId)}</span>
+                  <span><b>Ngày / Date:</b> ${escapeHTML(sec.sectionDate || "N/A")}</span>
+                  <span><b>Địa điểm / Venue:</b> ${escapeHTML(sec.venue || "N/A")}</span>
+                </div>
+              </div>
+              <div class="text-end small text-secondary">
+                <div><b>Thời gian xuất / Generated:</b> ${escapeHTML(nowVN)} (ICT)</div>
+              </div>
+            </div>
+
+            <!-- KPI Row -->
+            <div class="row g-2 mt-2">
+              <div class="col-6 col-md-3">
+                <div class="rpt-kpi-card">
+                  <div class="rpt-kpi-val text-primary">${regCount}</div>
+                  <div class="rpt-kpi-lbl">Học viên / Registered</div>
+                </div>
+              </div>
+              <div class="col-6 col-md-3">
+                <div class="rpt-kpi-card">
+                  <div class="rpt-kpi-val text-success">${checkinRate}%</div>
+                  <div class="rpt-kpi-lbl">Điểm danh / Check-in</div>
+                </div>
+              </div>
+              <div class="col-6 col-md-3">
+                <div class="rpt-kpi-card">
+                  <div class="rpt-kpi-val text-info">${feedbackRate}%</div>
+                  <div class="rpt-kpi-lbl">Khảo sát / Feedback</div>
+                </div>
+              </div>
+              <div class="col-6 col-md-3">
+                <div class="rpt-kpi-card">
+                  <div class="rpt-kpi-val text-warning" id="reportKpiRating">--</div>
+                  <div class="rpt-kpi-lbl">Đánh giá TB / Avg Rating</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 1 & 2: Rates Overview -->
+          <div class="row g-3 mb-3">
+            <!-- 1. Checkin Overview -->
+            <div class="col-12 col-lg-6">
+              <div class="rpt-card rpt-avoid-break h-100 mb-0">
+                <h6 class="fw-bold text-dark mb-3"><i class="fas fa-user-check me-2 text-success"></i>1. Tỉ lệ điểm danh / Attendance Summary</h6>
+                <div class="d-flex align-items-center justify-content-center mb-3">
+                  ${svgPie({ slices: checkinDonutSlices, size: 160, isDonut: true, centerLabel: `${checkinRate}%`, centerSub: "Hoàn thành" })}
+                </div>
+                <hr class="my-3 opacity-25">
+                <div class="small fw-bold text-secondary mb-2">Chi tiết từng ca điểm danh:</div>
+                ${slotBarsHtml}
+              </div>
+            </div>
+
+            <!-- 2. Feedback Overview -->
+            <div class="col-12 col-lg-6">
+              <div class="rpt-card rpt-avoid-break h-100 mb-0">
+                <h6 class="fw-bold text-dark mb-3"><i class="fas fa-poll me-2 text-info"></i>2. Tỉ lệ khảo sát / Feedback Participation</h6>
+                <div class="d-flex align-items-center justify-content-center mb-3">
+                  ${svgPie({ slices: feedbackDonutSlices, size: 160, isDonut: true, centerLabel: `${feedbackRate}%`, centerSub: "Hoàn thành" })}
+                </div>
+                <hr class="my-3 opacity-25">
+                <div class="small fw-bold text-secondary mb-2">Chi tiết từng đợt khảo sát:</div>
+                ${roundBarsHtml}
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 3: Feedback Details by Question -->
+          <div class="rpt-card mb-0">
+            <h5 class="fw-bold text-dark mb-3"><i class="fas fa-comments me-2 text-primary"></i>3. Kết quả khảo sát chi tiết / Survey Results</h5>
+            <div id="reportFeedbackDetails">
+              <div class="text-center py-4 text-muted">
+                <div class="spinner-border spinner-border-sm text-primary me-2"></div> Đang tải kết quả khảo sát...
+              </div>
+            </div>
+          </div>
+        `;
+
+        const reportContainer = document.getElementById("reportContent");
+        if (reportContainer) {
+          reportContainer.innerHTML = html;
+        }
+
+        // If feedback summary is already loaded for this section, render details immediately
+        if (currentFeedbackSummary && currentFeedbackSummary.sectionId === sec.sectionId) {
+          renderReportFeedbackDetails();
+        }
+      }
+
+      async function loadReportFeedbackSummary(forceReload = false) {
+        if (!currentModalSection) return;
+        const sectionId = currentModalSection.sectionId;
+        if (!forceReload && currentFeedbackSummary && currentFeedbackSummary.sectionId === sectionId) {
+          renderReportFeedbackDetails();
+          return;
+        }
+
+        const detailsContainer = document.getElementById("reportFeedbackDetails");
+        if (detailsContainer) {
+          detailsContainer.innerHTML = `<div class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm text-primary me-2"></div> Đang tải kết quả khảo sát...</div>`;
+        }
+
+        try {
+          const token = getReportToken();
+          const res = await fetch(`/api/report/feedback-summary?sectionId=${encodeURIComponent(sectionId)}`, {
+            headers: token ? { Authorization: "Bearer " + token } : {}
+          });
+          const json = await res.json().catch(() => ({}));
+          if (!res.ok || !json.success) {
+            throw new Error(json.error || "Không thể tải chi tiết khảo sát.");
+          }
+
+          currentFeedbackSummary = json.data;
+
+          // Populate rounds dropdown
+          const select = document.getElementById("reportRoundSelect");
+          if (select) {
+            const rounds = currentFeedbackSummary.rounds || [];
+            if (rounds.length === 0) {
+              select.innerHTML = '<option value="">(Không có đợt khảo sát nào)</option>';
+            } else {
+              select.innerHTML = rounds.map((r, i) =>
+                `<option value="${escapeHTML(r.mappingId)}">Đợt ${i + 1}: ${escapeHTML(r.formTitle || "Khảo sát")} (${r.submittedCount} lượt)</option>`
+              ).join("");
+              // Pick first round with submissions > 0, or first round
+              const firstWithSubs = rounds.find((r) => r.submittedCount > 0);
+              if (firstWithSubs) {
+                select.value = firstWithSubs.mappingId;
+              } else {
+                select.value = rounds[0].mappingId;
+              }
+            }
+          }
+
+          renderReportFeedbackDetails();
+        } catch (err) {
+          console.error("Error loading feedback summary:", err);
+          if (detailsContainer) {
+            detailsContainer.innerHTML = `
+              <div class="alert alert-warning my-3 d-flex align-items-center justify-content-between">
+                <span><i class="fas fa-exclamation-triangle me-2"></i> ${escapeHTML(err.message)}</span>
+                <button class="btn btn-sm btn-outline-dark" onclick="loadReportFeedbackSummary(true)"><i class="fas fa-sync-alt me-1"></i> Thử lại</button>
+              </div>
+            `;
+          }
+        }
+      }
+
+      function renderReportFeedbackDetails() {
+        const detailsContainer = document.getElementById("reportFeedbackDetails");
+        if (!detailsContainer) return;
+        if (!currentFeedbackSummary || !currentFeedbackSummary.rounds) {
+          detailsContainer.innerHTML = '<div class="text-muted text-center py-4">Chưa có dữ liệu khảo sát.</div>';
+          return;
+        }
+
+        const rounds = currentFeedbackSummary.rounds || [];
+        if (rounds.length === 0) {
+          detailsContainer.innerHTML = '<div class="text-muted text-center py-4">Lớp học này chưa có cấu hình khảo sát.</div>';
+          return;
+        }
+
+        const selectedMappingId = document.getElementById("reportRoundSelect")?.value;
+        const currentRound = rounds.find((r) => r.mappingId === selectedMappingId) || rounds[0];
+        const showEmail = document.getElementById("reportShowEmail")?.checked || false;
+
+        // Calculate average satisfaction for this round across all rating questions
+        const ratingQuestions = (currentRound.questions || []).filter((q) => q.type === "rating" && q.average > 0);
+        const ratingKpiEl = document.getElementById("reportKpiRating");
+        if (ratingKpiEl) {
+          if (ratingQuestions.length > 0) {
+            const overallAvg = ratingQuestions.reduce((acc, q) => acc + q.average, 0) / ratingQuestions.length;
+            ratingKpiEl.innerHTML = `${Math.round(overallAvg * 10) / 10} <span style="font-size: 0.9rem; color: #f59e0b;">⭐</span>`;
+          } else {
+            ratingKpiEl.innerText = "--";
+          }
+        }
+
+        if (!currentRound.questions || currentRound.questions.length === 0) {
+          detailsContainer.innerHTML = '<div class="text-muted text-center py-4">Đợt khảo sát này chưa có câu hỏi nào.</div>';
+          return;
+        }
+
+        const choiceColors = ["#3b82f6", "#10b981", "#8b5cf6", "#f59e0b", "#ec4899", "#06b6d4", "#f97316", "#64748b"];
+        const ratingColors = {
+          "5": "#10b981",
+          "4": "#3b82f6",
+          "3": "#f59e0b",
+          "2": "#f97316",
+          "1": "#ef4444"
+        };
+
+        const questionsHtml = currentRound.questions.map((q, qIdx) => {
+          let bodyHtml = "";
+          if (q.type === "rating") {
+            const slices = Object.entries(q.distribution || {}).map(([opt, count]) => ({
+              label: `${opt} sao`,
+              value: count,
+              color: ratingColors[opt] || "#6366f1"
+            }));
+            bodyHtml = `
+              <div class="row align-items-center g-3">
+                <div class="col-12 col-md-5 d-flex justify-content-center">
+                  ${svgPie({ slices, size: 150, isDonut: false })}
+                </div>
+                <div class="col-12 col-md-7">
+                  <div class="d-flex align-items-center gap-2 mb-2">
+                    <span class="badge bg-warning text-dark px-3 py-2 fs-6 fw-bold">
+                      ⭐ Điểm TB: ${q.average || 0} / 5
+                    </span>
+                    <span class="text-muted small">(${q.answered || 0} lượt trả lời)</span>
+                  </div>
+                  <div class="d-flex flex-wrap gap-2">
+                    ${slices.map((s) => `
+                      <div class="rpt-legend-item">
+                        <span class="rpt-legend-color" style="background:${s.color}"></span>
+                        <span class="small"><b>${escapeHTML(s.label)}:</b> ${s.value}</span>
+                      </div>
+                    `).join("")}
+                  </div>
+                </div>
+              </div>
+            `;
+          } else if (q.type === "choice") {
+            const slices = Object.entries(q.distribution || {}).map(([opt, count], i) => ({
+              label: opt,
+              value: count,
+              color: choiceColors[i % choiceColors.length]
+            }));
+            bodyHtml = `
+              <div class="row align-items-center g-3">
+                <div class="col-12 col-md-5 d-flex justify-content-center">
+                  ${svgPie({ slices, size: 150, isDonut: false })}
+                </div>
+                <div class="col-12 col-md-7">
+                  <div class="text-muted small mb-2">${q.answered || 0} lượt trả lời</div>
+                  <div class="d-flex flex-wrap gap-2">
+                    ${slices.map((s) => `
+                      <div class="rpt-legend-item">
+                        <span class="rpt-legend-color" style="background:${s.color}"></span>
+                        <span class="small"><b>${escapeHTML(s.label)}:</b> ${s.value}</span>
+                      </div>
+                    `).join("")}
+                  </div>
+                </div>
+              </div>
+            `;
+          } else {
+            // Text quotes
+            const texts = q.texts || [];
+            if (texts.length === 0) {
+              bodyHtml = '<div class="text-muted small italic">Chưa có ý kiến phản hồi nào.</div>';
+            } else {
+              const isExpanded = reportExpandedQuotes.has(q.questionId);
+              const visibleTexts = isExpanded ? texts : texts.slice(0, 10);
+              const quotesHtml = visibleTexts.map((t) => `
+                <div class="rpt-quote">
+                  <div>"${escapeHTML(t.text)}"</div>
+                  ${showEmail && t.email ? `<span class="rpt-email">(${escapeHTML(t.email)})</span>` : ""}
+                </div>
+              `).join("");
+
+              let expandBtnHtml = "";
+              if (texts.length > 10) {
+                expandBtnHtml = `
+                  <div class="rpt-no-print mt-2">
+                    <button class="btn btn-sm btn-link p-0 text-decoration-none fw-semibold" onclick="toggleShowAllQuotes('${escapeHTML(q.questionId)}')">
+                      ${isExpanded ? 'Thu gọn / Show less' : `Xem thêm ${texts.length - 10} ý kiến khác / Show all (${texts.length})`}
+                    </button>
+                  </div>
+                `;
+              }
+
+              bodyHtml = `
+                <div class="text-muted small mb-2">${texts.length} ý kiến phản hồi:</div>
+                <div class="rpt-quotes-container">${quotesHtml}</div>
+                ${expandBtnHtml}
+              `;
+            }
+          }
+
+          return `
+            <div class="rpt-card rpt-avoid-break mb-3">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <h6 class="fw-bold mb-0 text-dark">Câu ${qIdx + 1}: ${escapeHTML(q.text)}</h6>
+                <span class="badge bg-light text-secondary border small">${escapeHTML(q.type.toUpperCase())}</span>
+              </div>
+              ${bodyHtml}
+            </div>
+          `;
+        }).join("");
+
+        detailsContainer.innerHTML = questionsHtml;
+      }
+
+      function svgPie({ slices = [], size = 160, isDonut = false, centerLabel = "", centerSub = "" }) {
+        const total = slices.reduce((acc, s) => acc + (s.value || 0), 0);
+        const r = (size / 2) - 10;
+        const cx = size / 2;
+        const cy = size / 2;
+        const innerR = isDonut ? r * 0.62 : 0;
+
+        if (total === 0) {
+          return `
+            <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+              <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#e2e8f0" stroke-width="2" />
+              <text x="${cx}" y="${cy + 4}" text-anchor="middle" font-size="11" fill="#94a3b8">0</text>
+            </svg>
+          `;
+        }
+
+        const nonZeroSlices = slices.filter((s) => (s.value || 0) > 0);
+        if (nonZeroSlices.length === 1) {
+          const s = nonZeroSlices[0];
+          return `
+            <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+              <circle cx="${cx}" cy="${cy}" r="${r}" fill="${s.color}" />
+              ${isDonut ? `
+                <circle cx="${cx}" cy="${cy}" r="${innerR}" fill="#ffffff" />
+                <text x="${cx}" y="${cy - 2}" text-anchor="middle" font-size="16" font-weight="700" fill="#1e293b">${escapeHTML(centerLabel)}</text>
+                <text x="${cx}" y="${cy + 14}" text-anchor="middle" font-size="10" fill="#64748b">${escapeHTML(centerSub)}</text>
+              ` : ''}
+            </svg>
+          `;
+        }
+
+        let startAngle = -Math.PI / 2;
+        const paths = slices.map((s) => {
+          if (!s.value) return "";
+          const sliceAngle = (s.value / total) * 2 * Math.PI;
+          const endAngle = startAngle + sliceAngle;
+          const x1 = cx + r * Math.cos(startAngle);
+          const y1 = cy + r * Math.sin(startAngle);
+          const x2 = cx + r * Math.cos(endAngle);
+          const y2 = cy + r * Math.sin(endAngle);
+          const largeArc = sliceAngle > Math.PI ? 1 : 0;
+
+          let d = "";
+          if (isDonut) {
+            const x3 = cx + innerR * Math.cos(endAngle);
+            const y3 = cy + innerR * Math.sin(endAngle);
+            const x4 = cx + innerR * Math.cos(startAngle);
+            const y4 = cy + innerR * Math.sin(startAngle);
+            d = `M ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2} L ${x3} ${y3} A ${innerR} ${innerR} 0 ${largeArc} 0 ${x4} ${y4} Z`;
+          } else {
+            d = `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2} Z`;
+          }
+          startAngle = endAngle;
+          return `<path d="${d}" fill="${s.color}" stroke="#ffffff" stroke-width="1.5" />`;
+        }).join("");
+
+        const centerText = isDonut ? `
+          <circle cx="${cx}" cy="${cy}" r="${innerR}" fill="#ffffff" />
+          <text x="${cx}" y="${cy - 2}" text-anchor="middle" font-size="16" font-weight="700" fill="#1e293b">${escapeHTML(centerLabel)}</text>
+          <text x="${cx}" y="${cy + 14}" text-anchor="middle" font-size="10" fill="#64748b">${escapeHTML(centerSub)}</text>
+        ` : '';
+
+        return `
+          <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+            ${paths}
+            ${centerText}
+          </svg>
+        `;
+      }
+
+      function printClassReport() {
+        if (!currentModalSection) return;
+        const showEmail = document.getElementById("reportShowEmail")?.checked || false;
+        if (showEmail) {
+          logEmailReveal("print");
+        }
+
+        const contentEl = document.getElementById("reportContent");
+        if (!contentEl) return;
+
+        const tempSummary = currentFeedbackSummary;
+        const selectedMappingId = document.getElementById("reportRoundSelect")?.value;
+        const round = (tempSummary?.rounds || []).find((r) => r.mappingId === selectedMappingId) || (tempSummary?.rounds || [])[0];
+        const roundTitle = round ? round.formTitle : "Báo cáo lớp học";
+
+        const printIframe = document.createElement("iframe");
+        printIframe.style.position = "fixed";
+        printIframe.style.right = "0";
+        printIframe.style.bottom = "0";
+        printIframe.style.width = "0";
+        printIframe.style.height = "0";
+        printIframe.style.border = "0";
+        document.body.appendChild(printIframe);
+
+        const printDoc = printIframe.contentWindow.document;
+        printDoc.open();
+        printDoc.write(`
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <title>Báo cáo ${escapeHTML(currentModalSection.sectionId)} - ${escapeHTML(roundTitle)}</title>
+            <style>
+              @page { size: A4; margin: 12mm; }
+              body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; font-size: 12px; color: #1e293b; margin: 0; padding: 0; background: #fff; }
+              * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; box-sizing: border-box; }
+              .rpt-card { border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; margin-bottom: 12px; background: #fff; }
+              .rpt-avoid-break { break-inside: avoid; page-break-inside: avoid; }
+              .rpt-no-print { display: none !important; }
+              .rpt-kpi-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; text-align: center; }
+              .rpt-kpi-val { font-size: 1.3rem; font-weight: 700; color: #1e293b; }
+              .rpt-kpi-lbl { font-size: 0.7rem; color: #64748b; text-transform: uppercase; font-weight: 600; margin-top: 2px; }
+              .rpt-quote { border-left: 3px solid #6366f1; background: #f8fafc; padding: 8px 12px; margin-bottom: 6px; font-size: 11px; line-height: 1.4; break-inside: avoid; page-break-inside: avoid; }
+              .rpt-email { font-size: 10px; color: #64748b; font-weight: 600; margin-left: 6px; }
+              .rpt-legend-item { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; margin-right: 12px; margin-bottom: 4px; }
+              .rpt-legend-color { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+              .progress { background: #e2e8f0; border-radius: 4px; height: 8px; overflow: hidden; margin-top: 4px; }
+              .progress-bar { height: 100%; }
+              .bg-success { background-color: #10b981 !important; }
+              .bg-info { background-color: #06b6d4 !important; }
+              .row { display: flex; flex-wrap: wrap; margin-left: -6px; margin-right: -6px; }
+              .col-6 { width: 50%; padding-left: 6px; padding-right: 6px; }
+              .col-md-3 { width: 25%; }
+              .col-md-5 { width: 40%; }
+              .col-md-7 { width: 60%; }
+              .col-12 { width: 100%; }
+              .col-lg-6 { width: 50%; padding-left: 6px; padding-right: 6px; }
+              .d-flex { display: flex; }
+              .align-items-center { align-items: center; }
+              .justify-content-between { justify-content: space-between; }
+              .justify-content-center { justify-content: center; }
+              .flex-wrap { flex-wrap: wrap; }
+              .fw-bold { font-weight: 700; }
+              .fw-semibold { font-weight: 600; }
+              .text-primary { color: #4338ca !important; }
+              .text-secondary { color: #64748b !important; }
+              .text-muted { color: #64748b !important; }
+              .text-dark { color: #1e293b !important; }
+              .text-success { color: #10b981 !important; }
+              .text-info { color: #0284c7 !important; }
+              .text-warning { color: #d97706 !important; }
+              .text-end { text-align: right; }
+              .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; }
+              .bg-light { background-color: #f1f5f9 !important; }
+              .bg-warning { background-color: #fef3c7 !important; color: #92400e !important; }
+              .border { border: 1px solid #cbd5e1; }
+              hr { border: 0; border-top: 1px solid #e2e8f0; margin: 12px 0; }
+              .rpt-footer-note { font-size: 10px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 8px; margin-top: 16px; text-align: center; }
+            </style>
+          </head>
+          <body>
+            ${contentEl.innerHTML}
+            ${showEmail ? '<div class="rpt-footer-note">⚠️ Báo cáo có chứa thông tin cá nhân (email học viên) - Chỉ lưu hành nội bộ / Contains trainee personal data - internal use only.</div>' : ''}
+          </body>
+          </html>
+        `);
+        printDoc.close();
+
+        setTimeout(() => {
+          printIframe.contentWindow.focus();
+          printIframe.contentWindow.print();
+          setTimeout(() => {
+            if (document.body.contains(printIframe)) {
+              document.body.removeChild(printIframe);
+            }
+          }, 2000);
+        }, 500);
+      }
+
+      // Hook tab switch event to load feedback summary
+      document.addEventListener("DOMContentLoaded", () => {
+        const reportTabBtn = document.getElementById("tabReport-tab");
+        if (reportTabBtn) {
+          reportTabBtn.addEventListener("shown.bs.tab", () => {
+            loadReportFeedbackSummary();
+          });
+        }
+      });
 
       // Boot
       window.addEventListener("DOMContentLoaded", checkAutoLogin);
