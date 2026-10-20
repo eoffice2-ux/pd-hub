@@ -357,10 +357,10 @@ export const TBL_ATTENDEE = "pdc_section attendee management";
 export const TBL_COURSE = "pdc_course master list";
 export const TBL_VENUE = "pdc-room lab management";
 
-const SECTION_ALLOW_VIEW = ["registration open", "registration closed", "in progress"];
+const SECTION_ALLOW_VIEW = ["registration open", "registration closed", "in progress", "registration ready"];
 // Business rule: allow late registration for sections already in progress
 // if today is still within date start/end registration window.
-const SECTION_ALLOW_REGISTRATION = ["registration open", "in progress"];
+const SECTION_ALLOW_REGISTRATION = ["registration open", "in progress", "registration ready"];
 
 export async function getTraineeSectionsFromSheet(env, traineeEmail, options = {}) {
   const cleanEmail = normalizeEmail(traineeEmail);
@@ -416,7 +416,8 @@ export async function getTraineeSectionsFromSheet(env, traineeEmail, options = {
 
     const sectionType = String(row[indexes.sectionType] || "").toLowerCase().trim();
     let typeMatch = false;
-    if (userType === "Industry") typeMatch = sectionType === "industry";
+    if (sectionType === "community") typeMatch = true;
+    else if (userType === "Industry") typeMatch = sectionType === "industry";
     else if (userType === "Staff") typeMatch = sectionType === "eiu staff";
     else if (userType === "Student") typeMatch = sectionType === "student";
     if (!typeMatch) continue;
@@ -427,7 +428,7 @@ export async function getTraineeSectionsFromSheet(env, traineeEmail, options = {
 
     let displayStatus = "";
     if (isRegistered) displayStatus = "Registered";
-    else if (now < startReg) displayStatus = "Not Open for registration yet";
+    else if (now < startReg) displayStatus = "Not Available for registration yet";
     else if (now > endReg) displayStatus = "Missed";
     else if (SECTION_ALLOW_REGISTRATION.includes(rawStatus)) displayStatus = "Open for registration";
     else displayStatus = "Registration Closed";
@@ -559,7 +560,8 @@ export async function registerTraineeForSectionInSheet(env, email, sectionId, dr
   const userType = getUserType(cleanEmail);
   const sectionType = sTypeIdx !== -1 ? String(sectionRow[sTypeIdx] || "").toLowerCase().trim() : "";
   let typeMatch = false;
-  if (userType === "Industry") typeMatch = sectionType === "industry";
+  if (sectionType === "community") typeMatch = true;
+  else if (userType === "Industry") typeMatch = sectionType === "industry";
   else if (userType === "Staff") typeMatch = sectionType === "eiu staff";
   else if (userType === "Student") typeMatch = sectionType === "student";
   if (!typeMatch) {

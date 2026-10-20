@@ -107,7 +107,8 @@ export async function registerTraineeForSectionPsql(env, email, sectionId, dryRu
   const userType = getUserType(clean);
   const sectionType = String(section["section type"] || section["section trainee type"] || section["section_type"] || "").toLowerCase().trim();
   let typeMatch = false;
-  if (userType === "Industry") typeMatch = sectionType === "industry";
+  if (sectionType === "community") typeMatch = true;
+  else if (userType === "Industry") typeMatch = sectionType === "industry";
   else if (userType === "Staff") typeMatch = sectionType === "eiu staff";
   else if (userType === "Student") typeMatch = sectionType === "student";
   if (!typeMatch) {
@@ -121,7 +122,7 @@ export async function registerTraineeForSectionPsql(env, email, sectionId, dryRu
   const endReg = parsePsqlVietnamDate(endRegVal, "2099-12-31T23:59:59Z", true);
   
   const now = new Date();
-  const SECTION_ALLOW_REGISTRATION = ["registration open", "in progress"];
+  const SECTION_ALLOW_REGISTRATION = ["registration open", "in progress", "registration ready"];
   const isOpenByStatus = SECTION_ALLOW_REGISTRATION.includes(rawStatus);
   const isOpenByDate = now >= startReg && now <= endReg;
   

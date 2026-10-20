@@ -126,6 +126,18 @@ All serverless endpoints run under `functions/api/`:
    - Question type support: `radio` (pie), `checkbox` (horizontal percent bars), `scale` (1..5 stars with dynamic range detection), `nps` (Promoters/Passives/Detractors + NPS score), and `text` (quotes with toggleable email).
    - Email reveal operational audit logging (`report_feedback_email_viewed`).
    - Fixed scale range parsing bug where semicolon-delimited lists (`"1; 2; 3; 4; 5"`) were incorrectly truncated to max 2.
+6. **Step 52 — Trainee Organization Disambiguation & First-Login Guardrails** (Commit `39fb85e`, `0546ade`):
+   - Implemented interactive Disambiguation Modal card intercepting custom-typed org names when database matches exist.
+   - Fuzzy corporate token matching via `stripOrgNoiseWords` across `name_vn` and `name_gb`.
+   - Visual status pill indicating verified database selection vs pending manual declaration.
+   - Welcoming first-login onboarding guidance alert.
+7. **Step 53 — Section Status ('Registration Ready') & Type ('community') Expansion**:
+   - Expanded catalog visibility to include `section status = "Registration Ready"` (case-insensitive).
+   - Strict date-window gating for registration:
+     - `now < start_reg`: Informative cyan badge `"Not Available for registration yet"` (`bg-info text-dark`), card non-clickable/disabled.
+     - `start_reg <= now <= end_reg`: Dynamically displays `"Open for registration"` (`bg-success`), enabling enrollment.
+     - `now > end_reg`: Dynamically displays `"Missed"` (`bg-danger`), non-clickable.
+   - Expanded `section type = "community"` (case-insensitive) to be visible to and registrable by all `userType` (`Industry`, `Staff`, `Student`) across both PostgreSQL repository (`section-repo.js`, `registration-repo.js`) and Google Sheets fallback (`trainee-gsheet.js`).
 
 ---
 
@@ -136,16 +148,22 @@ To run the automated test suite across all portals:
 ```powershell
 # In '3. Cloudflare PDHub/step 44 - Production Stable':
 
-# 1. Test Class Detail Report Tab, Question Types, and Email Reveal Audit
-node test-class-report-tab.mjs
+# 1. Test Section Status ('Registration Ready') & Type ('community') Expansion
+node test-section-status-type-expansion.mjs
 
-# 2. Audit DOM ID null-safety across all HTML pages
+# 2. Test Trainee Organization Disambiguation & Profile First-Login
+node test-trainee-profile-org-disambig.mjs
+
+# 3. Audit DOM ID null-safety across all HTML pages
 node audit-dom-ids.mjs
 
-# 3. Test Operational Logs enhancements and scope filters
+# 4. Test Class Detail Report Tab, Question Types, and Email Reveal Audit
+node test-class-report-tab.mjs
+
+# 5. Test Operational Logs enhancements and scope filters
 node test-operational-logs-enhancements.mjs
 
-# 4. Test Registration and OTP Fixes
+# 6. Test Registration and OTP Fixes
 node test-registration-otp-fixes.mjs
 ```
 

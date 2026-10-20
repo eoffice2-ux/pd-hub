@@ -51,8 +51,8 @@ export async function getTraineeSectionsPsql(env, email, options = {}) {
   const registrations = await getRegisteredSectionsForTraineePsql(env, clean, options);
   const registeredIds = new Set(registrations.map(r => String(r["section id"] || r["section_id"] || "").trim()));
 
-  const SECTION_ALLOW_VIEW = ["registration open", "registration closed", "in progress"];
-  const SECTION_ALLOW_REGISTRATION = ["registration open", "in progress"];
+  const SECTION_ALLOW_VIEW = ["registration open", "registration closed", "in progress", "registration ready"];
+  const SECTION_ALLOW_REGISTRATION = ["registration open", "in progress", "registration ready"];
 
   const now = new Date();
   const data = [];
@@ -66,7 +66,8 @@ export async function getTraineeSectionsPsql(env, email, options = {}) {
 
     const sectionType = String(s["section type"] || s["section trainee type"] || s["section_type"] || "").toLowerCase().trim();
     let typeMatch = false;
-    if (userType === "Industry") typeMatch = sectionType === "industry";
+    if (sectionType === "community") typeMatch = true;
+    else if (userType === "Industry") typeMatch = sectionType === "industry";
     else if (userType === "Staff") typeMatch = sectionType === "eiu staff";
     else if (userType === "Student") typeMatch = sectionType === "student";
     if (!typeMatch) continue;
@@ -90,7 +91,7 @@ export async function getTraineeSectionsPsql(env, email, options = {}) {
     }
 
     if (isRegistered) displayStatus = "Registered";
-    else if (now < startReg) displayStatus = "Not Open for registration yet";
+    else if (now < startReg) displayStatus = "Not Available for registration yet";
     else if (now > endReg) displayStatus = "Missed";
     else if (SECTION_ALLOW_REGISTRATION.includes(rawStatus)) {
       if (maxParticipants > 0 && currentCount >= maxParticipants) {

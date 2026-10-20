@@ -2728,9 +2728,9 @@
             badgeClass = "bg-warning text-dark"; // Orange
             cardOpacity = "0.75";
             cursorStyle = "cursor: default;";
-          } else if (s.status === "Not Open for registration yet") {
-            badgeClass = "bg-secondary"; // Gray
-            cardOpacity = "0.7";
+          } else if (s.status === "Not Available for registration yet" || s.status === "Not Open for registration yet") {
+            badgeClass = "bg-info text-dark"; // Informative cyan badge
+            cardOpacity = "0.75";
             cursorStyle = "cursor: default;";
           }
 
