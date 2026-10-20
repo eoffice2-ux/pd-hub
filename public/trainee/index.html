@@ -2607,8 +2607,6 @@
 
         const wasNewUser = cachedProfile.isNew;
 
-        const isEIU =
-          userEmail && userEmail.toLowerCase().endsWith(INTERNAL_DOMAIN);
         let schoolVal = null,
           deptVal = null;
         if (isEIU) {
