@@ -59,6 +59,22 @@ export function formatVietnamDateTime(date) {
   return `${parts.day}/${parts.month}/${parts.year} ${parts.hour}:${parts.minute}:${parts.second}`;
 }
 
+export function formatVietnamDateDdMmmYyyy(date) {
+  if (!date) return "";
+  const d = new Date(date);
+  if (Number.isNaN(d.getTime())) return "";
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Ho_Chi_Minh",
+    day: "2-digit",
+    month: "short",
+    year: "numeric"
+  }).formatToParts(d).reduce((acc, part) => {
+    acc[part.type] = part.value;
+    return acc;
+  }, {});
+  return `${parts.day}/${parts.month}/${parts.year}`;
+}
+
 export function parsePsqlVietnamDate(value, fallbackStr, isEndDate = false) {
   if (!value) return new Date(fallbackStr);
   const d = new Date(value);

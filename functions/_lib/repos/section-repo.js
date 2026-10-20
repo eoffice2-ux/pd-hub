@@ -1,5 +1,5 @@
 import { psqlFindOne, psqlSelectRows, eqTrimLower } from "../psql-adapter.js";
-import { cleanEmail, parsePsqlVietnamDate, isPsql } from "./repo-utils.js";
+import { cleanEmail, parsePsqlVietnamDate, formatVietnamDateDdMmmYyyy, isPsql } from "./repo-utils.js";
 
 export async function getSectionPsql(env, sectionId) {
   return psqlFindOne(env, "SECTION", { "section id": String(sectionId || "").trim() });
@@ -91,7 +91,10 @@ export async function getTraineeSectionsPsql(env, email, options = {}) {
     }
 
     if (isRegistered) displayStatus = "Registered";
-    else if (now < startReg) displayStatus = "Not Available for registration yet";
+    else if (now < startReg) {
+      const dateStr = formatVietnamDateDdMmmYyyy(startReg);
+      displayStatus = dateStr ? `Upcoming • Opens ${dateStr}` : "Upcoming • Opens soon";
+    }
     else if (now > endReg) displayStatus = "Missed";
     else if (SECTION_ALLOW_REGISTRATION.includes(rawStatus)) {
       if (maxParticipants > 0 && currentCount >= maxParticipants) {

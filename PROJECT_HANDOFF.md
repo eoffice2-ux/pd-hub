@@ -134,7 +134,7 @@ All serverless endpoints run under `functions/api/`:
 7. **Step 53 — Section Status ('Registration Ready') & Type ('community') Expansion**:
    - Expanded catalog visibility to include `section status = "Registration Ready"` (case-insensitive).
    - Strict date-window gating for registration:
-     - `now < start_reg`: Informative cyan badge `"Not Available for registration yet"` (`bg-info text-dark`), card non-clickable/disabled.
+     - `now < start_reg`: Dynamic informative cyan badge `"Upcoming • Opens dd/mmm/yyyy"` (e.g. `Upcoming • Opens 25/Oct/2026`) in `bg-info text-dark`, card non-clickable/disabled.
      - `start_reg <= now <= end_reg`: Dynamically displays `"Open for registration"` (`bg-success`), enabling enrollment.
      - `now > end_reg`: Dynamically displays `"Missed"` (`bg-danger`), non-clickable.
    - Expanded `section type = "community"` (case-insensitive) to be visible to and registrable by all `userType` (`Industry`, `Staff`, `Student`) across both PostgreSQL repository (`section-repo.js`, `registration-repo.js`) and Google Sheets fallback (`trainee-gsheet.js`).

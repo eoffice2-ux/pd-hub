@@ -428,7 +428,10 @@ export async function getTraineeSectionsFromSheet(env, traineeEmail, options = {
 
     let displayStatus = "";
     if (isRegistered) displayStatus = "Registered";
-    else if (now < startReg) displayStatus = "Not Available for registration yet";
+    else if (now < startReg) {
+      const dateStr = formatSheetDateDdMmmYyyy(startReg);
+      displayStatus = dateStr ? `Upcoming • Opens ${dateStr}` : "Upcoming • Opens soon";
+    }
     else if (now > endReg) displayStatus = "Missed";
     else if (SECTION_ALLOW_REGISTRATION.includes(rawStatus)) displayStatus = "Open for registration";
     else displayStatus = "Registration Closed";
@@ -1054,6 +1057,17 @@ function parseSheetDate(value, fallback, isEndDate = false) {
   if (isEndDate) d.setHours(23, 59, 59, 999);
   else d.setHours(0, 0, 0, 0);
   return d;
+}
+
+function formatSheetDateDdMmmYyyy(date) {
+  if (!date) return "";
+  const d = new Date(date);
+  if (Number.isNaN(d.getTime())) return "";
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const day = String(d.getDate()).padStart(2, "0");
+  const month = months[d.getMonth()];
+  const year = d.getFullYear();
+  return `${day}/${month}/${year}`;
 }
 
 

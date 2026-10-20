@@ -2728,7 +2728,12 @@
             badgeClass = "bg-warning text-dark"; // Orange
             cardOpacity = "0.75";
             cursorStyle = "cursor: default;";
-          } else if (s.status === "Not Available for registration yet" || s.status === "Not Open for registration yet") {
+          } else if (
+            s.status.startsWith("Upcoming") ||
+            s.status.startsWith("Not Available") ||
+            s.status.startsWith("Not Open") ||
+            s.status.includes("available for registration")
+          ) {
             badgeClass = "bg-info text-dark"; // Informative cyan badge
             cardOpacity = "0.75";
             cursorStyle = "cursor: default;";
@@ -2760,7 +2765,7 @@
           }
 
           // 4. Build the badge HTML
-          const statusBadge = `<span id="catalog-badge-${s.id}" class="badge ${badgeClass} float-end shadow-sm">${s.status}</span>`;
+          const statusBadge = `<span id="catalog-badge-${s.id}" class="badge ${badgeClass} float-end shadow-sm" style="white-space: normal; line-height: 1.3;">${s.status}</span>`;
 
           // 5. Construct the beautiful Bootstrap card
           h += `<div class="col-md-6">
