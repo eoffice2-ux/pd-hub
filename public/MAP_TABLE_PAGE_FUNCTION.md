@@ -7,7 +7,7 @@ Rule: Keep in sync whenever a new table, page, or route is added.
 
 ## Legend
 - **Table Key** = env-resolved key used in `TAB_<KEY>_SOURCE` / `isPsql(env, KEY)`
-- **Source** = `psql` | `gsheet` (runtime-switchable per key)
+- **Source** = `psql` | `gsheet` (runtime-switchable per key; default is `psql`)
 - **Page** = HTML file under `public/`
 - **Route** = Cloudflare Pages Function path under `functions/api/`
 - **Method** = HTTP verb exposed to browser
@@ -30,6 +30,7 @@ Rule: Keep in sync whenever a new table, page, or route is added.
 | `public/trainee/index.html` | viewProfile | `GET /api/trainee/profile` | `functions/api/trainee/profile.js` | GET | `onRequestGet` → `getTraineeProfilePsql` / `readTraineeTable` |
 | `public/trainee/index.html` | viewProfile | `POST /api/trainee/profile/update` | `functions/api/trainee/profile/update.js` | POST | `onRequestPost` → `updateTraineeProfileFromUiPsql` / `updateTraineeProfileInSheet` |
 | `public/report.html` | reportApp | `GET /api/report/report-data` | `functions/api/report/report-data.js` | GET | `onRequestGet` (reads traineeSheet for name lookups) |
+| `public/report.html` | tabReport | `GET /api/report/feedback-summary` | `functions/api/report/feedback-summary.js` | GET | `onRequestGet` (resolves traineeId to email) |
 
 ---
 
@@ -78,18 +79,18 @@ Rule: Keep in sync whenever a new table, page, or route is added.
 ## 4. CHECKIN_PLAN
 - **Table**: `public.pdc_section checkin management`
 - **Source**: psql (TAB_CHECKIN_PLAN_SOURCE)
-- **Sheet fallback**: `pdc_section checkin management` tab in GOOGLE_SHEET_ID_CORE
+- **Sheet fallback**: `pdc-section checkin management` tab in GOOGLE_SHEET_ID_CORE
 
 ### Columns
 | Read | Written |
 |---|---|
-| `checkin slot id`, `section id`, `dateid`, `checkin date`, `checkin type`, `checkin valid from`, `checkin valid to`, `checkin code` | (admin only; no UI write route) |
+| `checkin slot id`, `section id`, `checkin date`, `checkin type`, `checkin valid from`, `checkin valid to`, `checkin code` | (admin only) |
 
 ### Routes
 | Page | View/Panel | Route | File | Method | Function |
 |---|---|---|---|---|---|
-| `public/trainee/index.html` | CheckinModal | `GET /api/trainee/checkin/data` | `functions/api/trainee/checkin/data.js` | GET | `onRequestGet` → `getTraineeCheckinDataPsql` / `getTraineeCheckinDataFromSheet` |
-| `public/report.html` | reportApp | `GET /api/report/report-data` | `functions/api/report/report-data.js` | GET | `onRequestGet` (reads checkinPlanSheet for slot metadata) |
+| `public/trainee/index.html` | CheckinModal | `GET /api/trainee/checkin/data` | `functions/api/trainee/checkin/data.js` | GET | `onRequestGet` → loads active slots for section |
+| `public/report.html` | reportApp | `GET /api/report/report-data` | `functions/api/report/report-data.js` | GET | `onRequestGet` (reads checkinPlanSheet for slot schedules) |
 
 ---
 
@@ -101,14 +102,14 @@ Rule: Keep in sync whenever a new table, page, or route is added.
 ### Columns
 | Read | Written |
 |---|---|
-| `section attendee id`, `checkin slot id`, `section id`, `trainee id`, `checkin time stamp` | `section attendee id`, `checkin slot id`, `section id`, `trainee id`, `checkin time stamp` |
+| `section attendee id`, `checkin slot id`, `section id`, `trainee id`, `checkin time stamp` | same (one row per check-in event) |
 
 ### Routes
 | Page | View/Panel | Route | File | Method | Function |
 |---|---|---|---|---|---|
-| `public/trainee/index.html` | CheckinModal | `POST /api/trainee/checkin/submit` | `functions/api/trainee/checkin/submit.js` | POST | `onRequestPost` → `submitTraineeCheckinPsql` / `submitTraineeCheckinToSheet` |
-| `public/trainee/index.html` | CheckinModal | `GET /api/trainee/checkin/data` | `functions/api/trainee/checkin/data.js` | GET | `onRequestGet` (logs[] returned alongside plans) |
-| `public/report.html` | reportApp | `GET /api/report/report-data` | `functions/api/report/report-data.js` | GET | `onRequestGet` (reads checkinSheet for completion stats) |
+| `public/trainee/index.html` | CheckinModal | `POST /api/trainee/checkin/submit` | `functions/api/trainee/checkin/submit.js` | POST | `onRequestPost` → `submitCheckinPsql` / `submitCheckinToSheet` |
+| `public/trainee/index.html` | CheckinModal | `GET /api/trainee/checkin/data` | `functions/api/trainee/checkin/data.js` | GET | `onRequestGet` → loads trainee's existing logs |
+| `public/report.html` | reportApp | `GET /api/report/report-data` | `functions/api/report/report-data.js` | GET | `onRequestGet` (reads checkinLogSheet to tally attendance) |
 
 ---
 
@@ -120,13 +121,14 @@ Rule: Keep in sync whenever a new table, page, or route is added.
 ### Columns
 | Read | Written |
 |---|---|
-| `id`, `form_id`, `form_title`, `section id`, `response starttime`, `response endtime` | (admin only) |
+| `mapping id`, `section id`, `form id`, `form title`, `status`, `start datetime`, `end datetime` | (admin only) |
 
 ### Routes
 | Page | View/Panel | Route | File | Method | Function |
 |---|---|---|---|---|---|
-| `public/trainee/index.html` | FormsModal | `GET /api/trainee/forms` | `functions/api/trainee/forms/index.js` | GET | `onRequestGet` → `getFormsForSectionPsql` / `getFormsForSectionFromSheet` |
-| `public/report.html` | reportApp | `GET /api/report/report-data` | `functions/api/report/report-data.js` | GET | `onRequestGet` (reads fbSecFormsSheet) |
+| `public/trainee/index.html` | FeedbackListModal | `GET /api/trainee/forms` | `functions/api/trainee/forms/index.js` | GET | `onRequestGet` → forms mapped to section |
+| `public/report.html` | reportApp | `GET /api/report/report-data` | `functions/api/report/report-data.js` | GET | `onRequestGet` (reads sectionFormsSheet) |
+| `public/report.html` | tabReport | `GET /api/report/feedback-summary` | `functions/api/report/feedback-summary.js` | GET | `onRequestGet` (resolves section to survey rounds) |
 
 ---
 
@@ -137,12 +139,12 @@ Rule: Keep in sync whenever a new table, page, or route is added.
 ### Columns
 | Read | Written |
 |---|---|
-| `form_id`, `title`, `description`, `created_at`, `is_active` | (admin only) |
+| `form_id`, `title`, `description`, `created_at` | (admin only) |
 
 ### Routes
 | Page | View/Panel | Route | File | Method | Function |
 |---|---|---|---|---|---|
-| `public/trainee/index.html` | FormsModal | `GET /api/trainee/forms/questions` | `functions/api/trainee/forms/questions/` | GET | joins FB_FORMS for title/description |
+| `public/trainee/index.html` | FormSubmissionModal | `GET /api/trainee/forms` | `functions/api/trainee/forms/index.js` | GET | forms metadata lookup |
 
 ---
 
@@ -158,7 +160,8 @@ Rule: Keep in sync whenever a new table, page, or route is added.
 ### Routes
 | Page | View/Panel | Route | File | Method | Function |
 |---|---|---|---|---|---|
-| `public/trainee/index.html` | FormSubmissionModal | `GET /api/trainee/forms/questions` | `functions/api/trainee/forms/questions/` | GET | questions loader repo |
+| `public/trainee/index.html` | FormSubmissionModal | `GET /api/trainee/forms/questions` | `functions/api/trainee/forms/questions.js` | GET | questions loader repo |
+| `public/report.html` | tabReport | `GET /api/report/feedback-summary` | `functions/api/report/feedback-summary.js` | GET | parses questions, options, types (`radio`, `checkbox`, `scale`, `nps`, `text`) |
 
 ---
 
@@ -175,8 +178,9 @@ Rule: Keep in sync whenever a new table, page, or route is added.
 ### Routes
 | Page | View/Panel | Route | File | Method | Function |
 |---|---|---|---|---|---|
-| `public/trainee/index.html` | FormSubmissionModal | `POST /api/trainee/forms/submit` | `functions/api/trainee/forms/submit/` | POST | feedback submit repo |
+| `public/trainee/index.html` | FormSubmissionModal | `POST /api/trainee/forms/submit` | `functions/api/trainee/forms/submit/index.js` | POST | feedback submit repo |
 | `public/report.html` | reportApp | `GET /api/report/report-data` | `functions/api/report/report-data.js` | GET | `onRequestGet` (reads fbSubmissionsSheet for completion %) |
+| `public/report.html` | tabReport | `GET /api/report/feedback-summary` | `functions/api/report/feedback-summary.js` | GET | aggregates submissions by mapping ID |
 
 ---
 
@@ -192,7 +196,8 @@ Rule: Keep in sync whenever a new table, page, or route is added.
 ### Routes
 | Page | View/Panel | Route | File | Method | Function |
 |---|---|---|---|---|---|
-| `public/trainee/index.html` | FormSubmissionModal | `POST /api/trainee/forms/submit` | `functions/api/trainee/forms/submit/` | POST | writes one row per answer |
+| `public/trainee/index.html` | FormSubmissionModal | `POST /api/trainee/forms/submit` | `functions/api/trainee/forms/submit/index.js` | POST | writes one row per answer |
+| `public/report.html` | tabReport | `GET /api/report/feedback-summary` | `functions/api/report/feedback-summary.js` | GET | aggregates answers into distributions, averages, percent bars, and quotes |
 
 ---
 
@@ -210,13 +215,13 @@ Rule: Keep in sync whenever a new table, page, or route is added.
 | Page | View/Panel | Route | File | Method | Function |
 |---|---|---|---|---|---|
 | `public/client/index.html` | viewInquiryList | `GET /api/client/inquiries` | `functions/api/client/inquiries.js` | GET | `onRequestGet` → `getClientInquiriesPsql` / sheet scan by `client representative email` |
-| `public/client/index.html` | viewInquiryDetail | `POST /api/client/inquiry/update` | `functions/api/client/inquiry/` | POST | inquiry update repo |
+| `public/client/index.html` | viewInquiryDetail | `POST /api/client/inquiry/update` | `functions/api/client/inquiry/update.js` | POST | inquiry update repo |
 
 ---
 
 ## 12. CLIENT_PROFILE
 - **Table**: `public.pdc_client_contract_info`
-- **Source**: psql (TAB_CLIENT_PROFILE_SOURCE)
+- **Source**: psql (TAB_CLIENT_PROFILE_SOURCE=psql)
 - **Sheet fallback**: `pdc_client_contract_info` tab in GOOGLE_SHEET_ID_CORE
 
 ### Columns
@@ -227,9 +232,9 @@ Rule: Keep in sync whenever a new table, page, or route is added.
 ### Routes
 | Page | View/Panel | Route | File | Method | Function |
 |---|---|---|---|---|---|
-| `public/client/index.html` | viewCorporate | `GET /api/client/profile` | `functions/api/client/profile.js` | GET | `onRequestGet` → `getClientProfilePsql` / sheet scan |
+| `public/client/index.html` | viewCorporate | `GET /api/client/profile` | `functions/api/client/profile.js` | GET | `onRequestGet` (reads PostgreSQL profile by `client updater email`) |
 | `public/client/index.html` | viewPersonal | `GET /api/client/profile` | `functions/api/client/profile.js` | GET | same — personal view renders subset |
-| `public/client/index.html` | viewPersonal | `POST /api/client/profile/update` | `functions/api/client/profile/update.js` | POST | `updateClientProfilePsql` / sheet update |
+| `public/client/index.html` | viewPersonal | `POST /api/client/profile/update` | `functions/api/client/profile/update.js` | POST | client profile update repo |
 
 ---
 
@@ -240,12 +245,16 @@ Rule: Keep in sync whenever a new table, page, or route is added.
 ### Columns
 | Read | Written |
 |---|---|
-| `id` (organization id), `name` (organization name) | none |
+| `id` (organization id), `name` (organization name), `company_name_en`, `status` | `name`, `company_name_en`, `status`, `created_at`, `updated_at` |
 
 ### Routes
 | Page | View/Panel | Route | File | Method | Function |
 |---|---|---|---|---|---|
-| `public/trainee/index.html` | viewProfile (org autocomplete) | `GET /api/trainee/organizations/search` | `functions/api/trainee/organizations/search.js` | GET | `onRequestGet` → `searchOrganizationsPsql` (q param, limit 15) |
+| `public/trainee/index.html` | viewProfile (org autocomplete) | `GET /api/trainee/organizations/search` | `functions/api/trainee/organizations/search.js` | GET | `onRequestGet` → `searchOrganizationsPsql` (q param, limit 15, includes PD badge) |
+| `public/trainee/index.html` | register / profile | `POST /api/trainee/organizations/register-pending` | `functions/api/trainee/organizations/register-pending.js` | POST | `onRequestPost` → self-declares new organization |
+| `public/admin/index.html` | pendingOrgsModal | `GET /api/admin/pending-orgs` | `functions/api/admin/pending-orgs.js` | GET | `onRequestGet` → lists pending organizations |
+| `public/admin/index.html` | pendingOrgsModal | `POST /api/admin/pending-orgs` | `functions/api/admin/pending-orgs.js` | POST | `onRequestPost` → creates/registers organization |
+| `public/admin/index.html` | pendingOrgsModal | `PATCH /api/admin/pending-orgs` | `functions/api/admin/pending-orgs.js` | PATCH | `onRequestPatch` → updates company EN or status (`approved`, `rejected`, `merged`) |
 
 ---
 
@@ -268,32 +277,32 @@ Rule: Keep in sync whenever a new table, page, or route is added.
 ---
 
 ## 15. COURSE_MASTER
-- **Table**: `public."pdc_course master list"`
-- **Source**: psql (TAB_COURSE_MASTER_SOURCE)
+- **Table**: `public.pdc_course master list`
+- **Source**: psql (TAB_COURSE_MASTER_SOURCE=psql)
 - **Sheet fallback**: `pdc_course master list` tab in GOOGLE_SHEET_ID_CORE
 
 ### Columns
 | Read | Written |
 |---|---|
-| `course id`, `course name en`, `course name`, `course name vn`, `course objectives`, `course description` | none |
+| `course id`, `course code`, `course name en`, `course name`, description fields | none |
 
 ### Routes
 | Page | View/Panel | Route | File | Method | Function |
 |---|---|---|---|---|---|
-| `public/trainee/index.html` | ClassDetailModal | `GET /api/trainee/section/details` | `functions/api/trainee/section/details.js` | GET | `getSectionDetailsPsql` / `getCourseHelper` (resolves course name) |
-| `public/report.html` | reportApp | `GET /api/report/report-data` | `functions/api/report/report-data.js` | GET | `onRequestGet` → `fetchTableAsMatrix` (reads from PostgreSQL) |
+| `public/trainee/index.html` | ClassDetailModal | `GET /api/trainee/section/details` | `functions/api/trainee/section/details.js` | GET | `getSectionDetailsPsql` / `getTraineeSectionDetailsFromSheet` (resolves course name) |
+| `public/report.html` | reportApp | `GET /api/report/report-data` | `functions/api/report/report-data.js` | GET | `onRequestGet` (reads courseSheet for course name lookup) |
 
 ---
 
 ## 16. USER_ROLES
 - **Table**: `public.pdc_user_roles`
-- **Source**: psql (TAB_USER_ROLES_SOURCE)
+- **Source**: psql
 - **Sheet fallback**: `pdc_user_roles` tab in GOOGLE_SHEET_ID_CORE
 
 ### Columns
 | Read | Written |
 |---|---|
-| `email`, `role`, `assigned_by`, `assigned_at`, `pin number` | `email`, `role`, `assigned_by`, `assigned_at`, `pin number` |
+| `email`, `role` | `email`, `role`, `updated_by`, `updated_at` |
 
 ### Routes
 | Page | View/Panel | Route | File | Method | Function |
@@ -306,13 +315,13 @@ Rule: Keep in sync whenever a new table, page, or route is added.
 
 ## 17. temp_otp (transient OTP)
 - **Table**: `public.temp_otp`
-- **Source**: psql (TAB_OTP_SOURCE)
-- **Sheet fallback**: `temp_otp` tab in GOOGLE_SHEET_ID_CORE
+- **Source**: psql
+- **Sheet fallback**: tab name from `TAB_OTP_GSHEET` env var
 
 ### Columns
 | Read | Written |
 |---|---|
-| `email`, `otp_hash`, `scope`, `expires_at`, `used_at` | `email`, `otp_hash`, `scope`, `expires_at`, `send_provider`, `request_ip`, `user_agent` |
+| `email`, `otp`, `scope`, `expires_at` | `email`, `otp`, `scope`, `expires_at` |
 
 ### Routes
 | Page | View/Panel | Route | File | Method | Function |
@@ -321,33 +330,45 @@ Rule: Keep in sync whenever a new table, page, or route is added.
 | `public/index.html` | viewLogin (admin) | `POST /api/auth/verify-otp` | `functions/api/auth/verify-otp.js` | POST | `onRequestPost` → OTP verify + session issue |
 | `public/client/index.html` | viewLogin | `POST /api/auth/send-otp` | same | POST | same (scope=client) |
 | `public/client/index.html` | viewLogin | `POST /api/auth/verify-otp` | same | POST | same |
+| `public/trainee/index.html` | viewLogin | `POST /api/auth/send-otp` | same | POST | same (scope=trainee) |
+| `public/trainee/index.html` | viewLogin | `POST /api/auth/verify-otp` | same | POST | same |
 
 ---
 
-## 18. pdc_app_logs (application event log)
+## 18. pdc_app_logs (application operational audit log)
 - **Table**: `public.pdc_app_logs`
-- **Source**: psql (TAB_APP_LOG_SOURCE)
-- **Sheet fallback**: `pdc_app_logs` tab in GOOGLE_SHEET_ID_CORE
+- **Source**: psql
+- **Sheet fallback**: tab name from `TAB_APP_LOG_GSHEET` env var
+
+### Scopes
+- `auth`: Logins, OTP sends, OTP verifications, PIN changes.
+- `trainee`: Course registrations, check-ins, feedback submissions, pending org declarations, profile updates.
+- `client`: Client logins, corporate profile updates, inquiry updates.
+- `admin`: Role changes, organization status updates, email reveal audit trails.
 
 ### Columns
 | Read | Written |
 |---|---|
-| `id`, `timestamp`, `event`, `scope`, `email`, `path`, `success`, `detail`, `provider`, `ip`, `user_agent` | same (append-only) |
+| `timestamp`, `event`, `scope`, `email`, `success`, `detail`, `provider`, `ip` | same (append-only) |
 
 ### Routes
 | Page | View/Panel | Route | File | Method | Function |
 |---|---|---|---|---|---|
-| `public/admin/index.html` | panelLogs | `GET /api/admin/status` | `functions/api/admin/status.js` | GET | `onRequestGet` → `readAppLogs` + `summarizeAppLogs` |
+| `public/admin/index.html` | panelLogs | `GET /api/admin/status` | `functions/api/admin/status.js` | GET | `onRequestGet` → `readAppLogs` + `summarizeAppLogs` (supports scope filter & live search) |
+| `public/report.html` | tabReport | `POST /api/report/log-email-view` | `functions/api/report/log-email-view.js` | POST | logs `report_feedback_email_viewed` on show/print/export |
 | *(written by)* | — | `POST /api/auth/send-otp` | `functions/api/auth/send-otp.js` | POST | `appendAppLog` on every OTP send |
 | *(written by)* | — | `POST /api/auth/verify-otp` | `functions/api/auth/verify-otp.js` | POST | `appendAppLog` on every OTP verify |
 | *(written by)* | — | `POST /api/auth/verify-pin` | `functions/api/auth/verify-pin.js` | POST | `appendAppLog` on PIN verify |
+| *(written by)* | — | `POST /api/trainee/register` | `functions/api/trainee/register.js` | POST | `appendAppLog` on course enrollment |
+| *(written by)* | — | `POST /api/trainee/checkin/submit`| `functions/api/trainee/checkin/submit.js` | POST | `appendAppLog` on check-in |
+| *(written by)* | — | `POST /api/trainee/forms/submit` | `functions/api/trainee/forms/submit/index.js` | POST | `appendAppLog` on feedback submit |
 
 ---
 
 ## 19. PROPOSAL_DATEPROPOSAL
 - **Table**: `public.pdc_proposal dateproposal`
 - **Source**: psql (TAB_PROPOSAL_DATEPROPOSAL_SOURCE)
-- **Note**: No direct UI page currently; scheduling metadata
+- **Note**: Scheduling metadata
 
 ### Columns
 `dateid`, `proposal id`, `section id`, `proposal date`, `section`, `hours`, `room id`, `notes`, `updated by`, `updated at`
@@ -357,7 +378,7 @@ Rule: Keep in sync whenever a new table, page, or route is added.
 ## 20. LOGISTIC_LOG
 - **Table**: `public.pdc_logistic_log`
 - **Source**: psql (TAB_LOGISTIC_LOG_SOURCE)
-- **Note**: No direct UI page currently; operational backend table
+- **Note**: Operational backend table
 
 ### Columns
 `log_id`, `proposal id`, `section id`, `logistic id`, `preparation type`, `check list items`, `contact office`, `contact person`, `pd pic`, `checking status`, `note`, `updated by`, `updated at`
@@ -407,7 +428,13 @@ Rule: Keep in sync whenever a new table, page, or route is added.
 | `GET /api/admin/roles` | `functions/api/admin/roles.js` | GET | USER_ROLES |
 | `POST /api/admin/roles` | `functions/api/admin/roles.js` | POST | USER_ROLES |
 | `DELETE /api/admin/roles` | `functions/api/admin/roles.js` | DELETE | USER_ROLES |
+| `GET /api/admin/pending-orgs` | `functions/api/admin/pending-orgs.js` | GET | ORGANIZATION |
+| `POST /api/admin/pending-orgs` | `functions/api/admin/pending-orgs.js` | POST | ORGANIZATION |
+| `PATCH /api/admin/pending-orgs` | `functions/api/admin/pending-orgs.js` | PATCH | ORGANIZATION |
+| `POST /api/admin/migrate-final-tables` | `functions/api/admin/migrate-final-tables.js` | POST | COURSE_MASTER, CLIENT_PROFILE, PROPOSAL_DATEPROPOSAL, LOGISTIC_LOG |
 | `GET /api/report/report-data` | `functions/api/report/report-data.js` | GET | SECTION, SECTION_ATTENDEE, CHECKIN_LOG, CHECKIN_PLAN, COURSE_MASTER, VENUE, TRAINEE_PROFILE, FB_SECTIONFORMS, FB_SUBMISSIONS |
+| `GET /api/report/feedback-summary` | `functions/api/report/feedback-summary.js` | GET | FB_SECTIONFORMS, FB_QUESTIONS, FB_SUBMISSIONS, FB_RESPONSES, TRAINEE_PROFILE |
+| `POST /api/report/log-email-view` | `functions/api/report/log-email-view.js` | POST | pdc_app_logs (writes `report_feedback_email_viewed`) |
 | `GET /api/health` | `functions/api/health.js` | GET | none (liveness check only) |
 
 ---
@@ -417,7 +444,7 @@ Rule: Keep in sync whenever a new table, page, or route is added.
 | Page | Tables / Sheets Accessed |
 |---|---|
 | `public/index.html` (admin login) | temp_otp, pdc_app_logs, USER_ROLES |
-| `public/trainee/index.html` | TRAINEE_PROFILE, SECTION, SECTION_ATTENDEE, CHECKIN_PLAN, CHECKIN_LOG, FB_SECTIONFORMS, FB_FORMS, FB_QUESTIONS, FB_SUBMISSIONS, FB_RESPONSES, ORGANIZATION, SCHOOL_OFFICE, SCHOOL_PROGRAM |
+| `public/trainee/index.html` | TRAINEE_PROFILE, SECTION, SECTION_ATTENDEE, CHECKIN_PLAN, CHECKIN_LOG, FB_SECTIONFORMS, FB_FORMS, FB_QUESTIONS, FB_SUBMISSIONS, FB_RESPONSES, ORGANIZATION, SCHOOL_OFFICE, SCHOOL_PROGRAM, temp_otp, pdc_app_logs |
 | `public/client/index.html` | CLIENT_PROFILE, CLIENT_INQUIRY, temp_otp, pdc_app_logs |
-| `public/admin/index.html` | USER_ROLES, pdc_app_logs, all table sources (describe via status) |
-| `public/report.html` | SECTION, SECTION_ATTENDEE, CHECKIN_LOG, CHECKIN_PLAN, COURSE_MASTER, VENUE, TRAINEE_PROFILE, FB_SECTIONFORMS, FB_SUBMISSIONS |
+| `public/admin/index.html` | USER_ROLES, pdc_app_logs, ORGANIZATION, all table sources (describe via status) |
+| `public/report.html` | SECTION, SECTION_ATTENDEE, CHECKIN_LOG, CHECKIN_PLAN, COURSE_MASTER, VENUE, TRAINEE_PROFILE, FB_SECTIONFORMS, FB_QUESTIONS, FB_SUBMISSIONS, FB_RESPONSES, pdc_app_logs |

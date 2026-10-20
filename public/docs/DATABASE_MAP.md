@@ -21,17 +21,17 @@ Complete cross-reference of every database table/sheet, the web page(s) that con
 | 5 | `CHECKIN_LOG` | `public.pdc_section checkin log` | `psql` / `gsheet` | `/trainee/index.html`, `/report.html` |
 | 6 | `FB_SECTIONFORMS` | `public.pdc_fb_sectionforms` | `psql` / `gsheet` | `/trainee/index.html`, `/report.html` |
 | 7 | `FB_FORMS` | `public.pdc_fb_forms` | `psql` | `/trainee/index.html` |
-| 8 | `FB_QUESTIONS` | `public.pdc_fb_questions` | `psql` | `/trainee/index.html` |
+| 8 | `FB_QUESTIONS` | `public.pdc_fb_questions` | `psql` | `/trainee/index.html`, `/report.html` |
 | 9 | `FB_SUBMISSIONS` | `public.pdc_fb_submissions` | `psql` / `gsheet` | `/trainee/index.html`, `/report.html` |
-| 10 | `FB_RESPONSES` | `public.pdc_fb_responses` | `psql` | `/trainee/index.html` |
+| 10 | `FB_RESPONSES` | `public.pdc_fb_responses` | `psql` | `/trainee/index.html`, `/report.html` |
 | 11 | `CLIENT_INQUIRY` | `public.pdc_inquiry management` | `psql` / `gsheet` | `/client/index.html` |
 | 12 | `CLIENT_PROFILE` | `public.pdc_client_contract_info` | `psql` | `/client/index.html` |
-| 13 | `ORGANIZATION` | `public.oce_industry_list` | `psql` | `/trainee/index.html` |
+| 13 | `ORGANIZATION` | `public.oce_industry_list` | `psql` | `/trainee/index.html`, `/admin/index.html` |
 | 14 | `VENUE` | `public.pdc_room lab management` | `psql` / `gsheet` | `/trainee/index.html`, `/report.html` |
 | 15 | `COURSE_MASTER` | `public.pdc_course master list` | `psql` | `/trainee/index.html`, `/report.html` |
 | 16 | `USER_ROLES` | `public.pdc_user_roles` | `psql` | `/admin/index.html` |
 | 17 | `temp_otp` | `public.temp_otp` | `psql` | `/index.html`, `/client/index.html`, `/admin/index.html` |
-| 18 | `pdc_app_logs` | `public.pdc_app_logs` | `psql` | `/admin/index.html` |
+| 18 | `pdc_app_logs` | `public.pdc_app_logs` | `psql` | `/admin/index.html`, `/report.html` |
 | 19 | `PROPOSAL_DATEPROPOSAL`| `public.pdc_proposal dateproposal` | `psql` | Backend / Scheduling |
 | 20 | `LOGISTIC_LOG` | `public.pdc_logistic_log` | `psql` | Backend / Operational |
 | 21 | `SCHOOL_OFFICE` | `public.setting_school_office` | `psql` | `/trainee/index.html` |
@@ -50,6 +50,7 @@ Complete cross-reference of every database table/sheet, the web page(s) that con
   - `GET /api/trainee/profile` (`functions/api/trainee/profile.js`) &rarr; `getTraineeProfilePsql` / `readTraineeTable`
   - `POST /api/trainee/profile/update` (`functions/api/trainee/profile/update.js`) &rarr; `updateTraineeProfileFromUiPsql` / `updateTraineeProfileInSheet`
   - `GET /api/report/report-data` (`functions/api/report/report-data.js`) &rarr; Trainee profile lookup
+  - `GET /api/report/feedback-summary` (`functions/api/report/feedback-summary.js`) &rarr; Trainee ID to email resolution
 
 ---
 
@@ -77,6 +78,7 @@ Complete cross-reference of every database table/sheet, the web page(s) that con
   - `GET /api/trainee/history` (`functions/api/trainee/history.js`) &rarr; Trainee learning history
   - `GET /api/report/report-data` (`functions/api/report/report-data.js`) &rarr; Attendance metrics
   - `POST /api/webhooks/appsheet/cancel-registration` &rarr; Send `.ics` calendar cancellation
+  - `POST /api/webhooks/appsheet/new-registration` &rarr; Send registration confirmation email to trainee
 
 ---
 
@@ -92,13 +94,20 @@ Complete cross-reference of every database table/sheet, the web page(s) that con
 ### 5. FEEDBACK ENGINE (`FB_*`)
 - **Section Forms:** `public.pdc_fb_sectionforms` (maps section &rarr; feedback form)
 - **Forms:** `public.pdc_fb_forms` (form metadata, title, instructions)
-- **Questions:** `public.pdc_fb_questions` (question texts, types, choices)
+- **Questions:** `public.pdc_fb_questions` (question texts, types: `radio`, `checkbox`, `scale`, `nps`, `short_text`, `long_text`, options)
 - **Submissions:** `public.pdc_fb_submissions` (overall submission record per trainee)
 - **Responses:** `public.pdc_fb_responses` (individual question responses)
 - **Routes & Handlers:**
   - `GET /api/trainee/forms` &rarr; Available forms for active section
   - `GET /api/trainee/forms/questions` &rarr; Question list with ordering
-  - `POST /api/trainee/forms/submit` &rarr; Commit submission and answers
+  - `POST /api/trainee/forms/submit` &rarr; Commit submission and individual answers
+  - `GET /api/report/feedback-summary` (`functions/api/report/feedback-summary.js`) &rarr; Aggregated survey metrics per round with full question type breakdown:
+    - `radio`: Semicolon options, pie chart percentages, respondent counts.
+    - `checkbox`: Semicolon options, multi-answer respondent percentages.
+    - `scale`: Range detection (1..5), average score, star tier distribution.
+    - `nps`: Promoters (9-10), Passives (7-8), Detractors (0-6), NPS score ($\% \text{Promoters} - \% \text{Detractors}$).
+    - `text`: Trainee quote responses with author emails and timestamps.
+  - `POST /api/report/log-email-view` (`functions/api/report/log-email-view.js`) &rarr; Audit trail when feedback emails are revealed on `/report.html`.
 
 ---
 
@@ -113,9 +122,12 @@ Complete cross-reference of every database table/sheet, the web page(s) that con
 ---
 
 ### 7. MASTER METADATA & SYSTEM LOGS
-- **ORGANIZATION (`public.oce_industry_list`):** Autocomplete endpoint `GET /api/trainee/organizations/search?q=...`
+- **ORGANIZATION (`public.oce_industry_list`):**
+  - Autocomplete: `GET /api/trainee/organizations/search?q=...`
+  - Trainee Self-Declaration: `POST /api/trainee/organizations/register-pending`
+  - Admin Pending Orgs Review: `GET /api/admin/pending-orgs`, `POST /api/admin/pending-orgs`, `PATCH /api/admin/pending-orgs`
 - **VENUE (`public.pdc_room lab management`):** Room titles, campus buildings, and capacities.
-- **COURSE_MASTER (`public."pdc_course master list"`):** Canonical course names and descriptions.
+- **COURSE_MASTER (`public.pdc_course master list`):** Canonical course names, course codes, and descriptions.
 - **USER_ROLES (`public.pdc_user_roles`):** RBAC authorization matrix managed in Admin (`GET`, `POST`, `DELETE /api/admin/roles`).
-- **temp_otp (`public.temp_otp`):** Transient 6-digit login codes.
-- **pdc_app_logs (`public.pdc_app_logs`):** Audit trail capturing every user login, OTP send, and admin operational check.
+- **temp_otp (`public.temp_otp`):** Transient 6-digit login codes supporting concurrent multi-tab sessions.
+- **pdc_app_logs (`public.pdc_app_logs`):** Operational audit trail categorized into 4 scopes (`auth`, `trainee`, `client`, `admin`) tracking logins, registrations, check-ins, feedback submissions, pending org approvals, and email reveals.

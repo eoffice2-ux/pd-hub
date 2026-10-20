@@ -27,8 +27,9 @@ The application is deployed as a single Cloudflare Pages project with unified ed
 ### 1. 🎓 Trainee Portal (`/trainee/index.html`)
 - **Audience:** Internal EIU students/staff and external enterprise trainees.
 - **Key Features:**
-  - Dynamic login via **4-digit PIN** or **Email OTP** (auto-detects trainee type).
+  - Dynamic login via **4-digit PIN** or **Email OTP** (auto-detects trainee type; case/space-insensitive lookup).
   - Profile self-service with EIU department/school cascading selectors or organization autocomplete.
+  - **Pending Organization Declaration:** Trainees from unlisted companies can declare their organization name, automatically tagged with a dynamic "Pending PD" badge.
   - Interactive **Course Catalog** with real-time seat availability meter and section schedules.
   - Section enrollment with instantaneous seat locking and rejection upon capacity limits.
   - In-class **QR / 6-digit Check-in** with strict server-side start/end time window validation.
@@ -38,7 +39,7 @@ The application is deployed as a single Cloudflare Pages project with unified ed
 - **Audience:** Enterprise HR managers, training coordinators, and corporate sponsors.
 - **Key Features:**
   - Secure passwordless login via **Brevo Email OTP**.
-  - Company Master Profile management (tax code, legal addresses, authorized representatives).
+  - Company Master Profile management stored in PostgreSQL (`pdc_client_contract_info`: tax code, legal addresses, authorized representatives).
   - Training Inquiries tracking & status updates (scope, requested timeline, budget, attendees).
   - Real-time synchronization with OCE business development pipeline.
 
@@ -48,14 +49,21 @@ The application is deployed as a single Cloudflare Pages project with unified ed
 - **Key Features:**
   - Unified operational dashboard cross-referencing attendance, check-ins, and feedback metrics.
   - Live section completion rates, enrollment statistics, and venue utilization.
-  - Multi-source data synthesis across PostgreSQL and Google Sheets.
+  - **Class Detail Report Tab**:
+    - **Header & Metrics**: Class metadata, registration/check-in/feedback rates, and timestamp in Vietnam ICT.
+    - **Visual Participation Breakdown**: Donut charts with completion rates and drill-down progress bars for every check-in slot and survey round.
+    - **Survey Results by Question**: Interactive feedback visualizer with dropdown survey round selector.
+    - **Chart Engines**: SVG pie charts (`radio`), horizontal percentage bars (`checkbox`), NPS metrics with Promoters/Passives/Detractors distribution (`nps`), 1–5 star scale rating with dynamic min..max detection (`scale`), and text quotes with collapsible toggle.
+    - **Data Privacy**: Trainee emails hidden by default with automated audit logging (`report_feedback_email_viewed`) upon user reveal.
+    - **Export & Print**: Clean A4 print layout via isolated iframe and one-click CSV export.
 
 ### 4. 🛡️ Admin & Developer Hub (`/admin/index.html`)
 - **Audience:** System engineers, devops, and authorized administrative staff.
 - **Key Features:**
   - **Operational Status:** Deep health diagnostics for Hyperdrive, PostgreSQL pool, Google Sheets API, and edge cache.
+  - **Pending Organizations Management:** Review, approve, reject, or merge newly declared organizations, and update English company names.
   - **RBAC Management:** Granular role assignment (`admin` vs `report_viewer`).
-  - **Telemetry & Logs:** 24h/7d user access counters, OTP delivery audit, and PostgreSQL execution traces.
+  - **Telemetry & Operational Logs:** Scope categorization (`auth`, `trainee`, `client`, `admin`), action types, IP address and email provider columns, live text search, and PostgreSQL execution traces.
   - **Interactive Developer Docs:** Real-time rendered documentation, architecture diagrams, and database matrix.
 
 ---
@@ -66,9 +74,9 @@ The application is deployed as a single Cloudflare Pages project with unified ed
 |---|---|---|
 | **Hosting & Edge** | Cloudflare Pages | Global edge static asset distribution + SSL |
 | **Serverless Backend** | Cloudflare Pages Functions | Node.js-compatible serverless endpoints under `/functions/api` |
-| **Primary Relational DB** | PostgreSQL | Hosted transactional database for fast ACID operations |
+| **Primary Relational DB** | PostgreSQL | Hosted transactional database for 100% of master and transactional tables |
 | **Connection Pooling** | Cloudflare Hyperdrive | Low-latency global TCP connection pooling to PostgreSQL |
-| **Secondary / Sheet DB** | Google Sheets API v4 | Legacy/fallback data store accessed via Google Service Account (JWT) |
-| **Email Delivery (OTP)** | Brevo API v3 (Sendinblue) | Transactional OTP email dispatch |
+| **Secondary / Sheet DB** | Google Sheets API v4 | Fallback data store accessed via Google Service Account (JWT) |
+| **Email Delivery (OTP)** | Brevo API v3 (Sendinblue) + Dual-GAS | Transactional OTP email dispatch with automatic fallback |
 | **Calendar Automation** | Google AppSheet + `.ics` | Webhook-triggered calendar invite updates and cancellations |
 | **Design System** | OCE Design System | EIU brand identity (Deep Navy `#001A4E`, Gold `#C9A84C`, Warm Slate `#F8F7F5`) |

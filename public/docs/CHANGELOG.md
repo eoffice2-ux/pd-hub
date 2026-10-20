@@ -1,5 +1,62 @@
 # Version Changes / Change Log
 
+### **Step 51** — Executive Class Detail Report Tab & Survey Analytics
+- **Class Detail Report Tab (`/report.html`)**:
+  - Embedded dedicated "Report" tab directly inside the Class Detail modal with three primary analytics sections:
+    1. **Course & Venue Header**: Class metadata, registration/check-in/feedback rates, and generated timestamp in Vietnam ICT.
+    2. **Participation Overviews**: Donut charts with completion rates and drill-down progress bars for every check-in slot and survey round.
+    3. **Survey Results by Question**: Interactive feedback visualizer supporting multi-round surveys via dropdown selector.
+- **Survey Question Types & Visualizations**:
+  - **Single Choice (`radio`)**: SVG donut/pie distribution chart with respondent counts and percentages.
+  - **Multiple Choice (`checkbox`)**: Horizontal percentage progress bars calculated against total answered respondents (avoiding misleading multi-choice pies).
+  - **Scale Rating (`scale`)**: Dynamic 1–5 star range parsing across semicolon lists (`1; 2; 3; 4; 5`, `1-5`), average score badge (`⭐ Điểm TB: X / 5`), and star tier distribution pie chart.
+  - **Net Promoter Score (`nps`)**: Fixed 0–10 rating system computing Promoters (9–10), Passives (7–8), Detractors (0–6), overall **NPS Score** ($\% \text{Promoters} - \% \text{Detractors}$), average rating, and 0–10 score chips.
+  - **Text Quotes (`text`, `short_text`, `long_text` & Unknown types)**: Structured feedback quote cards with collapsible view (> 10 items) and toggleable `(email)` format (hidden by default).
+- **Data Privacy & Operational Audit Trail**:
+  - Trainee emails are delivered server-side and hidden by default in the UI.
+  - Whenever emails are revealed (via toggle switch, A4 print layout, or CSV export), an audit record is dispatched to `POST /api/report/log-email-view` and logged into `pdc_app_logs` under action `report_feedback_email_viewed` (scope `admin`).
+- **Reporting Utilities**:
+  - Print button generates a clean A4 formatted report using an isolated iframe.
+  - One-click CSV export formats percentage questions and text feedback with optional email inclusion.
+
+### **Step 50** — Comprehensive Operational Audit Logs
+- **Scope Categorization**:
+  - Reorganized `pdc_app_logs` across 4 distinct operational scopes: `auth`, `trainee`, `client`, and `admin`.
+  - Added dedicated scope filter dropdown and live text search in the Admin portal (`/admin/index.html`).
+- **Telemetry & Traceability**:
+  - Logged client IP address (`cf-connecting-ip`) and active email provider.
+  - Comprehensive action tracking: `trainee_login`, `client_login`, `admin_login`, `pin_changed`, `course_registered`, `attendance_checkin`, `feedback_submitted`, `org_declared`, `profile_updated`, `client_profile_updated`, `inquiry_updated`, `admin_role_assign`, `admin_role_delete`, `admin_org_update`, and `report_feedback_email_viewed`.
+- **Defensive Frontend Engineering**:
+  - Resolved `logPages` container missing-element reference and added null-safe DOM rendering guards across all admin telemetry modules.
+
+### **Step 49** — Authentication & Registration Hardening
+- **Flexible Trainee Lookup**:
+  - Implemented case-insensitive and whitespace-trimmed email normalization for trainee profile lookups, preventing login failures due to trailing spaces or uppercase mobile keyboard inputs.
+- **Multi-Device / Concurrent OTPs**:
+  - Upgraded `temp_otp` validation to support concurrent active OTP sessions across multiple browser tabs and devices, eliminating "invalid code" race conditions when trainees request verification from phone and desktop simultaneously.
+- **Capacity Race Condition Safeguards**:
+  - Added cache bypass on enrollment validation pathways to guarantee real-time seat lock verification.
+
+### **Step 48** — Trainee Pending Organizations & Admin Review
+- **Trainee Self-Declaration**:
+  - Trainees from unlisted companies can declare their organization name directly in registration and profile forms (`POST /api/trainee/organizations/register-pending`).
+  - Added distinctive "Pending PD" badge in organization search dropdowns to differentiate approved enterprise clients from newly declared entities.
+- **Admin Review & Approval Workflow**:
+  - Built interactive Pending Organizations management panel in `/admin/index.html` (`GET`, `POST`, `PATCH /api/admin/pending-orgs`).
+  - Allows OCE administrators to edit company English names, manage organization status (`approved`, `rejected`, `merged`), and sync declared organizations with master directory records.
+
+### **Step 47** — Final 5 Tables PostgreSQL Migration
+- **Full Database Cutover**:
+  - Completed schema definition and data migration for the final 5 Google Sheets tables into PostgreSQL `public` schema:
+    - `pdc_course master list`
+    - `pdc_client_contract_info`
+    - `pdc_proposal dateproposal`
+    - `pdc_logistic_log`
+    - System setting tables (`setting_school_office`, `setting_school_program`)
+- **Automated Data Migration Endpoint**:
+  - Deployed `POST /api/admin/migrate-final-tables` with dual-security authorization (Admin session or `x-migration-token`).
+  - Automated batch transfer and column normalization from Google Sheets into PostgreSQL with error isolation.
+
 ### **Step 46** — Admin & Report Portal Audit Polish
 - **Security & RBAC**: Masked OTP displays in logs (`••••••`), conditionally concealed emergency `DEBUG_TOKEN` behind `?debug=1` parameter with audit logging on usage.
 - **Data Integrity**: Enforced dual PIN confirmation (`confirmNewPin` / `confirmChangePin`) on both Admin and Report portals to eliminate accidental lockout.
