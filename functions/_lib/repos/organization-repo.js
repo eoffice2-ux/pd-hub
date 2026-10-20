@@ -1,6 +1,18 @@
 import { getTablePsqlName, quoteIdentifierPath } from "../data-source.js";
 import { queryPostgres } from "../postgres.js";
 
+export function stripOrgNoiseWords(str) {
+  if (!str) return "";
+  let clean = String(str)
+    .toLowerCase()
+    .replace(/\b(công ty|cty|tnhh|cổ phần|cp|mtv|tập đoàn)\b/gi, "")
+    .replace(/\b(company|co\.?|ltd\.?|limited|corp\.?|corporation|inc\.?|group|enterprise)\b/gi, "")
+    .replace(/[^a-zA-Z0-9\s\u00C0-\u024F\u1EA0-\u1EF9]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return clean.length >= 2 ? clean : String(str).trim();
+}
+
 export async function searchOrganizationsPsql(env, query, options = {}) {
   const tableName = quoteIdentifierPath(getTablePsqlName(env, "ORGANIZATION"), "organization PostgreSQL table");
   const idCol = quoteIdentifierPath("company_id", "organization id column");
@@ -10,19 +22,35 @@ export async function searchOrganizationsPsql(env, query, options = {}) {
   const q = String(query || "").trim();
   if (q.length < 2) return [];
 
+  const coreToken = stripOrgNoiseWords(q);
+
   const sql = `
     SELECT
       ${idCol}::text AS id,
-      COALESCE(NULLIF(${nameGbCol}::text, ''), ${nameVnCol}::text) AS name
+      COALESCE(NULLIF(${nameGbCol}::text, ''), ${nameVnCol}::text) AS name,
+      ${nameGbCol}::text AS name_gb,
+      ${nameVnCol}::text AS name_vn
     FROM ${tableName}
-    WHERE COALESCE(NULLIF(${nameGbCol}::text, ''), ${nameVnCol}::text) ILIKE $1
-    ORDER BY name ASC
+    WHERE (
+      ${nameGbCol} ILIKE $1 
+      OR ${nameVnCol} ILIKE $1
+      OR ${nameGbCol} ILIKE $2
+      OR ${nameVnCol} ILIKE $2
+    )
+    ORDER BY 
+      CASE WHEN LOWER(${nameGbCol}) = LOWER($3) OR LOWER(${nameVnCol}) = LOWER($3) THEN 0 ELSE 1 END,
+      name ASC
     LIMIT ${limit}
   `;
-  const result = await queryPostgres(env, sql, [`%${q}%`]);
+  const result = await queryPostgres(env, sql, [`%${q}%`, `%${coreToken}%`, q]);
   return (result.rows || [])
     .filter((row) => row && row.name)
-    .map((row) => ({ id: row.id || "", name: row.name || "" }));
+    .map((row) => ({
+      id: row.id || "",
+      name: row.name || "",
+      name_gb: row.name_gb || "",
+      name_vn: row.name_vn || ""
+    }));
 }
 
 export async function searchPendingOrgsPsql(env, query, options = {}) {

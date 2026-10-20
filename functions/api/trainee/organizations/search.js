@@ -1,6 +1,6 @@
 import { jsonResponse, requireTraineeSession } from "../../../_lib/security.js";
 import { getTableSource } from "../../../_lib/data-source.js";
-import { searchOrganizationsPsql, searchPendingOrgsPsql } from "../../../_lib/repos/organization-repo.js";
+import { searchOrganizationsPsql, searchPendingOrgsPsql, stripOrgNoiseWords } from "../../../_lib/repos/organization-repo.js";
 
 const MOCK_ORGS = [
   { id: "EIU", name: "Eastern International University" },
@@ -64,5 +64,9 @@ async function searchOrganizationsFromPostgres(env, query) {
 
 function searchMockOrganizations(query) {
   const clean = String(query || "").toLowerCase();
-  return MOCK_ORGS.filter((item) => item.name.toLowerCase().includes(clean)).slice(0, 15);
+  const token = stripOrgNoiseWords(query).toLowerCase();
+  return MOCK_ORGS.filter((item) => {
+    const itemName = item.name.toLowerCase();
+    return itemName.includes(clean) || (token.length >= 2 && itemName.includes(token));
+  }).slice(0, 15);
 }

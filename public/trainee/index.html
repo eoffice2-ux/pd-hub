@@ -1045,10 +1045,16 @@
           <h5 class="fw-bold mb-3 text-primary">
             Hồ sơ học viên / <span class="en">Trainee Profile</span>
           </h5>
-          <p id="profileNotice" class="text-danger small d-none">
-            <i class="fas fa-exclamation-triangle"></i> Complete profile to
-            access Catalog.
-          </p>
+          <div id="profileNotice" class="alert alert-primary border-0 shadow-sm d-none mb-3" style="background: #eef4ff; border-radius: 12px;">
+            <div class="d-flex gap-3 align-items-start">
+              <i class="fas fa-graduation-cap fa-2x text-primary flex-shrink-0 mt-1"></i>
+              <div style="font-size: 0.88rem; line-height: 1.45;">
+                <strong class="text-primary d-block mb-1">Chào mừng bạn đến với PD Hub!</strong>
+                Vui lòng hoàn tất thông tin cá nhân và đơn vị công tác để kích hoạt tài khoản và nhận chứng chỉ sau khóa học.
+                <div class="text-muted small mt-1" style="font-size: 11px;">Please complete your profile and organization to access course catalog and certificates.</div>
+              </div>
+            </div>
+          </div>
           <form id="profileForm">
             <div class="col-md-12 mb-3">
               <label class="small fw-bold text-muted">Email Address</label>
@@ -1098,15 +1104,16 @@
               required
             />
 
-            <label class="small fw-bold"
-              >Organization <span class="text-danger">*</span></label
-            >
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="small fw-bold mb-0">Organization <span class="text-danger">*</span></label>
+              <span id="profOrgStatusPill" class="d-none" style="font-size: 11px; padding: 2px 8px; border-radius: 6px; font-weight: 600;"></span>
+            </div>
             <small
               class="text-muted d-block mb-2 fst-italic"
               style="font-size: 11px"
               >Vui lòng gõ và chọn tổ chức từ danh sách gợi ý / Please type and select organization from the dropdown list.</small
             >
-            <div class="search-container mb-3">
+            <div class="search-container mb-2">
               <input type="hidden" id="profOrgId" name="organizationId" />
               <input
                 type="text"
@@ -1118,6 +1125,9 @@
                 required
               />
               <div id="profOrgResults" class="search-results shadow-sm"></div>
+            </div>
+            <div id="profOrgHint" class="text-warning-emphasis small d-none mb-3" style="font-size: 11px;">
+              <i class="fas fa-info-circle text-warning me-1"></i> Đang nhập tên tự do. Nhấn chọn từ gợi ý hoặc hệ thống sẽ hỗ trợ bạn xác nhận khi bấm Lưu.
             </div>
 
             <label class="small fw-bold"
@@ -1266,6 +1276,49 @@
           /><button class="btn btn-primary w-100" onclick="processPinFirst()">
             Create PIN
           </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- DISAMBIGUATION MODAL (LAYER 2) -->
+    <div id="orgDisambiguationModal" class="d-none" style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(15,23,42,0.65); backdrop-filter:blur(4px); z-index:10050; display:flex; align-items:center; justify-content:center; padding:16px;">
+      <div style="background:#ffffff; border-radius:20px; max-width:500px; width:100%; border:1px solid rgba(255,255,255,0.2); box-shadow:0 25px 50px -12px rgba(15,23,42,0.25); overflow:hidden; animation:slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);">
+        
+        <div style="background:linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color:white; padding:20px 24px; border-bottom:3px solid #c59b27;">
+          <div class="d-flex align-items-center gap-3">
+            <div style="background:rgba(197,155,39,0.2); border:1.5px solid #c59b27; width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+              <i class="fas fa-building text-warning fs-5"></i>
+            </div>
+            <div>
+              <h6 class="fw-bold mb-0 text-white" style="font-size:1.05rem;">Xác nhận tổ chức của bạn</h6>
+              <span class="small text-white-50" style="font-size:11px;">Confirm your organization</span>
+            </div>
+          </div>
+          <div class="mt-3">
+            <div style="font-size:0.8rem; color:#cbd5e1;">Bạn đã nhập / You typed:</div>
+            <div style="background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.2); color:#f8fafc; padding:4px 12px; border-radius:9999px; font-weight:600; display:inline-flex; align-items:center; gap:6px; margin-top:4px; font-size:12px;">
+              <i class="fas fa-pen text-warning"></i>
+              <span id="disambigTypedText"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-4" style="background:#ffffff;">
+          <div class="small fw-semibold text-secondary mb-3 d-flex align-items-center gap-2" style="font-size:12px;">
+            <i class="fas fa-hand-pointer text-primary"></i> Có phải bạn thuộc một trong các tổ chức đã đăng ký sau đây?
+          </div>
+
+          <!-- Dynamic Candidate Cards Container -->
+          <div id="disambigCandidatesContainer" style="max-height:48vh; overflow-y:auto; padding-right:2px;"></div>
+
+          <div class="mt-3 pt-2">
+            <button type="button" id="disambigConfirmBtn" class="btn btn-primary w-100 py-2 fw-semibold mb-2" style="background:#003087; border-radius:10px; font-size:13px;" disabled onclick="confirmDisambigChoice()">
+              <i class="fas fa-check-circle me-1"></i> Xác nhận & Hoàn tất / Confirm
+            </button>
+            <button type="button" class="btn btn-link w-100 text-muted text-decoration-none small" style="font-size:12px;" onclick="closeOrgDisambiguationModal()">
+              <i class="fas fa-arrow-left me-1"></i> Quay lại sửa tên khác / Edit Name
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -2060,6 +2113,28 @@
         }
       });
 
+      function updateOrgStatusPill(isSet, name, isPending) {
+        const pill = document.getElementById("profOrgStatusPill");
+        const hint = document.getElementById("profOrgHint");
+        if (!pill) return;
+        if (isSet && name) {
+          pill.className = isPending
+            ? "badge bg-warning-subtle text-dark border border-warning-subtle"
+            : "badge bg-success-subtle text-success border border-success-subtle";
+          pill.innerHTML = isPending
+            ? `<i class="fas fa-clock me-1"></i> ${escapeHtml(name.length > 20 ? name.substring(0, 18) + "..." : name)} (Pending PD)`
+            : `<i class="fas fa-check-circle me-1"></i> Đã chọn`;
+          pill.classList.remove("d-none");
+          if (hint) hint.classList.add("d-none");
+        } else {
+          pill.classList.add("d-none");
+          if (hint) {
+            const orgVal = document.getElementById("profOrg")?.value?.trim();
+            hint.classList.toggle("d-none", !orgVal);
+          }
+        }
+      }
+
       function fillProfile() {
         const f = document.getElementById("profileForm");
         // THÊM DÒNG NÀY VÀO:
@@ -2075,11 +2150,31 @@
         if (isEIU) {
           document.getElementById("profOrg").value = INTERNAL_ORG;
           document.getElementById("profOrgId").value = "EIU"; // Or whatever ID EIU uses
+          updateOrgStatusPill(true, INTERNAL_ORG, false);
         } else {
-          document.getElementById("profOrg").value =
-            cachedProfile.organization || "";
-          document.getElementById("profOrgId").value =
-            cachedProfile.organizationId || "";
+          const orgVal = cachedProfile.organization || "";
+          let orgIdVal = cachedProfile.organizationId || "";
+
+          // Layer 5: Legacy Profile Auto-Recovery
+          if (orgVal && !orgIdVal) {
+            const legacySlug = orgVal
+              .toLowerCase()
+              .normalize("NFD")
+              .replace(/[\u0300-\u036f]/g, "")
+              .replace(/[^a-z0-9]+/g, "_")
+              .replace(/^_+|_+$/g, "");
+            orgIdVal = legacySlug ? `pd_${legacySlug}` : `pd_legacy_${Date.now()}`;
+            cachedProfile.organizationId = orgIdVal;
+          }
+
+          document.getElementById("profOrg").value = orgVal;
+          document.getElementById("profOrgId").value = orgIdVal;
+
+          if (orgVal && orgIdVal) {
+            updateOrgStatusPill(true, orgVal, String(orgIdVal).startsWith("pd_"));
+          } else {
+            updateOrgStatusPill(false);
+          }
         }
 
         f.position.value = cachedProfile.position || "";
@@ -2116,13 +2211,17 @@
 
         inp.addEventListener("input", () => {
           document.getElementById("profOrgId").value = "";
+          updateOrgStatusPill(false);
 
           clearTimeout(timer);
           const val = inp.value.trim();
+          const hint = document.getElementById("profOrgHint");
+          if (hint) hint.classList.toggle("d-none", !val);
 
           if (val.length < 2) {
             res.style.display = "none";
             currentSearchTerm = "";
+            window.__lastOrgSearchResults = [];
             return;
           }
 
@@ -2147,6 +2246,8 @@
                   if (note) h += note;
 
                   const items = Array.isArray(data) ? data : [];
+                  window.__lastOrgSearchResults = items;
+
                   if (items.length === 0) {
                     h += `<div class="result-item text-muted">No matches found.</div>`;
                   } else {
@@ -2217,18 +2318,21 @@
           });
           if (res && res.success && res.pd_id) {
             selectOrg(inpID, resID, res.name || name, res.pd_id);
+            return { success: true, pd_id: res.pd_id, name: res.name || name };
           } else {
             const err = res?.error || "Không thể đăng ký tổ chức mới / Could not register new organization.";
             if (btn) {
               btn.style.pointerEvents = "auto";
               btn.innerHTML = `<span class="text-danger small"><i class="fas fa-exclamation-circle me-1"></i>${escapeHtml(err)}</span>`;
             }
+            return { success: false, error: err };
           }
         } catch (err) {
           if (btn) {
             btn.style.pointerEvents = "auto";
             btn.innerHTML = `<span class="text-danger small"><i class="fas fa-exclamation-circle me-1"></i>${escapeHtml(err.message || String(err))}</span>`;
           }
+          return { success: false, error: err.message || String(err) };
         }
       }
 
@@ -2236,7 +2340,159 @@
       function selectOrg(inpID, resID, val, orgId) {
         document.getElementById(inpID).value = val;
         document.getElementById("profOrgId").value = orgId || ""; // Store ID in hidden field
-        document.getElementById(resID).style.display = "none";
+        const resEl = document.getElementById(resID);
+        if (resEl) resEl.style.display = "none";
+        const isPending = String(orgId || "").startsWith("pd_");
+        updateOrgStatusPill(true, val, isPending);
+      }
+
+      let disambigSelectedChoice = null;
+
+      async function openOrgDisambiguationModal(rawName) {
+        const typedEl = document.getElementById("disambigTypedText");
+        if (typedEl) typedEl.textContent = rawName;
+        const container = document.getElementById("disambigCandidatesContainer");
+        if (container) {
+          container.innerHTML = `<div class="text-center py-3 text-muted"><i class="fas fa-spinner fa-spin me-2"></i>Đang tìm các tổ chức tương tự...</div>`;
+        }
+
+        disambigSelectedChoice = null;
+        const confirmBtn = document.getElementById("disambigConfirmBtn");
+        if (confirmBtn) {
+          confirmBtn.disabled = true;
+          confirmBtn.innerHTML = `<i class="fas fa-check-circle me-1"></i> Xác nhận & Hoàn tất / Confirm`;
+        }
+
+        const modalEl = document.getElementById("orgDisambiguationModal");
+        if (modalEl) modalEl.classList.remove("d-none");
+
+        // Fetch candidate search if last search is empty
+        let items = window.__lastOrgSearchResults || [];
+        if (!items || items.length === 0) {
+          try {
+            const fetched = await callCloudflareAction("searchIndustry", [rawName]);
+            if (Array.isArray(fetched)) items = fetched;
+            window.__lastOrgSearchResults = items;
+          } catch (e) {
+            console.warn("Disambiguation candidate search error:", e);
+          }
+        }
+
+        const candidates = (items || []).filter((it) => it && it.name).slice(0, 3);
+        let html = "";
+
+        if (candidates.length > 0) {
+          candidates.forEach((cand, idx) => {
+            const optId = `cand_opt_${idx}`;
+            const safeName = String(cand.name).replace(/'/g, "\\'");
+            const safeId = String(cand.id).replace(/'/g, "\\'");
+            const isOfficial = cand.source === "official" || !String(cand.id).startsWith("pd_");
+            const badge = isOfficial
+              ? `<span class="badge bg-primary-subtle text-primary border border-primary-subtle" style="font-size:10px; font-weight:700;">HỆ THỐNG CÓ SẴN</span>`
+              : `<span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size:10px; font-weight:700;">PENDING PD</span>`;
+
+            html += `
+              <div class="option-card" id="${optId}" onclick="selectDisambigCard('${optId}', '${safeId}', '${safeName}', false)" style="border:2px solid #e2e8f0; border-radius:14px; padding:12px 14px; margin-bottom:10px; cursor:pointer; display:flex; align-items:flex-start; gap:12px; transition:all 0.2s; background:#ffffff;">
+                <div class="option-radio" style="width:18px; height:18px; border:2px solid #94a3b8; border-radius:50%; margin-top:2px; flex-shrink:0;"></div>
+                <div class="flex-grow-1 min-w-0">
+                  <div class="d-flex justify-content-between align-items-start gap-1">
+                    <strong class="text-dark d-block text-truncate" style="font-size:13px;">${escapeHtml(cand.name)}</strong>
+                    ${badge}
+                  </div>
+                  <div class="text-muted small mt-1" style="font-size:11px;">
+                    <i class="fas fa-check-double me-1 text-primary"></i> Trùng khớp với tên trong hệ thống
+                  </div>
+                </div>
+              </div>
+            `;
+          });
+        }
+
+        // Always append the New Custom Org card
+        const safeRaw = String(rawName).replace(/'/g, "\\'");
+        html += `
+          <div class="option-card new-org" id="cand_opt_new" onclick="selectDisambigCard('cand_opt_new', 'NEW', '${safeRaw}', true)" style="border:2px dashed #cbd5e1; background:#fafaf9; border-radius:14px; padding:12px 14px; margin-bottom:10px; cursor:pointer; display:flex; align-items:flex-start; gap:12px; transition:all 0.2s;">
+            <div class="option-radio" style="width:18px; height:18px; border:2px solid #94a3b8; border-radius:50%; margin-top:2px; flex-shrink:0;"></div>
+            <div class="flex-grow-1 min-w-0">
+              <div class="d-flex justify-content-between align-items-start gap-1">
+                <strong class="text-dark d-block" style="font-size:13px;">
+                  <i class="fas fa-plus-circle text-warning me-1"></i> Không thuộc các đơn vị trên
+                </strong>
+                <span class="badge bg-warning-subtle text-dark border border-warning-subtle" style="font-size:10px; font-weight:700;">ĐĂNG KÝ TÊN MỚI</span>
+              </div>
+              <div class="text-muted small mt-1" style="font-size:11px;">
+                Dùng chính xác tên: <b class="text-dark">"${escapeHtml(rawName)}"</b> và gửi xét duyệt.
+              </div>
+            </div>
+          </div>
+        `;
+
+        if (container) container.innerHTML = html;
+      }
+
+      function selectDisambigCard(cardId, id, name, isNew) {
+        disambigSelectedChoice = { id, name, isNew };
+        document.querySelectorAll("#disambigCandidatesContainer .option-card").forEach((el) => {
+          el.style.borderColor = el.classList.contains("new-org") ? "#cbd5e1" : "#e2e8f0";
+          el.style.background = el.classList.contains("new-org") ? "#fafaf9" : "#ffffff";
+          const radio = el.querySelector(".option-radio");
+          if (radio) {
+            radio.style.borderColor = "#94a3b8";
+            radio.style.background = "transparent";
+            radio.innerHTML = "";
+          }
+        });
+
+        const activeCard = document.getElementById(cardId);
+        if (activeCard) {
+          const isGold = activeCard.classList.contains("new-org");
+          activeCard.style.borderColor = isGold ? "#c59b27" : "#003087";
+          activeCard.style.background = isGold ? "#fffdf0" : "#f0f4ff";
+          const radio = activeCard.querySelector(".option-radio");
+          if (radio) {
+            radio.style.borderColor = isGold ? "#c59b27" : "#003087";
+            radio.style.background = isGold ? "#c59b27" : "#003087";
+            radio.innerHTML = '<div style="width:6px; height:6px; background:white; border-radius:50%; margin:auto;"></div>';
+          }
+        }
+
+        const confirmBtn = document.getElementById("disambigConfirmBtn");
+        if (confirmBtn) {
+          confirmBtn.disabled = false;
+          const displayLabel = name.length > 24 ? name.substring(0, 22) + "..." : name;
+          confirmBtn.innerHTML = `<i class="fas fa-check-circle me-1"></i> Chọn "${escapeHtml(displayLabel)}" & Tiếp tục`;
+        }
+      }
+
+      function closeOrgDisambiguationModal() {
+        const modal = document.getElementById("orgDisambiguationModal");
+        if (modal) modal.classList.add("d-none");
+        const inp = document.getElementById("profOrg");
+        if (inp) inp.focus();
+      }
+
+      async function confirmDisambigChoice() {
+        if (!disambigSelectedChoice) return;
+        const { id, name, isNew } = disambigSelectedChoice;
+        const confirmBtn = document.getElementById("disambigConfirmBtn");
+        if (confirmBtn) {
+          confirmBtn.disabled = true;
+          confirmBtn.innerHTML = `<i class="fas fa-spinner fa-spin me-1"></i> Đang xử lý...`;
+        }
+
+        if (isNew) {
+          await submitCustomOrg("profOrg", "profOrgResults", name);
+        } else {
+          selectOrg("profOrg", "profOrgResults", name, id);
+        }
+
+        closeOrgDisambiguationModal();
+        const form = document.getElementById("profileForm");
+        if (form && typeof form.requestSubmit === "function") {
+          form.requestSubmit();
+        } else if (form) {
+          form.dispatchEvent(new Event("submit", { cancelable: true, bubbles: true }));
+        }
       }
 
       function validateProfileForm() {
@@ -2270,7 +2526,7 @@
           check(
             document.getElementById("profOrgId").value,
             "profOrgId",
-            "Organization",
+            "Organization (Vui lòng chọn hoặc xác nhận tên tổ chức)",
             "profOrg",
           );
         }
@@ -2307,9 +2563,38 @@
       }
 
       let isProfileSubmitting = false;
-      document.getElementById("profileForm").onsubmit = (e) => {
+      document.getElementById("profileForm").onsubmit = async (e) => {
         e.preventDefault();
         if (isProfileSubmitting) return;
+
+        const isEIU =
+          userEmail && userEmail.toLowerCase().endsWith(INTERNAL_DOMAIN);
+
+        // Check if non-EIU user entered text into profOrg but profOrgId is empty
+        if (!isEIU) {
+          const rawOrg = (document.getElementById("profOrg")?.value || "").trim();
+          const orgId = (document.getElementById("profOrgId")?.value || "").trim();
+
+          if (rawOrg && !orgId) {
+            // Unconfirmed organization!
+            // First check Tier 1: exact match in last results
+            const lastItems = window.__lastOrgSearchResults || [];
+            const exact = lastItems.find((it) => 
+              String(it.name || "").trim().toLowerCase() === rawOrg.toLowerCase() ||
+              String(it.name_gb || "").trim().toLowerCase() === rawOrg.toLowerCase() ||
+              String(it.name_vn || "").trim().toLowerCase() === rawOrg.toLowerCase()
+            );
+
+            if (exact) {
+              selectOrg("profOrg", "profOrgResults", exact.name, exact.id);
+            } else {
+              // Tier 2 & 3: Open the attractive Disambiguation Card!
+              await openOrgDisambiguationModal(rawOrg);
+              return;
+            }
+          }
+        }
+
         if (!validateProfileForm()) return;
 
         isProfileSubmitting = true;
@@ -2763,7 +3048,11 @@
         const err = document.getElementById("profileFormError");
         if (err) err.remove();
         fillProfile();
-        toggleProfile(false);
+        if (cachedProfile && cachedProfile.isNew) {
+          toggleProfile(true);
+        } else {
+          toggleProfile(false);
+        }
       }
 
       function loadHistory() {
