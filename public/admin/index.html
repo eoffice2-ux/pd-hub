@@ -208,27 +208,94 @@
         margin-top: 6px;
       }
       .empty {
-        border: 1px dashed #cbd5e1;
-        border-radius: 14px;
-        padding: 16px;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 10px 16px;
         color: var(--pd-muted);
         background: #fff;
         margin-bottom: 16px;
+        font-size: 13px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        line-height: 1.4;
       }
       .empty.ok {
-        color: #047857;
-        background: #ecfdf5;
-        border-color: rgba(16, 185, 129, 0.3);
+        color: #065f46;
+        background: #f0fdf4;
+        border-color: #bbf7d0;
       }
       .empty.warn {
-        color: #b45309;
+        color: #92400e;
         background: #fffbeb;
-        border-color: rgba(245, 158, 11, 0.3);
+        border-color: #fde68a;
       }
       .empty.bad {
-        color: #be123c;
-        background: #fff1f2;
-        border-color: rgba(244, 63, 94, 0.3);
+        color: #991b1b;
+        background: #fef2f2;
+        border-color: #fecaca;
+      }
+
+      /* Universal Badges */
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 8px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        line-height: 1.2;
+      }
+      .badge.bg-primary { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+      .badge.bg-secondary { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+      .badge.bg-success { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+      .badge.bg-warning { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
+      .badge.bg-danger { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+
+      /* Sleek URI Copy Box */
+      .copy-box {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 7px 12px;
+        margin-top: 5px;
+        margin-bottom: 12px;
+      }
+      .copy-box code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 12px;
+        color: #0f172a;
+        word-break: break-all;
+      }
+      .copy-btn {
+        border: 1px solid #cbd5e1;
+        background: #ffffff;
+        color: #334155;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 5px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        flex-shrink: 0;
+        margin-left: 10px;
+        line-height: 1.2;
+        text-decoration: none;
+      }
+      .copy-btn:hover {
+        background: #f1f5f9;
+        border-color: #94a3b8;
+        color: #0f172a;
+        transform: translateY(-1px);
+      }
+      .copy-btn.copied {
+        background: #dcfce7;
+        border-color: #86efac;
+        color: #166534;
       }
       /* Split Navigation Panel */
       .admin-nav {
@@ -830,38 +897,46 @@
             </div>
 
             <!-- DUAL-DOMAIN QUICK COPY GUIDE -->
-            <div class="card" style="margin-top: 16px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 14px; padding: 18px;">
-              <h4 style="margin: 0 0 10px 0; color: #003087; font-size: 15px;"><i class="fas fa-globe me-2"></i>Multi-Domain App Registration Guide</h4>
-              <p class="small text-muted" style="margin-bottom: 12px;">
+            <div class="card" style="margin-top: 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 20px;">
+              <h4 style="margin: 0 0 6px 0; color: #003087; font-size: 15px; font-weight: 700; display:flex; align-items:center; gap:8px;">
+                <i class="fas fa-globe"></i>Multi-Domain App Registration Guide
+              </h4>
+              <p class="small text-muted" style="margin-bottom: 16px; font-size: 13px; line-height:1.5;">
                 Copy and paste the exact redirect URIs below into your Google Cloud Console and Microsoft Azure App Registrations:
               </p>
 
-              <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 14px;">
-                <div style="background:#fff; padding:12px; border-radius:10px; border:1px solid #e2e8f0;">
-                  <span class="badge bg-primary mb-2" style="font-size:11px;">Domain 1 (Custom Domain)</span>
-                  <div class="small fw-bold text-dark">Authorized JavaScript Origin:</div>
-                  <div class="d-flex align-items-center justify-content-between bg-light p-2 rounded mt-1 mb-2">
-                    <code style="font-size:12px; word-break:break-all;">https://pd-onestop.centralhub.io.vn</code>
-                    <button class="btn btn-sm btn-outline-secondary ms-2" onclick="navigator.clipboard.writeText('https://pd-onestop.centralhub.io.vn'); this.innerText='Copied!'; setTimeout(()=>this.innerText='Copy',1500);">Copy</button>
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div style="background:#fff; padding:16px; border-radius:12px; border:1px solid #e2e8f0; box-shadow:0 1px 3px rgba(0,0,0,0.03);">
+                  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+                    <span class="badge bg-primary">Domain 1 (Custom Domain)</span>
+                    <span class="muted small" style="font-size:11px;">CentralHub Production</span>
                   </div>
-                  <div class="small fw-bold text-dark">Authorized Redirect URI:</div>
-                  <div class="d-flex align-items-center justify-content-between bg-light p-2 rounded mt-1">
-                    <code style="font-size:12px; word-break:break-all;">https://pd-onestop.centralhub.io.vn/api/auth/oauth/callback</code>
-                    <button class="btn btn-sm btn-outline-secondary ms-2" onclick="navigator.clipboard.writeText('https://pd-onestop.centralhub.io.vn/api/auth/oauth/callback'); this.innerText='Copied!'; setTimeout(()=>this.innerText='Copy',1500);">Copy</button>
+                  <div class="small" style="font-weight:600; color:#334155; margin-bottom:4px;">Authorized JavaScript Origin:</div>
+                  <div class="copy-box">
+                    <code>https://pd-onestop.centralhub.io.vn</code>
+                    <button type="button" class="copy-btn" onclick="copyUri('https://pd-onestop.centralhub.io.vn', this)"><i class="far fa-copy me-1"></i>Copy</button>
+                  </div>
+                  <div class="small" style="font-weight:600; color:#334155; margin-bottom:4px;">Authorized Redirect URI:</div>
+                  <div class="copy-box">
+                    <code>https://pd-onestop.centralhub.io.vn/api/auth/oauth/callback</code>
+                    <button type="button" class="copy-btn" onclick="copyUri('https://pd-onestop.centralhub.io.vn/api/auth/oauth/callback', this)"><i class="far fa-copy me-1"></i>Copy</button>
                   </div>
                 </div>
 
-                <div style="background:#fff; padding:12px; border-radius:10px; border:1px solid #e2e8f0;">
-                  <span class="badge bg-secondary mb-2" style="font-size:11px;">Domain 2 (Cloudflare Pages)</span>
-                  <div class="small fw-bold text-dark">Authorized JavaScript Origin:</div>
-                  <div class="d-flex align-items-center justify-content-between bg-light p-2 rounded mt-1 mb-2">
-                    <code style="font-size:12px; word-break:break-all;">https://pd-onestop.pages.dev</code>
-                    <button class="btn btn-sm btn-outline-secondary ms-2" onclick="navigator.clipboard.writeText('https://pd-onestop.pages.dev'); this.innerText='Copied!'; setTimeout(()=>this.innerText='Copy',1500);">Copy</button>
+                <div style="background:#fff; padding:16px; border-radius:12px; border:1px solid #e2e8f0; box-shadow:0 1px 3px rgba(0,0,0,0.03);">
+                  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+                    <span class="badge bg-secondary">Domain 2 (Cloudflare Pages)</span>
+                    <span class="muted small" style="font-size:11px;">Direct Pages Host</span>
                   </div>
-                  <div class="small fw-bold text-dark">Authorized Redirect URI:</div>
-                  <div class="d-flex align-items-center justify-content-between bg-light p-2 rounded mt-1">
-                    <code style="font-size:12px; word-break:break-all;">https://pd-onestop.pages.dev/api/auth/oauth/callback</code>
-                    <button class="btn btn-sm btn-outline-secondary ms-2" onclick="navigator.clipboard.writeText('https://pd-onestop.pages.dev/api/auth/oauth/callback'); this.innerText='Copied!'; setTimeout(()=>this.innerText='Copy',1500);">Copy</button>
+                  <div class="small" style="font-weight:600; color:#334155; margin-bottom:4px;">Authorized JavaScript Origin:</div>
+                  <div class="copy-box">
+                    <code>https://pd-onestop.pages.dev</code>
+                    <button type="button" class="copy-btn" onclick="copyUri('https://pd-onestop.pages.dev', this)"><i class="far fa-copy me-1"></i>Copy</button>
+                  </div>
+                  <div class="small" style="font-weight:600; color:#334155; margin-bottom:4px;">Authorized Redirect URI:</div>
+                  <div class="copy-box">
+                    <code>https://pd-onestop.pages.dev/api/auth/oauth/callback</code>
+                    <button type="button" class="copy-btn" onclick="copyUri('https://pd-onestop.pages.dev/api/auth/oauth/callback', this)"><i class="far fa-copy me-1"></i>Copy</button>
                   </div>
                 </div>
               </div>
@@ -870,41 +945,45 @@
             <!-- OAUTH CREDENTIALS FORM -->
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 18px;">
               <!-- Google Box -->
-              <div class="card" style="border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px;">
-                <h4 style="margin: 0 0 12px 0; color: #1e293b; display:flex; align-items:center; gap:8px;">
-                  <i class="fab fa-google text-danger"></i> Google OAuth
-                  <span id="googleOauthStatus" class="badge bg-secondary ms-auto" style="font-size:11px;">Checking...</span>
-                </h4>
-                <div class="mb-3">
-                  <label class="small muted"><b>Client ID</b></label>
-                  <input id="googleClientId" type="text" placeholder="xxxx.apps.googleusercontent.com" style="margin-top:6px; font-family:monospace; font-size:13px;" />
+              <div class="card" style="border: 1px solid #e2e8f0; border-radius: 14px; padding: 20px; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+                  <h4 style="margin: 0; color: #1e293b; font-size:15px; font-weight:700; display:flex; align-items:center; gap:8px;">
+                    <i class="fab fa-google" style="color:#ea4335;"></i> Google Identity Services
+                  </h4>
+                  <span id="googleOauthStatus" class="badge bg-secondary">Checking...</span>
                 </div>
-                <div class="mb-3">
-                  <label class="small muted"><b>Client Secret</b></label>
-                  <input id="googleClientSecret" type="password" placeholder="••••••••••••" style="margin-top:6px; font-family:monospace; font-size:13px;" />
+                <div style="margin-bottom:14px;">
+                  <label class="small muted" style="font-weight:600; display:block; margin-bottom:6px;">Client / App ID</label>
+                  <input id="googleClientId" type="text" placeholder="xxxx.apps.googleusercontent.com" style="width:100%; font-family:ui-monospace,SFMono-Regular,Consolas,monospace; font-size:13px; padding:9px 12px; border-radius:8px; border:1px solid #cbd5e1; box-sizing:border-box;" />
+                </div>
+                <div>
+                  <label class="small muted" style="font-weight:600; display:block; margin-bottom:6px;">Client Secret</label>
+                  <input id="googleClientSecret" type="password" placeholder="••••••••••••" style="width:100%; font-family:ui-monospace,SFMono-Regular,Consolas,monospace; font-size:13px; padding:9px 12px; border-radius:8px; border:1px solid #cbd5e1; box-sizing:border-box;" />
                 </div>
               </div>
 
               <!-- Microsoft Box -->
-              <div class="card" style="border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px;">
-                <h4 style="margin: 0 0 12px 0; color: #1e293b; display:flex; align-items:center; gap:8px;">
-                  <i class="fab fa-microsoft text-primary"></i> Microsoft Entra ID
-                  <span id="msOauthStatus" class="badge bg-secondary ms-auto" style="font-size:11px;">Checking...</span>
-                </h4>
-                <div class="mb-3">
-                  <label class="small muted"><b>Application (Client) ID</b></label>
-                  <input id="msClientId" type="text" placeholder="00000000-0000-0000-0000-000000000000" style="margin-top:6px; font-family:monospace; font-size:13px;" />
+              <div class="card" style="border: 1px solid #e2e8f0; border-radius: 14px; padding: 20px; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+                  <h4 style="margin: 0; color: #1e293b; font-size:15px; font-weight:700; display:flex; align-items:center; gap:8px;">
+                    <i class="fab fa-microsoft" style="color:#00a4ef;"></i> Microsoft 365 (Entra ID)
+                  </h4>
+                  <span id="msOauthStatus" class="badge bg-secondary">Checking...</span>
                 </div>
-                <div class="mb-3">
-                  <label class="small muted"><b>Client Secret (Value)</b></label>
-                  <input id="msClientSecret" type="password" placeholder="••••••••••••" style="margin-top:6px; font-family:monospace; font-size:13px;" />
+                <div style="margin-bottom:14px;">
+                  <label class="small muted" style="font-weight:600; display:block; margin-bottom:6px;">Application (Client) ID</label>
+                  <input id="msClientId" type="text" placeholder="00000000-0000-0000-0000-000000000000" style="width:100%; font-family:ui-monospace,SFMono-Regular,Consolas,monospace; font-size:13px; padding:9px 12px; border-radius:8px; border:1px solid #cbd5e1; box-sizing:border-box;" />
+                </div>
+                <div>
+                  <label class="small muted" style="font-weight:600; display:block; margin-bottom:6px;">Client Secret (Value)</label>
+                  <input id="msClientSecret" type="password" placeholder="••••••••••••" style="width:100%; font-family:ui-monospace,SFMono-Regular,Consolas,monospace; font-size:13px; padding:9px 12px; border-radius:8px; border:1px solid #cbd5e1; box-sizing:border-box;" />
                 </div>
               </div>
             </div>
 
-            <div style="margin-top: 18px; display:flex; justify-content:flex-end; gap:12px;">
-              <button onclick="saveOAuthSettings(this)" style="padding:12px 24px; font-weight:600;">
-                <i class="fas fa-save me-2"></i>Save OAuth Credentials
+            <div style="margin-top: 20px; display:flex; justify-content:flex-end; gap:12px;">
+              <button onclick="saveOAuthSettings(this)" style="padding:11px 22px; font-size:13px; font-weight:700; display:inline-flex; align-items:center; gap:8px;">
+                <i class="fas fa-save"></i>Save OAuth Credentials
               </button>
             </div>
             <div id="oauthSaveMsg" class="empty hidden" style="margin-top: 12px;"></div>
@@ -1908,6 +1987,18 @@
         }
       }
 
+      function copyUri(text, btn) {
+        if (!navigator?.clipboard) return;
+        navigator.clipboard.writeText(text);
+        const originalHtml = btn.innerHTML;
+        btn.classList.add("copied");
+        btn.innerHTML = '<i class="fas fa-check me-1"></i>Copied!';
+        setTimeout(() => {
+          btn.classList.remove("copied");
+          btn.innerHTML = originalHtml;
+        }, 1600);
+      }
+
       async function loadOAuthSettings() {
         const DEFAULT_GOOGLE_ID = "41484975128-tl3pd0s0njmrsob8msa83g94qt4mmanp.apps.googleusercontent.com";
         const DEFAULT_MS_ID = "8be420ab-0c92-48b9-bff7-efad4b537a64";
@@ -1923,9 +2014,9 @@
         const token = getAdminToken();
         if (!token) {
           const gStatus = document.getElementById("googleOauthStatus");
-          if (gStatus) { gStatus.className = "badge bg-success ms-auto"; gStatus.innerText = "Active (Default)"; }
+          if (gStatus) { gStatus.className = "badge bg-success"; gStatus.innerHTML = '<i class="fas fa-check-circle me-1"></i>Active (Default)'; }
           const msStatus = document.getElementById("msOauthStatus");
-          if (msStatus) { msStatus.className = "badge bg-success ms-auto"; msStatus.innerText = "Active (Default)"; }
+          if (msStatus) { msStatus.className = "badge bg-success"; msStatus.innerHTML = '<i class="fas fa-check-circle me-1"></i>Active (Default)'; }
           return;
         }
 
@@ -1937,8 +2028,8 @@
             document.getElementById("googleClientSecret").placeholder = d.google.clientSecretMasked || "••••••••";
             const gStatus = document.getElementById("googleOauthStatus");
             if (gStatus) {
-              gStatus.className = d.google.isConfigured ? "badge bg-success ms-auto" : "badge bg-warning text-dark ms-auto";
-              gStatus.innerText = d.google.isConfigured ? "Active" : "Not Set";
+              gStatus.className = d.google.isConfigured ? "badge bg-success" : "badge bg-warning";
+              gStatus.innerHTML = d.google.isConfigured ? '<i class="fas fa-check-circle me-1"></i>Active' : '<i class="fas fa-exclamation-circle me-1"></i>Not Set';
             }
           }
           if (d.microsoft) {
@@ -1946,16 +2037,16 @@
             document.getElementById("msClientSecret").placeholder = d.microsoft.clientSecretMasked || "••••••••";
             const msStatus = document.getElementById("msOauthStatus");
             if (msStatus) {
-              msStatus.className = d.microsoft.isConfigured ? "badge bg-success ms-auto" : "badge bg-warning text-dark ms-auto";
-              msStatus.innerText = d.microsoft.isConfigured ? "Active" : "Not Set";
+              msStatus.className = d.microsoft.isConfigured ? "badge bg-success" : "badge bg-warning";
+              msStatus.innerHTML = d.microsoft.isConfigured ? '<i class="fas fa-check-circle me-1"></i>Active' : '<i class="fas fa-exclamation-circle me-1"></i>Not Set';
             }
           }
         } catch (err) {
           console.warn("loadOAuthSettings note:", err.message);
           const gStatus = document.getElementById("googleOauthStatus");
-          if (gStatus) { gStatus.className = "badge bg-success ms-auto"; gStatus.innerText = "Active"; }
+          if (gStatus) { gStatus.className = "badge bg-success"; gStatus.innerHTML = '<i class="fas fa-check-circle me-1"></i>Active'; }
           const msStatus = document.getElementById("msOauthStatus");
-          if (msStatus) { msStatus.className = "badge bg-success ms-auto"; msStatus.innerText = "Active"; }
+          if (msStatus) { msStatus.className = "badge bg-success"; msStatus.innerHTML = '<i class="fas fa-check-circle me-1"></i>Active'; }
         }
       }
 
