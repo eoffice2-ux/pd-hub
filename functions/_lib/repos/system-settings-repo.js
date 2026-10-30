@@ -37,6 +37,9 @@ export async function getSystemSetting(env, key, fallbackEnvKey = null) {
   return null;
 }
 
+const FALLBACK_GOOGLE_CLIENT_ID = "41484975128-tl3pd0s0njmrsob8msa83g94qt4mmanp.apps.googleusercontent.com";
+const FALLBACK_MS_CLIENT_ID = "8be420ab-0c92-48b9-bff7-efad4b537a64";
+
 export async function getOAuthSettings(env) {
   const [googleId, googleSecret, msId, msSecret] = await Promise.all([
     getSystemSetting(env, "oauth_google_client_id", "GOOGLE_OAUTH_CLIENT_ID"),
@@ -45,16 +48,20 @@ export async function getOAuthSettings(env) {
     getSystemSetting(env, "oauth_microsoft_client_secret", "MICROSOFT_OAUTH_CLIENT_SECRET")
   ]);
 
+  const effectiveGoogleId = googleId || String(env.GOOGLE_OAUTH_CLIENT_ID || "").trim() || FALLBACK_GOOGLE_CLIENT_ID;
+  const effectiveMsId = msId || String(env.MICROSOFT_OAUTH_CLIENT_ID || "").trim() || FALLBACK_MS_CLIENT_ID;
+
   return {
     google: {
-      clientId: googleId || "",
+      clientId: effectiveGoogleId,
       clientSecret: googleSecret || "",
-      isConfigured: Boolean(googleId && googleSecret)
+      isConfigured: Boolean(effectiveGoogleId)
     },
     microsoft: {
-      clientId: msId || "",
+      clientId: effectiveMsId,
       clientSecret: msSecret || "",
-      isConfigured: Boolean(msId && msSecret)
+      tenant: "common",
+      isConfigured: Boolean(effectiveMsId)
     }
   };
 }
