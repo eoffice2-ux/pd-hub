@@ -69,15 +69,21 @@ export async function readJson(request) {
   }
 }
 
-export async function issueSessionToken(email, env = {}, scope = "client") {
+export async function issueSessionToken(email, env = {}, scope = "client", extraRoles = []) {
   const cleanEmail = normalizeEmail(email);
-  const safeScope = ["client", "trainee", "admin", "all"].includes(String(scope || "").toLowerCase()) ? String(scope).toLowerCase() : "client";
+  const safeScope = ["client", "trainee", "admin", "super_user", "report_viewer", "all"].includes(String(scope || "").toLowerCase()) ? String(scope).toLowerCase() : "client";
   const now = Math.floor(Date.now() / 1000);
   const ttl = Number(env.SESSION_TTL_SECONDS || DEFAULT_SESSION_TTL_SECONDS);
+
+  const rolesSet = new Set(Array.isArray(extraRoles) ? extraRoles.map(r => String(r).toLowerCase().trim()) : []);
+  rolesSet.add(safeScope);
+  if (rolesSet.has("super_user")) rolesSet.add("admin");
+
   const payload = {
-    v: 1,
+    v: 2,
     email: cleanEmail,
     scope: safeScope,
+    roles: Array.from(rolesSet),
     iat: now,
     exp: now + ttl
   };
@@ -95,7 +101,14 @@ export async function issueSessionToken(email, env = {}, scope = "client") {
 
 export async function requireSessionScope(request, env = {}, allowedScopes = ["client"]) {
   const authHeader = request.headers.get("authorization") || "";
-  const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
+  let token = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
+
+  // Also support reading from cookie for web pages
+  if (!token) {
+    const cookieHeader = request.headers.get("cookie") || "";
+    const match = cookieHeader.match(/pd_session=([^;]+)/);
+    if (match) token = decodeURIComponent(match[1].trim());
+  }
 
   if (!token) {
     return {
@@ -119,7 +132,18 @@ export async function requireSessionScope(request, env = {}, allowedScopes = ["c
   }
 
   const allowed = new Set([...(allowedScopes || []), "all"]);
-  if (!allowed.has(verified.session.scope)) {
+  const userRoles = new Set(verified.session.roles || [verified.session.scope]);
+
+  // If user has super_user, allow admin
+  if (userRoles.has("super_user")) {
+    userRoles.add("admin");
+    userRoles.add("report_viewer");
+  }
+
+  // Check if any user role overlaps with allowed scopes
+  const hasAccess = [...allowed].some(sc => userRoles.has(sc) || verified.session.scope === sc);
+
+  if (!hasAccess) {
     return {
       ok: false,
       response: jsonResponse({
@@ -196,7 +220,7 @@ export function assertEmailAllowed(requestedEmail, sessionEmail) {
   return { ok: true, email: session };
 }
 
-async function verifySessionToken(token, env = {}) {
+export async function verifySessionToken(token, env = {}) {
   const parts = String(token || "").split(".");
   if (parts.length !== 3 || parts[0] !== "v1") {
     return { ok: false, error: "Unauthorized. Malformed session token." };

@@ -141,6 +141,17 @@ All serverless endpoints run under `functions/api/`:
 
 ---
 
+8. **Step 54 — Federated OAuth (Google & Microsoft) & Multi-Role RBAC**:
+   - Integrated Google & Microsoft OAuth login buttons across all portals (`/trainee`, `/client`, `/report.html`, `/admin`).
+   - Dynamic OAuth redirect URI generator supporting both `https://pd-onestop.pages.dev` and custom production domain `https://pd-onestop.centralhub.io.vn`.
+   - In-Admin OAuth credentials manager (`OAuth Settings` tab) backed by `pdc_system_settings`.
+   - Automatic zero-friction default role (`trainee`) for first-time OAuth users.
+   - Introduced `super_user` role: only `super_user` or `ADMIN_EMAILS` can assign roles or modify OAuth configurations.
+   - Multi-role support: users can hold multiple roles simultaneously (`trainee`, `client`, `report_viewer`, `admin`, `super_user`).
+   - Added interactive `portal-switcher.js` providing an elegant top-header dropdown to jump between active portals without re-authenticating.
+
+---
+
 ## 5. Verification Runbook & Testing Commands
 
 To run the automated test suite across all portals:
@@ -148,22 +159,25 @@ To run the automated test suite across all portals:
 ```powershell
 # In '3. Cloudflare PDHub/step 44 - Production Stable':
 
-# 1. Test Section Status ('Registration Ready') & Type ('community') Expansion
+# 1. Test OAuth Multi-Domain & Multi-Role RBAC
+node test-oauth-multirole.mjs
+
+# 2. Test Section Status ('Registration Ready') & Type ('community') Expansion
 node test-section-status-type-expansion.mjs
 
-# 2. Test Trainee Organization Disambiguation & Profile First-Login
+# 3. Test Trainee Organization Disambiguation & Profile First-Login
 node test-trainee-profile-org-disambig.mjs
 
-# 3. Audit DOM ID null-safety across all HTML pages
+# 4. Audit DOM ID null-safety across all HTML pages
 node audit-dom-ids.mjs
 
-# 4. Test Class Detail Report Tab, Question Types, and Email Reveal Audit
+# 5. Test Class Detail Report Tab, Question Types, and Email Reveal Audit
 node test-class-report-tab.mjs
 
-# 5. Test Operational Logs enhancements and scope filters
+# 6. Test Operational Logs enhancements and scope filters
 node test-operational-logs-enhancements.mjs
 
-# 6. Test Registration and OTP Fixes
+# 7. Test Registration and OTP Fixes
 node test-registration-otp-fixes.mjs
 ```
 

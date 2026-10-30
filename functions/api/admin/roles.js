@@ -8,7 +8,7 @@
  */
 
 import { jsonResponse, normalizeEmail, readJson, requireAdminSession, isAdminEmail } from "../../_lib/security.js";
-import { getUserRole, listUserRoles, setUserRole, deleteUserRole, VALID_ROLES } from "../../_lib/user-roles.js";
+import { getUserRoles, isSuperUser, listUserRoles, setUserRoles, deleteUserRole, VALID_ROLES } from "../../_lib/user-roles.js";
 import { appendAppLog } from "../../_lib/app-logs.js";
 
 async function isAuthorizedRoleManager(request, env) {
@@ -18,16 +18,14 @@ async function isAuthorizedRoleManager(request, env) {
 
   const email = adminAuth.session.email;
 
-  // Allow: in ADMIN_EMAILS env
-  if (isAdminEmail(email, env)) return { ok: true, email };
-
-  // Allow: role=admin in sheet
-  const role = await getUserRole(env, email);
-  if (role === "admin") return { ok: true, email };
+  // Allow: in ADMIN_EMAILS env or has super_user role
+  if (isAdminEmail(email, env) || await isSuperUser(env, email)) {
+    return { ok: true, email };
+  }
 
   return {
     ok: false,
-    response: jsonResponse({ success: false, error: "Forbidden. You need admin role to manage roles." }, 403)
+    response: jsonResponse({ success: false, error: "Forbidden. You need Super User role to manage roles." }, 403)
   };
 }
 
@@ -53,16 +51,25 @@ export async function onRequestPost(context) {
   if (!parsed.ok) return jsonResponse({ success: false, error: parsed.error }, 400);
 
   const targetEmail = normalizeEmail(parsed.data.email);
-  const role = String(parsed.data.role || "").trim().toLowerCase();
-
   if (!targetEmail) return jsonResponse({ success: false, error: "Missing 'email' field." }, 400);
-  if (!VALID_ROLES.includes(role)) {
-    return jsonResponse({ success: false, error: `Invalid role. Must be one of: ${VALID_ROLES.join(", ")}` }, 400);
+
+  // Support both single role and multi-role array
+  let rolesToSet = [];
+  if (Array.isArray(parsed.data.roles) && parsed.data.roles.length > 0) {
+    rolesToSet = parsed.data.roles.map(r => String(r || "").trim().toLowerCase());
+  } else if (parsed.data.role) {
+    rolesToSet = [String(parsed.data.role || "").trim().toLowerCase()];
+  }
+
+  // Validate roles
+  const validSet = rolesToSet.filter(r => VALID_ROLES.includes(r));
+  if (validSet.length === 0) {
+    return jsonResponse({ success: false, error: `Invalid roles. Allowed roles: ${VALID_ROLES.join(", ")}` }, 400);
   }
 
   try {
-    const result = await setUserRole(env, targetEmail, role, auth.email);
-    await appendAppLog(env, { event: "admin_role_assign", scope: "admin", email: auth.email, success: true, detail: JSON.stringify({ targetEmail, role }), request: context.request });
+    const result = await setUserRoles(env, targetEmail, validSet, auth.email);
+    await appendAppLog(env, { event: "admin_role_assign", scope: "admin", email: auth.email, success: true, detail: JSON.stringify({ targetEmail, roles: validSet }), request: context.request });
     return jsonResponse({ success: true, ...result });
   } catch (err) {
     await appendAppLog(env, { event: "admin_role_assign", scope: "admin", email: auth.email, success: false, detail: err.message || String(err), request: context.request });

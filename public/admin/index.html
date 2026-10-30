@@ -15,6 +15,7 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
     />
     <link rel="stylesheet" href="/oce-theme.css" />
+    <script src="/portal-switcher.js" defer></script>
     <link rel="stylesheet" href="/dev-theme.css" />
     <link
       rel="stylesheet"
@@ -572,6 +573,23 @@
             <button onclick="sendAdminOtp(this)">Continue</button>
             <a class="btn light" href="/">Back to home</a>
           </div>
+
+          <div style="display:flex; align-items:center; margin: 16px 0;">
+            <hr style="flex-grow:1; margin:0; border:none; border-top:1px solid #e2e8f0;">
+            <span style="padding: 0 10px; font-size:12px; color:#64748b;">hoặc / or</span>
+            <hr style="flex-grow:1; margin:0; border:none; border-top:1px solid #e2e8f0;">
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <a href="/api/auth/oauth/login?provider=google&portal=admin" style="display:flex; align-items:center; justify-content:center; gap:8px; padding:10px 14px; border:1px solid #cbd5e1; border-radius:8px; background:#fff; text-decoration:none; color:#1e293b; font-size:14px; font-weight:600;">
+              <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+              <span>Sign in with Google</span>
+            </a>
+            <a href="/api/auth/oauth/login?provider=microsoft&portal=admin" style="display:flex; align-items:center; justify-content:center; gap:8px; padding:10px 14px; border:1px solid #cbd5e1; border-radius:8px; background:#fff; text-decoration:none; color:#1e293b; font-size:14px; font-weight:600;">
+              <svg width="18" height="18" viewBox="0 0 23 23"><path fill="#f35325" d="M1 1h10v10H1z"/><path fill="#81bc06" d="M12 1h10v10H12z"/><path fill="#05a6f0" d="M1 12h10v10H1z"/><path fill="#ffba08" d="M12 12h10v10H12z"/></svg>
+              <span>Sign in with Microsoft</span>
+            </a>
+          </div>
         </div>
 
         <div id="adminStepChoice" class="hidden">
@@ -670,6 +688,9 @@
           <button class="tab" id="tabRoles" onclick="showTab('roles')">
             <i class="fas fa-user-shield me-2"></i>Roles
           </button>
+          <button class="tab" id="tabOAuth" onclick="showTab('oauth')">
+            <i class="fas fa-key me-2"></i>OAuth Settings
+          </button>
           <button class="tab" id="tabDocs" onclick="showTab('docs')">
             <i class="fas fa-book me-2"></i>Developer Docs
           </button>
@@ -730,16 +751,16 @@
                 background: rgba(79, 70, 229, 0.03) !important;
               "
             >
-              <h3 style="margin-top: 0">Assign / Update Role</h3>
+              <h3 style="margin-top: 0">Assign / Update Multi-Role</h3>
               <div
                 style="
                   display: flex;
-                  gap: 10px;
+                  gap: 12px;
                   flex-wrap: wrap;
                   align-items: flex-end;
                 "
               >
-                <div style="flex: 1; min-width: 200px">
+                <div style="flex: 1; min-width: 240px">
                   <label class="small muted"><b>Email người dùng</b></label>
                   <input
                     id="roleEmail"
@@ -752,31 +773,32 @@
                     <i class="fas fa-exclamation-triangle me-1"></i>Lưu ý: Email không thuộc miền @eiu.edu.vn
                   </div>
                 </div>
-                <div style="min-width: 180px">
-                  <label class="small muted"><b>Role</b></label>
-                  <select
-                    id="roleSelect"
-                    style="
-                      width: 100%;
-                      padding: 12px 14px;
-                      border: 1px solid #e6eaf2;
-                      border-radius: 12px;
-                      font-size: 14px;
-                      margin-top: 6px;
-                    "
-                  >
-                    <option value="admin">&#128081; admin</option>
-                    <option value="report_viewer">
-                      &#128202; report_viewer
-                    </option>
-                  </select>
+                <div style="flex: 2; min-width: 300px">
+                  <label class="small muted"><b>Chọn vai trò (Multiple Roles)</b></label>
+                  <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:8px; padding:10px 14px; background:#fff; border:1px solid #e2e8f0; border-radius:10px;">
+                    <label style="display:flex; align-items:center; gap:5px; font-size:13px; cursor:pointer;">
+                      <input type="checkbox" id="chkRoleTrainee" value="trainee" checked> 🎓 Trainee
+                    </label>
+                    <label style="display:flex; align-items:center; gap:5px; font-size:13px; cursor:pointer;">
+                      <input type="checkbox" id="chkRoleClient" value="client"> 🏢 Client
+                    </label>
+                    <label style="display:flex; align-items:center; gap:5px; font-size:13px; cursor:pointer;">
+                      <input type="checkbox" id="chkRoleReport" value="report_viewer"> 📊 Report Viewer
+                    </label>
+                    <label style="display:flex; align-items:center; gap:5px; font-size:13px; cursor:pointer;">
+                      <input type="checkbox" id="chkRoleAdmin" value="admin"> 🛡️ Admin
+                    </label>
+                    <label style="display:flex; align-items:center; gap:5px; font-size:13px; cursor:pointer; color:#b91c1c; font-weight:600;">
+                      <input type="checkbox" id="chkRoleSuper" value="super_user"> ⚡ Super User
+                    </label>
+                  </div>
                 </div>
-                <button onclick="assignRole(this)" style="white-space: nowrap">
-                  Assign Role
+                <button onclick="assignRoles(this)" style="white-space: nowrap; padding: 12px 20px; font-weight:600;">
+                  Save Roles
                 </button>
               </div>
               <div class="small muted" style="margin-top: 12px; background: rgba(0, 48, 135, 0.04); border-left: 3px solid var(--c-navy); padding: 8px 12px; border-radius: 6px;">
-                <i class="fas fa-info-circle me-1"></i><b>Lưu ý:</b> Tài khoản nằm trong cấu hình <code>ADMIN_EMAILS</code> trên máy chủ Cloudflare luôn có toàn quyền quản trị, bất kể danh sách này.
+                <i class="fas fa-info-circle me-1"></i><b>Lưu ý:</b> Chỉ tài khoản có vai trò <code>super_user</code> hoặc nằm trong <code>ADMIN_EMAILS</code> mới có quyền phân quyền hoặc cấu hình OAuth.
               </div>
               <div
                 id="roleAssignMsg"
@@ -789,6 +811,103 @@
             <div id="rolesList">
               <div class="empty muted">Nhấn "Tải lại" để xem danh sách.</div>
             </div>
+          </div>
+        </section>
+
+        <!-- OAUTH SETTINGS PANEL -->
+        <section id="panelOAuth" class="panel">
+          <div class="card">
+            <div class="status-actions">
+              <div>
+                <h2><i class="fas fa-key me-2 text-primary"></i>OAuth App Registration Settings</h2>
+                <p class="small muted">
+                  Configure Google and Microsoft OAuth credentials directly. Credentials are stored securely in PostgreSQL (<code>pdc_system_settings</code>).
+                </p>
+              </div>
+              <div class="toolbar action-toolbar">
+                <button onclick="loadOAuthSettings()">&#8635; Refresh</button>
+              </div>
+            </div>
+
+            <!-- DUAL-DOMAIN QUICK COPY GUIDE -->
+            <div class="card" style="margin-top: 16px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 14px; padding: 18px;">
+              <h4 style="margin: 0 0 10px 0; color: #003087; font-size: 15px;"><i class="fas fa-globe me-2"></i>Multi-Domain App Registration Guide</h4>
+              <p class="small text-muted" style="margin-bottom: 12px;">
+                Copy and paste the exact redirect URIs below into your Google Cloud Console and Microsoft Azure App Registrations:
+              </p>
+
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                <div style="background:#fff; padding:12px; border-radius:10px; border:1px solid #e2e8f0;">
+                  <span class="badge bg-primary mb-2" style="font-size:11px;">Domain 1 (Custom Domain)</span>
+                  <div class="small fw-bold text-dark">Authorized JavaScript Origin:</div>
+                  <div class="d-flex align-items-center justify-content-between bg-light p-2 rounded mt-1 mb-2">
+                    <code style="font-size:12px; word-break:break-all;">https://pd-onestop.centralhub.io.vn</code>
+                    <button class="btn btn-sm btn-outline-secondary ms-2" onclick="navigator.clipboard.writeText('https://pd-onestop.centralhub.io.vn'); this.innerText='Copied!'; setTimeout(()=>this.innerText='Copy',1500);">Copy</button>
+                  </div>
+                  <div class="small fw-bold text-dark">Authorized Redirect URI:</div>
+                  <div class="d-flex align-items-center justify-content-between bg-light p-2 rounded mt-1">
+                    <code style="font-size:12px; word-break:break-all;">https://pd-onestop.centralhub.io.vn/api/auth/oauth/callback</code>
+                    <button class="btn btn-sm btn-outline-secondary ms-2" onclick="navigator.clipboard.writeText('https://pd-onestop.centralhub.io.vn/api/auth/oauth/callback'); this.innerText='Copied!'; setTimeout(()=>this.innerText='Copy',1500);">Copy</button>
+                  </div>
+                </div>
+
+                <div style="background:#fff; padding:12px; border-radius:10px; border:1px solid #e2e8f0;">
+                  <span class="badge bg-secondary mb-2" style="font-size:11px;">Domain 2 (Cloudflare Pages)</span>
+                  <div class="small fw-bold text-dark">Authorized JavaScript Origin:</div>
+                  <div class="d-flex align-items-center justify-content-between bg-light p-2 rounded mt-1 mb-2">
+                    <code style="font-size:12px; word-break:break-all;">https://pd-onestop.pages.dev</code>
+                    <button class="btn btn-sm btn-outline-secondary ms-2" onclick="navigator.clipboard.writeText('https://pd-onestop.pages.dev'); this.innerText='Copied!'; setTimeout(()=>this.innerText='Copy',1500);">Copy</button>
+                  </div>
+                  <div class="small fw-bold text-dark">Authorized Redirect URI:</div>
+                  <div class="d-flex align-items-center justify-content-between bg-light p-2 rounded mt-1">
+                    <code style="font-size:12px; word-break:break-all;">https://pd-onestop.pages.dev/api/auth/oauth/callback</code>
+                    <button class="btn btn-sm btn-outline-secondary ms-2" onclick="navigator.clipboard.writeText('https://pd-onestop.pages.dev/api/auth/oauth/callback'); this.innerText='Copied!'; setTimeout(()=>this.innerText='Copy',1500);">Copy</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- OAUTH CREDENTIALS FORM -->
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 18px;">
+              <!-- Google Box -->
+              <div class="card" style="border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px;">
+                <h4 style="margin: 0 0 12px 0; color: #1e293b; display:flex; align-items:center; gap:8px;">
+                  <i class="fab fa-google text-danger"></i> Google OAuth
+                  <span id="googleOauthStatus" class="badge bg-secondary ms-auto" style="font-size:11px;">Checking...</span>
+                </h4>
+                <div class="mb-3">
+                  <label class="small muted"><b>Client ID</b></label>
+                  <input id="googleClientId" type="text" placeholder="xxxx.apps.googleusercontent.com" style="margin-top:6px; font-family:monospace; font-size:13px;" />
+                </div>
+                <div class="mb-3">
+                  <label class="small muted"><b>Client Secret</b></label>
+                  <input id="googleClientSecret" type="password" placeholder="••••••••••••" style="margin-top:6px; font-family:monospace; font-size:13px;" />
+                </div>
+              </div>
+
+              <!-- Microsoft Box -->
+              <div class="card" style="border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px;">
+                <h4 style="margin: 0 0 12px 0; color: #1e293b; display:flex; align-items:center; gap:8px;">
+                  <i class="fab fa-microsoft text-primary"></i> Microsoft Entra ID
+                  <span id="msOauthStatus" class="badge bg-secondary ms-auto" style="font-size:11px;">Checking...</span>
+                </h4>
+                <div class="mb-3">
+                  <label class="small muted"><b>Application (Client) ID</b></label>
+                  <input id="msClientId" type="text" placeholder="00000000-0000-0000-0000-000000000000" style="margin-top:6px; font-family:monospace; font-size:13px;" />
+                </div>
+                <div class="mb-3">
+                  <label class="small muted"><b>Client Secret (Value)</b></label>
+                  <input id="msClientSecret" type="password" placeholder="••••••••••••" style="margin-top:6px; font-family:monospace; font-size:13px;" />
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top: 18px; display:flex; justify-content:flex-end; gap:12px;">
+              <button onclick="saveOAuthSettings(this)" style="padding:12px 24px; font-weight:600;">
+                <i class="fas fa-save me-2"></i>Save OAuth Credentials
+              </button>
+            </div>
+            <div id="oauthSaveMsg" class="empty hidden" style="margin-top: 12px;"></div>
           </div>
         </section>
 
@@ -1463,6 +1582,7 @@
         for (const n of [
           "status",
           "roles",
+          "oauth",
           "docs",
           "logs",
           "versions",
@@ -1474,6 +1594,8 @@
           if (panel) panel.classList.toggle("active", n === name);
           if (tab) tab.classList.toggle("active", n === name);
         }
+        if (name === "oauth") loadOAuthSettings();
+        if (name === "roles") loadRoles();
         if (name === "logs") {
           const notice = document.getElementById("logsEmptyNotice");
           if (notice) notice.classList.toggle("hidden", !!lastStatus);
@@ -1645,16 +1767,19 @@
             return;
           }
           el.innerHTML =
-            "<table><thead><tr><th>#</th><th>Email</th><th>Role</th><th>Assigned by</th><th>Time</th><th>Delete</th></tr></thead><tbody>" +
+            "<table><thead><tr><th>#</th><th>Email</th><th>Roles (Quyền truy cập)</th><th>Assigned by</th><th>Time</th><th>Actions</th></tr></thead><tbody>" +
             list
               .map(
                 (r, i) => `<tr>
         <td>${i + 1}</td>
-        <td>${escapeHtml(r.email)}</td>
-        <td>${roleBadge(r.role)}</td>
+        <td><b>${escapeHtml(r.email)}</b></td>
+        <td>${renderRoleBadges(r.roles || [r.role])}</td>
         <td class="muted small">${escapeHtml(r.assignedBy || "-")}</td>
         <td class="muted small">${escapeHtml(r.assignedAt || "-")}</td>
-        <td><button class="danger" style="padding:6px 12px; font-size:12px;" onclick="removeRole('${escapeHtml(r.email)}', this)">Delete</button></td>
+        <td>
+          <button class="secondary" style="padding:4px 8px; font-size:11px; margin-right:4px;" onclick="populateEditRoles('${escapeHtml(r.email)}', ${JSON.stringify(r.roles || [r.role]).replace(/"/g, '&quot;')})">Edit</button>
+          <button class="danger" style="padding:4px 8px; font-size:11px;" onclick="removeRole('${escapeHtml(r.email)}', this)">Delete</button>
+        </td>
       </tr>`,
               )
               .join("") +
@@ -1664,13 +1789,31 @@
             `<div class="empty bad">${escapeHtml(err.message)}</div>`;
         }
       }
-      function roleBadge(role) {
-        if (role === "admin")
-          return '<span class="pill" style="background:#f0f4ff;color:var(--c-navy);border:1px solid rgba(0,48,135,0.2);">&#128081; admin</span>';
-        if (role === "report_viewer")
-          return '<span class="pill" style="background:#d1fae5;color:#065f46;">&#128202; report_viewer</span>';
-        return escapeHtml(role);
+
+      function renderRoleBadges(roles) {
+        if (!Array.isArray(roles)) roles = [roles];
+        return roles.map(r => {
+          const clean = String(r || "").toLowerCase().trim();
+          if (clean === "super_user") return '<span class="pill" style="background:#fee2e2;color:#991b1b;border:1px solid rgba(185,28,28,0.3);font-weight:700;">⚡ super_user</span>';
+          if (clean === "admin") return '<span class="pill" style="background:#f0f4ff;color:var(--c-navy);border:1px solid rgba(0,48,135,0.2);">🛡️ admin</span>';
+          if (clean === "report_viewer") return '<span class="pill" style="background:#d1fae5;color:#065f46;">📊 report_viewer</span>';
+          if (clean === "client") return '<span class="pill" style="background:#e0f2fe;color:#0369a1;">🏢 client</span>';
+          if (clean === "trainee") return '<span class="pill" style="background:#f1f5f9;color:#475569;">🎓 trainee</span>';
+          return `<span class="pill">${escapeHtml(clean)}</span>`;
+        }).join(" ");
       }
+
+      function populateEditRoles(email, roles) {
+        document.getElementById("roleEmail").value = email;
+        const set = new Set((roles || []).map(r => String(r).toLowerCase().trim()));
+        document.getElementById("chkRoleTrainee").checked = set.has("trainee");
+        document.getElementById("chkRoleClient").checked = set.has("client");
+        document.getElementById("chkRoleReport").checked = set.has("report_viewer");
+        document.getElementById("chkRoleAdmin").checked = set.has("admin");
+        document.getElementById("chkRoleSuper").checked = set.has("super_user");
+        document.getElementById("roleEmail").scrollIntoView({ behavior: "smooth" });
+      }
+
       function checkRoleEmailDomain(input) {
         const email = (input.value || "").trim().toLowerCase();
         const warnEl = document.getElementById("roleEmailWarn");
@@ -1682,39 +1825,112 @@
         }
       }
 
-      async function assignRole(btn) {
-        const email = document
-          .getElementById("roleEmail")
-          .value.trim()
-          .toLowerCase();
-        const role = document.getElementById("roleSelect").value;
+      async function assignRoles(btn) {
+        const email = document.getElementById("roleEmail").value.trim().toLowerCase();
         const msg = document.getElementById("roleAssignMsg");
+
+        const selectedRoles = [];
+        if (document.getElementById("chkRoleTrainee")?.checked) selectedRoles.push("trainee");
+        if (document.getElementById("chkRoleClient")?.checked) selectedRoles.push("client");
+        if (document.getElementById("chkRoleReport")?.checked) selectedRoles.push("report_viewer");
+        if (document.getElementById("chkRoleAdmin")?.checked) selectedRoles.push("admin");
+        if (document.getElementById("chkRoleSuper")?.checked) selectedRoles.push("super_user");
+
         if (!email || !email.includes("@")) {
           msg.className = "empty warn";
-          msg.innerText = "Nhập email hợp lệ.";
+          msg.innerText = "Vui lòng nhập email hợp lệ.";
           msg.classList.remove("hidden");
           return;
         }
+
+        if (selectedRoles.length === 0) {
+          msg.className = "empty warn";
+          msg.innerText = "Chọn ít nhất 1 vai trò.";
+          msg.classList.remove("hidden");
+          return;
+        }
+
         const token = getAdminToken();
         if (!token) return;
         const old = btn.innerText;
         btn.disabled = true;
-        btn.innerText = "...";
+        btn.innerText = "Saving...";
         try {
           const json = await apiBearerPost("/api/admin/roles", token, {
             email,
-            role,
+            roles: selectedRoles,
           });
           msg.className = "empty ok";
-          msg.innerText = `✓ ${json.action === "created" ? "Tạo mới" : "Cập nhật"} thành công: ${email} → ${role}`;
+          msg.innerText = `✓ Phân quyền thành công: ${email} → [${selectedRoles.join(", ")}]`;
           msg.classList.remove("hidden");
-          document.getElementById("roleEmail").value = "";
-          const warnEl = document.getElementById("roleEmailWarn");
-          if (warnEl) warnEl.classList.add("hidden");
           loadRoles();
         } catch (err) {
           msg.className = "empty bad";
           msg.innerText = err.message;
+          msg.classList.remove("hidden");
+        } finally {
+          btn.disabled = false;
+          btn.innerText = old;
+        }
+      }
+
+      async function loadOAuthSettings() {
+        const token = getAdminToken();
+        if (!token) return;
+        try {
+          const json = await apiBearerGet("/api/admin/oauth-settings", token);
+          const d = json.data || {};
+          if (d.google) {
+            document.getElementById("googleClientId").value = d.google.clientId || "";
+            document.getElementById("googleClientSecret").placeholder = d.google.clientSecretMasked || "••••••••";
+            const gStatus = document.getElementById("googleOauthStatus");
+            if (gStatus) {
+              gStatus.className = d.google.isConfigured ? "badge bg-success ms-auto" : "badge bg-warning text-dark ms-auto";
+              gStatus.innerText = d.google.isConfigured ? "Active" : "Not Set";
+            }
+          }
+          if (d.microsoft) {
+            document.getElementById("msClientId").value = d.microsoft.clientId || "";
+            document.getElementById("msClientSecret").placeholder = d.microsoft.clientSecretMasked || "••••••••";
+            const msStatus = document.getElementById("msOauthStatus");
+            if (msStatus) {
+              msStatus.className = d.microsoft.isConfigured ? "badge bg-success ms-auto" : "badge bg-warning text-dark ms-auto";
+              msStatus.innerText = d.microsoft.isConfigured ? "Active" : "Not Set";
+            }
+          }
+        } catch (err) {
+          console.warn("loadOAuthSettings note:", err.message);
+        }
+      }
+
+      async function saveOAuthSettings(btn) {
+        const token = getAdminToken();
+        if (!token) return;
+        const msg = document.getElementById("oauthSaveMsg");
+        const googleClientId = (document.getElementById("googleClientId")?.value || "").trim();
+        const googleClientSecret = (document.getElementById("googleClientSecret")?.value || "").trim();
+        const msClientId = (document.getElementById("msClientId")?.value || "").trim();
+        const msClientSecret = (document.getElementById("msClientSecret")?.value || "").trim();
+
+        const old = btn.innerText;
+        btn.disabled = true;
+        btn.innerText = "Saving...";
+        try {
+          const payload = { googleClientId, msClientId };
+          if (googleClientSecret && !googleClientSecret.includes("••••")) {
+            payload.googleClientSecret = googleClientSecret;
+          }
+          if (msClientSecret && !msClientSecret.includes("••••")) {
+            payload.msClientSecret = msClientSecret;
+          }
+          const res = await apiBearerPost("/api/admin/oauth-settings", token, payload);
+          msg.className = "empty ok";
+          msg.innerText = "✓ OAuth settings saved successfully in database.";
+          msg.classList.remove("hidden");
+          loadOAuthSettings();
+        } catch (err) {
+          msg.className = "empty bad";
+          msg.innerText = "Failed to save: " + err.message;
           msg.classList.remove("hidden");
         } finally {
           btn.disabled = false;

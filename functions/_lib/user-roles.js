@@ -19,8 +19,8 @@ import {
 import { getTableSheetName, getTableSource } from "./data-source.js";
 import { queryPostgres } from "./postgres.js";
 
-export const VALID_ROLES = ["admin", "report_viewer", "client"];
-const SHEET_HEADERS = ["email", "role", "assigned_by", "assigned_at", "pin number"];
+export const VALID_ROLES = ["admin", "super_user", "report_viewer", "client", "trainee"];
+const SHEET_HEADERS = ["email", "role", "assigned_by", "assigned_at", "pin number", "roles"];
 
 function getRolesSheetName(env) {
   return getTableSheetName(env, "USER_ROLES") || "pdc_user_roles";
@@ -118,51 +118,160 @@ async function _readAll(env) {
 }
 
 /**
- * Get the role of a specific email. Returns "admin" | "report_viewer" | null
+ * Parse a roles field (string, comma-separated, or JSON) into a clean string array.
  */
-export async function getUserRole(env, email) {
-  const clean = normalizeEmail(email);
-  if (!clean) return null;
-
-  if (getTableSource(env, "USER_ROLES") === "psql") {
-    try {
-      const res = await queryPostgres(env, `SELECT "role" FROM public.pdc_user_roles WHERE LOWER("email") = $1 LIMIT 1`, [clean]);
-      const role = String(res.rows?.[0]?.role || "").toLowerCase().trim();
-      return VALID_ROLES.includes(role) ? role : null;
-    } catch (_) {
-      return null;
+export function parseRolesList(rawRoles, fallbackRole = "") {
+  const set = new Set();
+  if (Array.isArray(rawRoles)) {
+    rawRoles.forEach(r => {
+      const clean = String(r || "").trim().toLowerCase();
+      if (VALID_ROLES.includes(clean)) set.add(clean);
+    });
+  } else if (typeof rawRoles === "string" && rawRoles.trim()) {
+    const trimmed = rawRoles.trim();
+    if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) {
+          parsed.forEach(r => {
+            const clean = String(r || "").trim().toLowerCase();
+            if (VALID_ROLES.includes(clean)) set.add(clean);
+          });
+        }
+      } catch (_) {}
+    }
+    if (set.size === 0) {
+      trimmed.split(/[;,]/).forEach(r => {
+        const clean = String(r || "").trim().toLowerCase();
+        if (VALID_ROLES.includes(clean)) set.add(clean);
+      });
     }
   }
 
-  try {
-    const rows = await _readAll(env);
-    const match = rows.find((r) => r.email === clean);
-    if (!match) return null;
-    return VALID_ROLES.includes(match.role) ? match.role : null;
-  } catch (_) {
-    return null;
+  if (set.size === 0 && fallbackRole) {
+    const cleanFallback = String(fallbackRole).trim().toLowerCase();
+    if (VALID_ROLES.includes(cleanFallback)) set.add(cleanFallback);
   }
+  return Array.from(set);
 }
 
 /**
- * List all role assignments.
+ * Check if caller is super_user or in ADMIN_EMAILS.
+ */
+export async function isSuperUser(env, email) {
+  const clean = normalizeEmail(email);
+  if (!clean) return false;
+  const adminEmails = String(env.ADMIN_EMAILS || env.ADMIN_EMAIL || "")
+    .split(/[;,\n]/)
+    .map(normalizeEmail)
+    .filter(Boolean);
+  if (adminEmails.includes(clean)) return true;
+
+  const roles = await getUserRoles(env, clean);
+  return roles.includes("super_user");
+}
+
+/**
+ * Get all effective roles for an email.
+ * Returns array e.g. ["trainee", "client", "report_viewer", "admin", "super_user"]
+ */
+export async function getUserRoles(env, email) {
+  const clean = normalizeEmail(email);
+  if (!clean) return [];
+
+  const rolesSet = new Set();
+
+  // 1. ADMIN_EMAILS env has super_user + admin + report_viewer
+  const adminEmails = String(env.ADMIN_EMAILS || env.ADMIN_EMAIL || "")
+    .split(/[;,\n]/)
+    .map(normalizeEmail)
+    .filter(Boolean);
+  if (adminEmails.includes(clean)) {
+    rolesSet.add("super_user");
+    rolesSet.add("admin");
+    rolesSet.add("report_viewer");
+  }
+
+  if (getTableSource(env, "USER_ROLES") === "psql") {
+    try {
+      const res = await queryPostgres(env, `
+        SELECT "role", "roles" 
+        FROM public.pdc_user_roles 
+        WHERE LOWER(TRIM("email")) = $1 
+        LIMIT 1
+      `, [clean]);
+      const row = res.rows?.[0];
+      if (row) {
+        const parsed = parseRolesList(row.roles, row.role);
+        parsed.forEach(r => rolesSet.add(r));
+      }
+    } catch (_) {
+      // Table might not exist or columns not ready
+    }
+  } else {
+    try {
+      const rows = await _readAll(env);
+      const match = rows.find((r) => r.email === clean);
+      if (match) {
+        const parsed = parseRolesList(match.roles || match.role, match.role);
+        parsed.forEach(r => rolesSet.add(r));
+      }
+    } catch (_) {}
+  }
+
+  // Trainee is default role for anyone who enters system or has profile
+  if (rolesSet.size === 0) {
+    rolesSet.add("trainee");
+  }
+
+  // If user has super_user, ensure admin is also active
+  if (rolesSet.has("super_user")) {
+    rolesSet.add("admin");
+  }
+
+  return Array.from(rolesSet);
+}
+
+/**
+ * Get primary role (for backward compatibility).
+ */
+export async function getUserRole(env, email) {
+  const roles = await getUserRoles(env, email);
+  if (roles.includes("super_user")) return "super_user";
+  if (roles.includes("admin")) return "admin";
+  if (roles.includes("report_viewer")) return "report_viewer";
+  if (roles.includes("client")) return "client";
+  if (roles.includes("trainee")) return "trainee";
+  return null;
+}
+
+/**
+ * List all role assignments with multi-role support.
  */
 export async function listUserRoles(env) {
   if (getTableSource(env, "USER_ROLES") === "psql") {
     try {
+      // Ensure roles column exists
+      try {
+        await queryPostgres(env, `ALTER TABLE public.pdc_user_roles ADD COLUMN IF NOT EXISTS "roles" TEXT`);
+      } catch (_) {}
+
       const res = await queryPostgres(env, `
-        SELECT "email", "role", "assigned_by" AS "assignedBy", "assigned_at" AS "assignedAt", "pin number" AS "pin"
+        SELECT "email", "role", "roles", "assigned_by" AS "assignedBy", "assigned_at" AS "assignedAt", "pin number" AS "pin"
         FROM public.pdc_user_roles
-        WHERE LOWER("role") = ANY($1)
         ORDER BY "assigned_at" DESC
-      `, [VALID_ROLES]);
-      return (res.rows || []).map((r, i) => ({
-        ...r,
-        email: normalizeEmail(r.email),
-        role: String(r.role || "").toLowerCase().trim(),
-        assignedAt: r.assignedAt ? (typeof r.assignedAt === "string" ? r.assignedAt : new Date(r.assignedAt).toISOString()) : "",
-        rowIndex: i + 1
-      }));
+      `);
+      return (res.rows || []).map((r, i) => {
+        const roles = parseRolesList(r.roles, r.role);
+        return {
+          ...r,
+          email: normalizeEmail(r.email),
+          role: String(r.role || roles[0] || "").toLowerCase().trim(),
+          roles: roles.length > 0 ? roles : [String(r.role || "").toLowerCase().trim()].filter(Boolean),
+          assignedAt: r.assignedAt ? (typeof r.assignedAt === "string" ? r.assignedAt : new Date(r.assignedAt).toISOString()) : "",
+          rowIndex: i + 1
+        };
+      });
     } catch (_) {
       return [];
     }
@@ -170,44 +279,55 @@ export async function listUserRoles(env) {
 
   try {
     const rows = await _readAll(env);
-    return rows.filter((r) => VALID_ROLES.includes(r.role));
+    return rows.map(r => {
+      const roles = parseRolesList(r.roles || r.role, r.role);
+      return {
+        ...r,
+        roles: roles.length > 0 ? roles : [r.role].filter(Boolean)
+      };
+    });
   } catch (_) {
     return [];
   }
 }
 
 /**
- * Assign or update role for an email (upsert).
+ * Assign or update a set of roles for an email (upsert).
  */
-export async function setUserRole(env, targetEmail, role, callerEmail) {
+export async function setUserRoles(env, targetEmail, rolesArray, callerEmail) {
   const target = normalizeEmail(targetEmail);
   const caller = normalizeEmail(callerEmail);
-  const cleanRole = String(role || "").trim().toLowerCase();
+  const cleanRoles = parseRolesList(rolesArray);
 
   if (!target) throw new Error("Missing target email.");
-  if (!VALID_ROLES.includes(cleanRole)) {
-    throw new Error(`Invalid role '${cleanRole}'. Must be one of: ${VALID_ROLES.join(", ")}`);
-  }
+  if (cleanRoles.length === 0) throw new Error("At least one valid role must be provided.");
+
+  const primaryRole = cleanRoles[0] || "trainee";
+  const rolesJson = JSON.stringify(cleanRoles);
 
   if (getTableSource(env, "USER_ROLES") === "psql") {
+    try {
+      await queryPostgres(env, `ALTER TABLE public.pdc_user_roles ADD COLUMN IF NOT EXISTS "roles" TEXT`);
+    } catch (_) {}
+
     const checkSql = `SELECT "email" FROM public.pdc_user_roles WHERE LOWER(TRIM("email")) = $1`;
     const checkRes = await queryPostgres(env, checkSql, [target]);
     const isUpdate = (checkRes.rows?.length || 0) > 0;
 
     const sql = `
-      INSERT INTO public.pdc_user_roles ("email", "role", "assigned_by", "assigned_at")
-      VALUES ($1, $2, $3, NOW())
+      INSERT INTO public.pdc_user_roles ("email", "role", "roles", "assigned_by", "assigned_at")
+      VALUES ($1, $2, $3, $4, NOW())
       ON CONFLICT ("email") DO UPDATE SET
         "role" = EXCLUDED."role",
+        "roles" = EXCLUDED."roles",
         "assigned_by" = EXCLUDED."assigned_by",
         "assigned_at" = NOW()
     `;
-    await queryPostgres(env, sql, [target, cleanRole, caller]);
-    return { action: isUpdate ? "updated" : "created", email: target, role: cleanRole };
+    await queryPostgres(env, sql, [target, primaryRole, rolesJson, caller]);
+    return { action: isUpdate ? "updated" : "created", email: target, role: primaryRole, roles: cleanRoles };
   }
 
   await ensureRolesSheetExists(env);
-
   const spreadsheetId = getCoreSpreadsheetId(env);
   const sheetName = getRolesSheetName(env);
   const rows = await _readAll(env);
@@ -216,16 +336,33 @@ export async function setUserRole(env, targetEmail, role, callerEmail) {
 
   if (existing) {
     await batchUpdateSheetValues(env, spreadsheetId, [{
-      range: `${quoteSheetName(sheetName)}!A${existing.rowIndex}:E${existing.rowIndex}`,
-      values: [[target, cleanRole, caller, now, existing.pin || ""]]
+      range: `${quoteSheetName(sheetName)}!A${existing.rowIndex}:F${existing.rowIndex}`,
+      values: [[target, primaryRole, caller, now, existing.pin || "", cleanRoles.join(",")]]
     }]);
-    return { action: "updated", email: target, role: cleanRole };
+    return { action: "updated", email: target, role: primaryRole, roles: cleanRoles };
   } else {
-    await appendSheetValues(env, spreadsheetId, `${quoteSheetName(sheetName)}!A:E`, [
-      [target, cleanRole, caller, now, ""]
+    await appendSheetValues(env, spreadsheetId, `${quoteSheetName(sheetName)}!A:F`, [
+      [target, primaryRole, caller, now, "", cleanRoles.join(",")]
     ]);
-    return { action: "created", email: target, role: cleanRole };
+    return { action: "created", email: target, role: primaryRole, roles: cleanRoles };
   }
+}
+
+/**
+ * Assign or update single role for an email (upsert - preserves existing roles).
+ */
+export async function setUserRole(env, targetEmail, role, callerEmail) {
+  const target = normalizeEmail(targetEmail);
+  const cleanRole = String(role || "").trim().toLowerCase();
+  if (!VALID_ROLES.includes(cleanRole)) {
+    throw new Error(`Invalid role '${cleanRole}'. Must be one of: ${VALID_ROLES.join(", ")}`);
+  }
+
+  // Fetch current roles and append
+  const currentRoles = await getUserRoles(env, target);
+  const updatedSet = new Set(currentRoles);
+  updatedSet.add(cleanRole);
+  return setUserRoles(env, target, Array.from(updatedSet), callerEmail);
 }
 
 /**
