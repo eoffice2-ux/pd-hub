@@ -39,7 +39,7 @@ export async function listPendingOrgs(env, { sort = "created_at", order = "desc"
       ON oce."company_id"::text = p."pd_id"
     LEFT JOIN (
       SELECT
-        LOWER(TRIM(t."trainee organization id")) AS org_id_match,
+        COALESCE(NULLIF(LOWER(TRIM(t."trainee organization id"::text)), ''), LOWER(TRIM(t."trainee organization new"::text))) AS org_match,
         COUNT(*)::int AS trainee_count,
         json_agg(
           json_build_object(
@@ -53,9 +53,11 @@ export async function listPendingOrgs(env, { sort = "created_at", order = "desc"
           ) ORDER BY t."trainee full name" ASC
         ) AS trainees
       FROM public."pdc_trainee general profile" t
-      WHERE t."trainee organization id" IS NOT NULL AND TRIM(t."trainee organization id") <> ''
-      GROUP BY LOWER(TRIM(t."trainee organization id"))
-    ) t_agg ON t_agg.org_id_match = LOWER(TRIM(p."pd_id"))
+      WHERE (t."trainee organization id" IS NOT NULL AND TRIM(t."trainee organization id") <> '')
+         OR (t."trainee organization new" IS NOT NULL AND TRIM(t."trainee organization new") <> '')
+      GROUP BY COALESCE(NULLIF(LOWER(TRIM(t."trainee organization id"::text)), ''), LOWER(TRIM(t."trainee organization new"::text)))
+    ) t_agg ON t_agg.org_match = LOWER(TRIM(p."pd_id"))
+            OR t_agg.org_match = LOWER(TRIM(p."name"))
     ORDER BY p."${safeSort}" ${safeOrder}
   `;
 
@@ -95,17 +97,17 @@ export async function listAllUsedTraineeOrgs(env, { search = "" } = {}) {
       MAX(t."trainee organization new") AS org_name,
       COUNT(*)::int AS trainee_count,
       CASE
-        WHEN oce.company_id IS NOT NULL THEN true
+        WHEN oce."company_id" IS NOT NULL THEN true
         ELSE false
       END AS is_official_oce,
-      oce.company_id AS oce_id,
-      oce.company_name_vn AS oce_name_vn,
-      oce.company_name_en AS oce_name_en,
+      oce."company_id"::text AS oce_id,
+      oce."company_name_VN"::text AS oce_name_vn,
+      oce."company_name_GB"::text AS oce_name_en,
       CASE
-        WHEN pend.pd_id IS NOT NULL THEN true
+        WHEN pend."pd_id" IS NOT NULL THEN true
         ELSE false
       END AS is_pending_org,
-      pend.status AS pending_status,
+      pend."status" AS pending_status,
       json_agg(
         json_build_object(
           'traineeId', COALESCE(t."trainee id", t."trainee email"),
@@ -119,11 +121,11 @@ export async function listAllUsedTraineeOrgs(env, { search = "" } = {}) {
       ) AS trainees
     FROM public."pdc_trainee general profile" t
     LEFT JOIN public.oce_industry_list oce 
-      ON LOWER(TRIM(oce.company_id)) = LOWER(TRIM(t."trainee organization id"))
+      ON LOWER(TRIM(oce."company_id"::text)) = LOWER(TRIM(t."trainee organization id"::text))
     LEFT JOIN public.pdc_pending_organizations pend
-      ON LOWER(TRIM(pend.pd_id)) = LOWER(TRIM(t."trainee organization id"))
+      ON LOWER(TRIM(pend."pd_id"::text)) = LOWER(TRIM(t."trainee organization id"::text))
     ${searchClause}
-    GROUP BY t."trainee organization id", oce.company_id, oce.company_name_vn, oce.company_name_en, pend.pd_id, pend.status
+    GROUP BY t."trainee organization id", oce."company_id", oce."company_name_VN", oce."company_name_GB", pend."pd_id", pend."status"
     ORDER BY COUNT(*) DESC, MAX(t."trainee organization new") ASC
   `;
 
@@ -167,8 +169,9 @@ export async function batchReassignTraineesOrganization(env, {
   // If target company name is not provided, look it up in oce_industry_list
   if (!finalTargetName) {
     const oceRes = await queryPostgres(env, `
-      SELECT company_name_vn, company_name_en FROM public.oce_industry_list
-      WHERE LOWER(TRIM(company_id)) = LOWER(TRIM($1)) LIMIT 1
+      SELECT "company_name_VN" AS company_name_vn, "company_name_GB" AS company_name_en
+      FROM public.oce_industry_list
+      WHERE LOWER(TRIM("company_id"::text)) = LOWER(TRIM($1)) LIMIT 1
     `, [cleanTargetId]);
     if (oceRes.rows && oceRes.rows.length > 0) {
       finalTargetName = oceRes.rows[0].company_name_vn || oceRes.rows[0].company_name_en || cleanTargetId;

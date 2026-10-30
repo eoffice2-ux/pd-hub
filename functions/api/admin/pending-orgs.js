@@ -41,13 +41,15 @@ export async function onRequestGet(context) {
     try {
       const q = `%${searchOce.toLowerCase()}%`;
       const res = await queryPostgres(env, `
-        SELECT company_id, company_name_vn, company_name_en, tax_code
+        SELECT 
+          "company_id"::text AS company_id,
+          "company_name_VN"::text AS company_name_vn,
+          "company_name_GB"::text AS company_name_en
         FROM public.oce_industry_list
-        WHERE LOWER(TRIM(company_id)) LIKE $1
-           OR LOWER(TRIM(company_name_vn)) LIKE $1
-           OR LOWER(TRIM(company_name_en)) LIKE $1
-           OR LOWER(TRIM(tax_code)) LIKE $1
-        ORDER BY company_name_vn ASC
+        WHERE "company_id"::text ILIKE $1
+           OR "company_name_VN"::text ILIKE $1
+           OR "company_name_GB"::text ILIKE $1
+        ORDER BY "company_name_VN" ASC
         LIMIT 25
       `, [q]);
       return jsonResponse({ success: true, count: res.rows?.length || 0, data: res.rows || [] });

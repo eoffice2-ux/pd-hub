@@ -871,10 +871,14 @@
                   <i class="fas fa-building"></i> Đơn vị Quản lý của Client / Assigned Company & EIU Scope
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                  <div>
+                  <div style="position: relative;">
                     <label class="small muted"><b>Mã / Tên Tổ chức (Company ID / Name)</b></label>
-                    <input type="text" id="roleClientCompany" placeholder="Nhập mã công ty (vd: EIU hoặc OCE...)" style="margin-top:4px;" />
-                    <small class="muted" style="font-size: 11px;">Nếu email thuộc @eiu.edu.vn, hệ thống tự động gán EIU.</small>
+                    <input type="text" id="roleClientCompany" placeholder="Nhập tên hoặc mã công ty (vd: EIU hoặc OCE...)" style="margin-top:4px;" oninput="searchRoleClientCompanyDebounced(this.value)" autocomplete="off" />
+                    <div id="roleClientCompanyResults" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1px solid #cbd5e1; border-radius:6px; max-height:180px; overflow-y:auto; z-index:100; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1);"></div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top: 4px;">
+                      <small class="muted" style="font-size: 11px;">Gõ để tìm kiếm công ty từ OCE list.</small>
+                      <button type="button" class="light" style="font-size:10px; padding:2px 6px; border-radius:4px;" onclick="setRoleCompanyQuick('EIU')">Chọn nhanh EIU</button>
+                    </div>
                   </div>
                   <div>
                     <label class="small muted"><b>Phạm vi EIU (Chỉ áp dụng nếu đơn vị là EIU)</b></label>
@@ -1994,6 +1998,51 @@
         } else {
           box.classList.add("hidden");
         }
+      }
+
+      function setRoleCompanyQuick(cid) {
+        const input = document.getElementById("roleClientCompany");
+        if (input) input.value = cid;
+        const resBox = document.getElementById("roleClientCompanyResults");
+        if (resBox) resBox.style.display = "none";
+      }
+
+      let roleClientCompSearchTimer = null;
+      function searchRoleClientCompanyDebounced(query) {
+        clearTimeout(roleClientCompSearchTimer);
+        const resultsEl = document.getElementById("roleClientCompanyResults");
+        if (!resultsEl) return;
+        if (!query || query.trim().length < 2) {
+          resultsEl.style.display = "none";
+          return;
+        }
+
+        roleClientCompSearchTimer = setTimeout(async () => {
+          const token = getAdminToken();
+          if (!token) return;
+          try {
+            resultsEl.innerHTML = '<div style="padding:6px 10px; font-size:11px; color:#64748b;"><i class="fas fa-spinner fa-spin me-1"></i>Searching companies...</div>';
+            resultsEl.style.display = "block";
+
+            const res = await apiBearerGet(`/api/admin/pending-orgs?search_oce=${encodeURIComponent(query.trim())}`, token);
+            const items = res.data || [];
+            if (items.length === 0) {
+              resultsEl.innerHTML = '<div style="padding:6px 10px; font-size:11px; color:#64748b;">No matching companies.</div>';
+              return;
+            }
+
+            resultsEl.innerHTML = items.map(c => `
+              <div style="padding: 6px 10px; border-bottom: 1px solid #f1f5f9; cursor: pointer; font-size: 11px;"
+                   onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#fff'"
+                   onclick="setRoleCompanyQuick('${escapeHtml(c.company_id).replace(/'/g, "\\'")}')">
+                <span class="badge bg-secondary" style="font-family:monospace;">${escapeHtml(c.company_id)}</span>
+                <b style="margin-left:4px;">${escapeHtml(c.company_name_vn || c.company_name_en)}</b>
+              </div>
+            `).join("");
+          } catch (e) {
+            resultsEl.innerHTML = `<div style="padding:6px 10px; font-size:11px; color:#dc2626;">Error: ${escapeHtml(e.message)}</div>`;
+          }
+        }, 250);
       }
 
       function populateEditRoles(email, roles, companyId, clientScope) {

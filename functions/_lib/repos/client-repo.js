@@ -66,7 +66,9 @@ export async function resolveClientAccessContextPsql(env, email) {
       // Lookup company name from oce_industry_list or contract
       let cname = cid;
       const oceRes = await queryPostgres(env, `
-        SELECT company_name_vn, company_name_en FROM public.oce_industry_list WHERE LOWER(TRIM(company_id)) = LOWER(TRIM($1)) LIMIT 1
+        SELECT "company_name_VN" AS company_name_vn, "company_name_GB" AS company_name_en
+        FROM public.oce_industry_list
+        WHERE LOWER(TRIM("company_id"::text)) = LOWER(TRIM($1)) LIMIT 1
       `, [cid]);
       if (oceRes.rows && oceRes.rows.length > 0) {
         cname = oceRes.rows[0].company_name_vn || oceRes.rows[0].company_name_en || cid;
@@ -213,25 +215,29 @@ export async function getClientTraineesPsql(env, email, options = {}) {
         t."trainee organization id" AS organization_id,
         t."trainee organization new" AS organization_name,
         t."trainee type" AS raw_type,
-        t."school" AS school_id,
-        t."department" AS department_id,
+        t."school"::text AS school_id,
+        t."department"::text AS department_id,
         so.name AS school_name,
         so.school_office_type AS school_type,
         sp.program_function AS department_name,
         ti.school AS team_school,
         ti.position AS team_position
       FROM public."pdc_trainee general profile" t
-      LEFT JOIN public.setting_school_office so ON t."school" = so.id
-      LEFT JOIN public.setting_school_program sp ON t."department" = sp.id
+      LEFT JOIN public.setting_school_office so 
+        ON LOWER(TRIM(t."school"::text)) = LOWER(TRIM(so.id::text))
+        OR LOWER(TRIM(t."school"::text)) = LOWER(TRIM(so.name::text))
+      LEFT JOIN public.setting_school_program sp 
+        ON LOWER(TRIM(t."department"::text)) = LOWER(TRIM(sp.id::text))
+        OR LOWER(TRIM(t."department"::text)) = LOWER(TRIM(sp.program_function::text))
       LEFT JOIN public."Team Information" ti ON LOWER(TRIM(ti.email_id_key)) = LOWER(TRIM(t."trainee email"))
       WHERE LOWER(TRIM(t."trainee email")) LIKE '%@eiu.edu.vn'
-         OR LOWER(TRIM(t."trainee organization id")) = 'eiu'
-         OR LOWER(TRIM(t."trainee organization new")) ILIKE '%eastern international university%'
-         OR LOWER(TRIM(t."trainee organization new")) ILIKE '%miền đông%'
+         OR LOWER(TRIM(t."trainee organization id"::text)) = 'eiu'
+         OR LOWER(TRIM(t."trainee organization new"::text)) ILIKE '%eastern international university%'
+         OR LOWER(TRIM(t."trainee organization new"::text)) ILIKE '%miền đông%'
       ORDER BY t."trainee full name" ASC
     `;
   } else {
-    // Corporate client scope: match organization ID, company name, or section attendee enrollment
+    // Corporate client scope: match organization ID or company name
     traineesSql = `
       SELECT DISTINCT
         t."trainee id" AS trainee_id,
@@ -243,22 +249,21 @@ export async function getClientTraineesPsql(env, email, options = {}) {
         t."trainee organization id" AS organization_id,
         t."trainee organization new" AS organization_name,
         t."trainee type" AS raw_type,
-        t."school" AS school_id,
-        t."department" AS department_id,
+        t."school"::text AS school_id,
+        t."department"::text AS department_id,
         so.name AS school_name,
         so.school_office_type AS school_type,
         sp.program_function AS department_name,
         NULL AS team_school,
         NULL AS team_position
       FROM public."pdc_trainee general profile" t
-      LEFT JOIN public.setting_school_office so ON t."school" = so.id
-      LEFT JOIN public.setting_school_program sp ON t."department" = sp.id
-      LEFT JOIN public."pdc_section attendee management" sa ON LOWER(TRIM(sa."trainee id")) = LOWER(TRIM(t."trainee id"))
-      LEFT JOIN public."pdc_section management" sm ON LOWER(TRIM(sm."section id")) = LOWER(TRIM(sa."section id"))
-      WHERE LOWER(TRIM(t."trainee organization id")) = LOWER(TRIM($1))
-         OR LOWER(TRIM(t."trainee organization new")) = LOWER(TRIM($2))
-         OR LOWER(TRIM(t."trainee organization new")) = LOWER(TRIM($3))
-         OR LOWER(TRIM(sm."client id")) = LOWER(TRIM($1))
+      LEFT JOIN public.setting_school_office so 
+        ON LOWER(TRIM(t."school"::text)) = LOWER(TRIM(so.id::text))
+      LEFT JOIN public.setting_school_program sp 
+        ON LOWER(TRIM(t."department"::text)) = LOWER(TRIM(sp.id::text))
+      WHERE LOWER(TRIM(t."trainee organization id"::text)) = LOWER(TRIM($1))
+         OR LOWER(TRIM(t."trainee organization new"::text)) = LOWER(TRIM($2))
+         OR LOWER(TRIM(t."trainee organization new"::text)) = LOWER(TRIM($3))
       ORDER BY t."trainee full name" ASC
     `;
     traineesParams = [clientId, clientNameVn || clientId, clientNameEn || clientId];
@@ -290,44 +295,48 @@ export async function getClientTraineesPsql(env, email, options = {}) {
         SELECT 
           sa."trainee id" AS trainee_id,
           sm."section id" AS section_id,
-          sm."section name vn" AS section_name,
+          COALESCE(NULLIF(sm."section name en", ''), sm."section id") AS section_name,
           sm."course id" AS course_id,
-          cm."course name vn" AS course_name,
-          sm."learning date start" AS learning_start,
-          sm."learning date end" AS learning_end,
-          sm."section status" AS section_status,
+          COALESCE(NULLIF(cm."course name en", ''), sm."section name en", sm."course id") AS course_name,
+          COALESCE(sm."section date"::text, sm."date start"::text, '') AS learning_start,
+          '' AS learning_end,
+          COALESCE(sm."section status", '') AS section_status,
           COALESCE(att_plan.total_slots, 0) AS total_slots,
           COALESCE(att_log.checked_slots, 0) AS checked_slots,
           COALESCE(fb_req.total_surveys, 0) AS total_surveys,
           COALESCE(fb_sub.submitted_surveys, 0) AS submitted_surveys,
-          sa."trainee cetificate link" AS certificate_link
+          COALESCE(sa."certificate status", '') AS certificate_link
         FROM public."pdc_section attendee management" sa
-        JOIN public."pdc_section management" sm ON LOWER(TRIM(sm."section id")) = LOWER(TRIM(sa."section id"))
-        LEFT JOIN public."pdc_course master list" cm ON LOWER(TRIM(cm."course id")) = LOWER(TRIM(sm."course id"))
+        JOIN public."pdc_section management" sm 
+          ON LOWER(TRIM(sm."section id"::text)) = LOWER(TRIM(sa."section id"::text))
+        LEFT JOIN public."pdc_course master list" cm 
+          ON LOWER(TRIM(cm."course id"::text)) = LOWER(TRIM(sm."course id"::text))
         LEFT JOIN (
-          SELECT "section id", COUNT(*)::int AS total_slots
+          SELECT LOWER(TRIM("section id"::text)) AS sec_id, COUNT(*)::int AS total_slots
           FROM public."pdc_section checkin management"
-          GROUP BY "section id"
-        ) att_plan ON LOWER(TRIM(att_plan."section id")) = LOWER(TRIM(sa."section id"))
+          GROUP BY LOWER(TRIM("section id"::text))
+        ) att_plan ON att_plan.sec_id = LOWER(TRIM(sa."section id"::text))
         LEFT JOIN (
-          SELECT "section id", "trainee id", COUNT(*)::int AS checked_slots
+          SELECT LOWER(TRIM("section id"::text)) AS sec_id, LOWER(TRIM("trainee id"::text)) AS tr_id, COUNT(DISTINCT "checkin slot id")::int AS checked_slots
           FROM public."pdc_section checkin log"
-          GROUP BY "section id", "trainee id"
-        ) att_log ON LOWER(TRIM(att_log."section id")) = LOWER(TRIM(sa."section id")) 
-                 AND LOWER(TRIM(att_log."trainee id")) = LOWER(TRIM(sa."trainee id"))
+          GROUP BY LOWER(TRIM("section id"::text)), LOWER(TRIM("trainee id"::text))
+        ) att_log ON att_log.sec_id = LOWER(TRIM(sa."section id"::text))
+                 AND att_log.tr_id = LOWER(TRIM(sa."trainee id"::text))
         LEFT JOIN (
-          SELECT "section id", COUNT(*)::int AS total_surveys
+          SELECT LOWER(TRIM("section id"::text)) AS sec_id, COUNT(*)::int AS total_surveys
           FROM public.pdc_fb_sectionforms
-          GROUP BY "section id"
-        ) fb_req ON LOWER(TRIM(fb_req."section id")) = LOWER(TRIM(sa."section id"))
+          GROUP BY LOWER(TRIM("section id"::text))
+        ) fb_req ON fb_req.sec_id = LOWER(TRIM(sa."section id"::text))
         LEFT JOIN (
-          SELECT "section id", "trainee email", COUNT(*)::int AS submitted_surveys
-          FROM public.pdc_fb_submissions
-          GROUP BY "section id", "trainee email"
-        ) fb_sub ON LOWER(TRIM(fb_sub."section id")) = LOWER(TRIM(sa."section id"))
-                 AND LOWER(TRIM(fb_sub."trainee email")) = LOWER(TRIM(sa."trainee id"))
-        WHERE LOWER(TRIM(sa."trainee id")) = ANY($1::text[])
-        ORDER BY sm."learning date start" DESC NULLS LAST
+          SELECT LOWER(TRIM(sf."section id"::text)) AS sec_id, LOWER(TRIM(sub."trainee_id"::text)) AS tr_id, COUNT(DISTINCT sub."mapping_id")::int AS submitted_surveys
+          FROM public.pdc_fb_submissions sub
+          JOIN public.pdc_fb_sectionforms sf
+            ON LOWER(TRIM(sf."id"::text)) = LOWER(TRIM(sub."mapping_id"::text))
+          GROUP BY LOWER(TRIM(sf."section id"::text)), LOWER(TRIM(sub."trainee_id"::text))
+        ) fb_sub ON fb_sub.sec_id = LOWER(TRIM(sa."section id"::text))
+                AND fb_sub.tr_id = LOWER(TRIM(sa."trainee id"::text))
+        WHERE LOWER(TRIM(sa."trainee id"::text)) = ANY($1::text[])
+          AND COALESCE(LOWER(TRIM(sa."registration status"::text)), '') <> 'withdrawn'
       `;
       const histRes = await queryPostgres(env, historySql, [traineeIds.map(s => s.toLowerCase().trim())]);
       (histRes.rows || []).forEach(row => {
@@ -355,7 +364,21 @@ export async function getClientTraineesPsql(env, email, options = {}) {
 
   const bySchoolGroups = {};
 
-  const trainees = rawTrainees.map(r => {
+  const trainees = rawTrainees
+    .filter(r => {
+      // Apply EIU clientScope if configured
+      if (isEiu && clientScope) {
+        const type = resolveTraineeType(r.email, r.raw_type, r.position);
+        if (clientScope.traineeType && clientScope.traineeType !== "all" && type !== clientScope.traineeType) {
+          return false;
+        }
+        if (clientScope.schoolId && r.school_id && String(r.school_id).toLowerCase() !== String(clientScope.schoolId).toLowerCase()) {
+          return false;
+        }
+      }
+      return true;
+    })
+    .map(r => {
     const tid = String(r.trainee_id || r.email || "").toLowerCase().trim();
     const courses = courseHistoryMap.get(tid) || [];
     const type = resolveTraineeType(r.email, r.raw_type, r.position);
