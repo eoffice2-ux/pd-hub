@@ -1309,9 +1309,15 @@
         localStorage.setItem(REPORT_EXP_KEY, data.expiresAt || "");
         localStorage.setItem(REPORT_EMAIL_KEY, data.email || "");
         localStorage.setItem(REPORT_ROLE_KEY, data.role || "report_viewer");
+        if (window.syncMultiPortalSession) {
+          try { window.syncMultiPortalSession(data); } catch (_) {}
+        }
       }
 
       function clearReportSession() {
+        if (window.clearMultiPortalSession) {
+          try { window.clearMultiPortalSession(); } catch (_) {}
+        }
         localStorage.removeItem(REPORT_TOKEN_KEY);
         localStorage.removeItem(REPORT_EXP_KEY);
         localStorage.removeItem(REPORT_EMAIL_KEY);

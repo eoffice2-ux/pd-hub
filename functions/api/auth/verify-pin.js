@@ -1,5 +1,5 @@
 import { jsonResponse, normalizeEmail, isAdminEmail, issueSessionToken } from "../../_lib/security.js";
-import { getUserInfo } from "../../_lib/user-roles.js";
+import { getUserInfo, getUserRoles } from "../../_lib/user-roles.js";
 import { appendAppLog } from "../../_lib/app-logs.js";
 
 export async function onRequestPost(context) {
@@ -54,22 +54,26 @@ export async function onRequestPost(context) {
   try {
     const userInfo = await getUserInfo(env, email);
     const isEnvAdmin = isAdminEmail(email, env);
-    const sheetRole = userInfo ? userInfo.role : null;
+    const roles = await getUserRoles(env, email);
     const realPin = userInfo ? userInfo.pin : "";
 
     let authorized = false;
-    let resolvedRole = sheetRole;
+    let resolvedRole = roles[0] || "client";
+    let scope = "client";
     const eventType = portal === "client" ? "client_login" : "admin_login";
 
     if (portal === "client") {
       authorized = true;
-      resolvedRole = sheetRole || "client";
+      scope = "client";
+      resolvedRole = roles.includes("client") ? "client" : roles[0];
     } else if (portal === "admin") {
-      authorized = isEnvAdmin || sheetRole === "admin";
-      resolvedRole = sheetRole || "admin";
+      authorized = isEnvAdmin || roles.includes("super_user") || roles.includes("admin");
+      scope = "admin";
+      resolvedRole = roles.includes("super_user") ? "super_user" : "admin";
     } else if (portal === "report") {
-      authorized = isEnvAdmin || sheetRole === "admin" || sheetRole === "report_viewer";
-      resolvedRole = sheetRole || "admin";
+      authorized = isEnvAdmin || roles.includes("super_user") || roles.includes("admin") || roles.includes("report_viewer");
+      scope = (isEnvAdmin || roles.includes("super_user") || roles.includes("admin")) ? "admin" : "report_viewer";
+      resolvedRole = roles.includes("super_user") ? "super_user" : (roles.includes("admin") ? "admin" : "report_viewer");
     } else {
       return jsonResponse({ success: false, error: "Invalid portal parameter." }, 400);
     }
@@ -85,8 +89,7 @@ export async function onRequestPost(context) {
       return jsonResponse({ success: true, source: "gsheet", dbMode, data: { ok: false } });
     }
 
-    const scope = portal === "client" ? "client" : "admin";
-    const session = await issueSessionToken(email, env, scope);
+    const session = await issueSessionToken(email, env, scope, roles);
     await appendAppLog(env, { event: eventType, scope: "auth", email, success: true, detail: `PIN verified. Role: ${resolvedRole}`, request: context.request });
 
     return jsonResponse({
@@ -98,6 +101,7 @@ export async function onRequestPost(context) {
         email,
         scope,
         role: resolvedRole,
+        roles,
         token: session.token,
         expiresAt: session.expiresAt,
         expiresInSeconds: session.expiresInSeconds

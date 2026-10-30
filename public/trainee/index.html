@@ -1384,12 +1384,26 @@
         return token;
       }
 
-      function setSessionToken(token) {
+      function setSessionToken(token, data, email) {
         if (token) localStorage.setItem(PDC_TOKEN_KEY, token);
+        if (window.syncMultiPortalSession && data) {
+          try {
+            window.syncMultiPortalSession({
+              token,
+              email: email || data.email || localStorage.getItem("pdc_email") || "",
+              expiresAt: data.expiresAt,
+              roles: data.roles || ["trainee"]
+            });
+          } catch (_) {}
+        }
       }
 
       function clearSessionToken() {
+        if (window.clearMultiPortalSession) {
+          try { window.clearMultiPortalSession(); } catch (_) {}
+        }
         localStorage.removeItem(PDC_TOKEN_KEY);
+        localStorage.removeItem("pdc_email");
       }
 
       // --- OPTIMISTIC UI OVERRIDE HELPERS ---
@@ -1493,7 +1507,7 @@
               method: "POST",
               body: JSON.stringify({ email, otp, scope: "trainee" }),
             });
-            setSessionToken(res?.data?.token);
+            setSessionToken(res?.data?.token, res?.data, email);
             return true;
           }
           case "checkUserAccessType": {
@@ -1509,7 +1523,7 @@
               method: "POST",
               body: JSON.stringify({ email, pin }),
             });
-            if (res?.data?.token) setSessionToken(res.data.token);
+            if (res?.data?.token) setSessionToken(res.data.token, res.data, email);
             return Boolean(res?.data?.ok ?? res?.data);
           }
           case "setTraineePin": {
@@ -3213,7 +3227,6 @@
       }
 
       function logout() {
-        localStorage.removeItem("pdc_email");
         clearSessionToken();
         location.reload();
       }

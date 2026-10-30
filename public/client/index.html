@@ -1335,7 +1335,7 @@
         return localStorage.getItem("pdhub_session_token") || "";
       }
 
-      function setSession(email, token, expiresAt) {
+      function setSession(email, token, expiresAt, roles) {
         loggedInEmail = String(email || "")
           .toLowerCase()
           .trim();
@@ -1344,10 +1344,23 @@
         if (token) localStorage.setItem("pdhub_session_token", token);
         if (expiresAt)
           localStorage.setItem("pdhub_session_expires_at", expiresAt);
+        if (window.syncMultiPortalSession) {
+          try {
+            window.syncMultiPortalSession({
+              token,
+              email: loggedInEmail,
+              expiresAt,
+              roles: roles || ["client"]
+            });
+          } catch (_) {}
+        }
       }
 
       function clearSession() {
         loggedInEmail = "";
+        if (window.clearMultiPortalSession) {
+          try { window.clearMultiPortalSession(); } catch (_) {}
+        }
         localStorage.removeItem("pdhub_session_email");
         localStorage.removeItem("pdhub_session_time");
         localStorage.removeItem("pdhub_session_token");
@@ -1562,6 +1575,7 @@
               res.data.email || email,
               res.data.token,
               res.data.expiresAt,
+              res.data.roles
             );
             onLoginSuccess();
           } else {
@@ -1597,7 +1611,7 @@
           });
 
           const data = res.data || {};
-          setSession(data.email || email, data.token, data.expiresAt);
+          setSession(data.email || email, data.token, data.expiresAt, data.roles);
           showLoader(false);
 
           if (!data.hasPin) {
@@ -1785,13 +1799,7 @@
 
       function logout() {
         clearSession();
-
-        document.getElementById("mainNav").style.display = "none";
-        document.getElementById("loginStepOTP").style.display = "none";
-        document.getElementById("loginStep1").style.display = "block";
-        document.getElementById("otpInput").value = "";
-        document.getElementById("emailInput").value = "";
-        showPane("viewLogin");
+        location.reload();
       }
 
       function toggleEditMode(isEdit) {

@@ -20,6 +20,7 @@ import { getTableSheetName, getTableSource } from "./data-source.js";
 import { queryPostgres } from "./postgres.js";
 
 export const VALID_ROLES = ["admin", "super_user", "report_viewer", "client", "trainee"];
+export const ROLE_PRIORITY = ["super_user", "admin", "report_viewer", "client", "trainee"];
 const SHEET_HEADERS = ["email", "role", "assigned_by", "assigned_at", "pin number", "roles"];
 
 function getRolesSheetName(env) {
@@ -148,11 +149,17 @@ export function parseRolesList(rawRoles, fallbackRole = "") {
     }
   }
 
-  if (set.size === 0 && fallbackRole) {
+  if (fallbackRole) {
     const cleanFallback = String(fallbackRole).trim().toLowerCase();
     if (VALID_ROLES.includes(cleanFallback)) set.add(cleanFallback);
   }
-  return Array.from(set);
+
+  // Sort by defined privilege priority
+  return Array.from(set).sort((a, b) => {
+    const ia = ROLE_PRIORITY.indexOf(a);
+    const ib = ROLE_PRIORITY.indexOf(b);
+    return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+  });
 }
 
 /**
@@ -173,7 +180,7 @@ export async function isSuperUser(env, email) {
 
 /**
  * Get all effective roles for an email.
- * Returns array e.g. ["trainee", "client", "report_viewer", "admin", "super_user"]
+ * Returns array e.g. ["super_user", "admin", "report_viewer", "trainee"]
  */
 export async function getUserRoles(env, email) {
   const clean = normalizeEmail(email);
@@ -195,7 +202,7 @@ export async function getUserRoles(env, email) {
   if (getTableSource(env, "USER_ROLES") === "psql") {
     try {
       const res = await queryPostgres(env, `
-        SELECT "role", "roles" 
+        SELECT *
         FROM public.pdc_user_roles 
         WHERE LOWER(TRIM("email")) = $1 
         LIMIT 1
@@ -206,7 +213,7 @@ export async function getUserRoles(env, email) {
         parsed.forEach(r => rolesSet.add(r));
       }
     } catch (_) {
-      // Table might not exist or columns not ready
+      // Table might not exist or connection issue
     }
   } else {
     try {
@@ -229,7 +236,12 @@ export async function getUserRoles(env, email) {
     rolesSet.add("admin");
   }
 
-  return Array.from(rolesSet);
+  // Return sorted by priority
+  return Array.from(rolesSet).sort((a, b) => {
+    const ia = ROLE_PRIORITY.indexOf(a);
+    const ib = ROLE_PRIORITY.indexOf(b);
+    return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+  });
 }
 
 /**
@@ -310,20 +322,22 @@ export async function setUserRoles(env, targetEmail, rolesArray, callerEmail) {
       await queryPostgres(env, `ALTER TABLE public.pdc_user_roles ADD COLUMN IF NOT EXISTS "roles" TEXT`);
     } catch (_) {}
 
-    const checkSql = `SELECT "email" FROM public.pdc_user_roles WHERE LOWER(TRIM("email")) = $1`;
+    const checkSql = `SELECT "email" FROM public.pdc_user_roles WHERE LOWER(TRIM("email")) = $1 LIMIT 1`;
     const checkRes = await queryPostgres(env, checkSql, [target]);
     const isUpdate = (checkRes.rows?.length || 0) > 0;
 
-    const sql = `
-      INSERT INTO public.pdc_user_roles ("email", "role", "roles", "assigned_by", "assigned_at")
-      VALUES ($1, $2, $3, $4, NOW())
-      ON CONFLICT ("email") DO UPDATE SET
-        "role" = EXCLUDED."role",
-        "roles" = EXCLUDED."roles",
-        "assigned_by" = EXCLUDED."assigned_by",
-        "assigned_at" = NOW()
-    `;
-    await queryPostgres(env, sql, [target, primaryRole, rolesJson, caller]);
+    if (isUpdate) {
+      await queryPostgres(env, `
+        UPDATE public.pdc_user_roles
+        SET "role" = $2, "roles" = $3, "assigned_by" = $4, "assigned_at" = NOW()
+        WHERE LOWER(TRIM("email")) = $1
+      `, [target, primaryRole, rolesJson, caller]);
+    } else {
+      await queryPostgres(env, `
+        INSERT INTO public.pdc_user_roles ("email", "role", "roles", "assigned_by", "assigned_at")
+        VALUES ($1, $2, $3, $4, NOW())
+      `, [target, primaryRole, rolesJson, caller]);
+    }
     return { action: isUpdate ? "updated" : "created", email: target, role: primaryRole, roles: cleanRoles };
   }
 
@@ -400,19 +414,22 @@ export async function getUserInfo(env, email) {
   if (getTableSource(env, "USER_ROLES") === "psql") {
     try {
       const res = await queryPostgres(env, `
-        SELECT "email", "role", "assigned_by" AS "assignedBy", "assigned_at" AS "assignedAt", "pin number" AS "pin"
+        SELECT *
         FROM public.pdc_user_roles
         WHERE LOWER(TRIM("email")) = $1
         LIMIT 1
       `, [clean]);
       const r = res.rows?.[0];
       if (!r) return null;
+      const roles = parseRolesList(r.roles, r.role);
+      const pinVal = String(r["pin number"] || r.pin || "").trim();
       return {
         email: normalizeEmail(r.email),
-        role: String(r.role || "").toLowerCase().trim(),
-        assignedBy: r.assignedBy || "",
-        assignedAt: r.assignedAt ? String(r.assignedAt) : "",
-        pin: r.pin || ""
+        role: String(r.role || roles[0] || "").toLowerCase().trim(),
+        roles,
+        assignedBy: r.assigned_by || r.assignedBy || "",
+        assignedAt: r.assigned_at ? String(r.assigned_at) : "",
+        pin: pinVal
       };
     } catch (_) {
       return null;
@@ -421,7 +438,13 @@ export async function getUserInfo(env, email) {
 
   try {
     const rows = await _readAll(env);
-    return rows.find((r) => r.email === clean) || null;
+    const found = rows.find((r) => r.email === clean);
+    if (!found) return null;
+    const roles = parseRolesList(found.roles || found.role, found.role);
+    return {
+      ...found,
+      roles
+    };
   } catch (_) {
     return null;
   }
@@ -433,18 +456,23 @@ export async function setUserPin(env, email, pin, defaultRole = "client") {
   if (!/^\d{4}$/.test(String(pin || ""))) throw new Error("PIN must be 4 digits.");
 
   if (getTableSource(env, "USER_ROLES") === "psql") {
-    const checkRes = await queryPostgres(env, `SELECT "role" FROM public.pdc_user_roles WHERE LOWER("email") = $1`, [target]);
+    const checkRes = await queryPostgres(env, `SELECT * FROM public.pdc_user_roles WHERE LOWER(TRIM("email")) = $1 LIMIT 1`, [target]);
     const existing = checkRes.rows?.[0];
     const roleToUse = existing?.role || defaultRole;
+    const rolesToUse = existing ? parseRolesList(existing.roles, roleToUse) : [roleToUse];
 
-    const sql = `
-      INSERT INTO public.pdc_user_roles ("email", "role", "assigned_by", "assigned_at", "pin number")
-      VALUES ($1, $2, 'self', NOW(), $3)
-      ON CONFLICT ("email") DO UPDATE SET
-        "pin number" = EXCLUDED."pin number",
-        "assigned_at" = NOW()
-    `;
-    await queryPostgres(env, sql, [target, roleToUse, String(pin)]);
+    if (existing) {
+      await queryPostgres(env, `
+        UPDATE public.pdc_user_roles
+        SET "pin number" = $2, "assigned_at" = NOW()
+        WHERE LOWER(TRIM("email")) = $1
+      `, [target, String(pin)]);
+    } else {
+      await queryPostgres(env, `
+        INSERT INTO public.pdc_user_roles ("email", "role", "roles", "assigned_by", "assigned_at", "pin number")
+        VALUES ($1, $2, $3, 'self', NOW(), $4)
+      `, [target, roleToUse, JSON.stringify(rolesToUse), String(pin)]);
+    }
     return { action: existing ? "updated" : "created", email: target, role: roleToUse };
   }
 

@@ -11,7 +11,10 @@ function parseJwtPayload(token) {
     let b64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
     const pad = b64.length % 4;
     if (pad) b64 += "=".repeat(4 - pad);
-    const jsonStr = atob(b64);
+    const binStr = atob(b64);
+    const bytes = new Uint8Array(binStr.length);
+    for (let i = 0; i < binStr.length; i++) bytes[i] = binStr.charCodeAt(i);
+    const jsonStr = new TextDecoder("utf-8").decode(bytes);
     return JSON.parse(jsonStr);
   } catch (err) {
     return null;
@@ -64,6 +67,9 @@ export async function onRequestGet(context) {
 
   try {
     if (provider === "google") {
+      if (!settings.google.clientSecret) {
+        throw new Error("Google OAuth Client Secret is not configured. An administrator must set the Client Secret in the Admin portal.");
+      }
       const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
         method: "POST",
         headers: { "content-type": "application/x-www-form-urlencoded" },
@@ -89,6 +95,9 @@ export async function onRequestGet(context) {
       verifiedEmail = normalizeEmail(idPayload.email);
       userName = idPayload.name || "";
     } else if (provider === "microsoft" || provider === "ms") {
+      if (!settings.microsoft.clientSecret) {
+        throw new Error("Microsoft OAuth Client Secret is not configured. An administrator must set the Client Secret in the Admin portal.");
+      }
       const tokenRes = await fetch("https://login.microsoftonline.com/common/oauth2/v2.0/token", {
         method: "POST",
         headers: { "content-type": "application/x-www-form-urlencoded" },
@@ -118,13 +127,6 @@ export async function onRequestGet(context) {
 
     // RBAC Multi-Role Resolution
     const roles = await getUserRoles(env, verifiedEmail);
-
-    // If first-time user without explicit DB record, auto-grant 'trainee'
-    if (roles.length === 0 || (roles.length === 1 && roles[0] === "trainee")) {
-      try {
-        await setUserRoles(env, verifiedEmail, ["trainee"], `oauth_${provider}`);
-      } catch (_) {}
-    }
 
     // Determine target portal and check authorization
     let targetPortal = portal;
@@ -249,7 +251,7 @@ export async function onRequestGet(context) {
     return new Response(html, {
       headers: {
         "content-type": "text/html; charset=utf-8",
-        "set-cookie": `pd_session=${cookieVal}; Path=/; Max-Age=28800; HttpOnly; SameSite=Lax; Secure`
+        "set-cookie": `pd_session=${cookieVal}; Path=/; Max-Age=28800; SameSite=Lax; Secure`
       }
     });
   } catch (err) {

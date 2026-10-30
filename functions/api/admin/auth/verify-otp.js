@@ -1,7 +1,7 @@
 import { isRealOtpEnabled, verifyStoredOtp } from "../../../_lib/otp.js";
 import { isAdminEmail, issueSessionToken, jsonResponse, normalizeEmail, readJson } from "../../../_lib/security.js";
 import { appendAppLog } from "../../../_lib/app-logs.js";
-import { getUserRole, getUserInfo } from "../../../_lib/user-roles.js";
+import { getUserRoles, getUserInfo } from "../../../_lib/user-roles.js";
 
 export async function onRequestPost(context) {
   const env = context.env || {};
@@ -14,10 +14,11 @@ export async function onRequestPost(context) {
     await appendAppLog(env, { event: "admin_login", scope: "auth", email, success: false, detail: "Missing or invalid email.", request: context.request });
     return jsonResponse({ success: false, error: "Missing or invalid email." }, 400);
   }
-  // Allow: in ADMIN_EMAILS env OR has a valid role in pdc_user_roles sheet
+  // Allow: in ADMIN_EMAILS env OR has a valid admin/report role in pdc_user_roles
   const isEnvAdmin = isAdminEmail(email, env);
-  const sheetRole = isEnvAdmin ? null : await getUserRole(env, email);
-  if (!isEnvAdmin && !sheetRole) {
+  const roles = await getUserRoles(env, email);
+  const hasAccess = isEnvAdmin || roles.includes("super_user") || roles.includes("admin") || roles.includes("report_viewer");
+  if (!hasAccess) {
     await appendAppLog(env, { event: "admin_login", scope: "auth", email, success: false, detail: "Email not authorized for admin/report access.", request: context.request });
     return jsonResponse({ success: false, error: "This email is not authorized for admin or report access." }, 403);
   }
@@ -32,10 +33,12 @@ export async function onRequestPost(context) {
     return jsonResponse({ success: false, error: verified.error || "Invalid or expired OTP." }, 401);
   }
 
-  const session = await issueSessionToken(email, env, "admin");
+  const isAdminScope = isEnvAdmin || roles.includes("super_user") || roles.includes("admin");
+  const scope = isAdminScope ? "admin" : "report_viewer";
+  const session = await issueSessionToken(email, env, scope, roles);
 
-  // Resolve role: reuse sheetRole already fetched, fallback "admin" for ADMIN_EMAILS users
-  const resolvedRole = sheetRole || "admin";
+  // Resolve primary role
+  const resolvedRole = roles.includes("super_user") ? "super_user" : (roles.includes("admin") ? "admin" : (roles.includes("report_viewer") ? "report_viewer" : roles[0]));
 
   let hasPin = false;
   if (String(env.DB_MODE || "gsheet").toLowerCase() === "mock") {
@@ -53,7 +56,7 @@ export async function onRequestPost(context) {
     success: true,
     source: "email",
     message: "Admin OTP verified. Session token issued.",
-    data: { email, scope: session.session.scope, role: resolvedRole, token: session.token, expiresAt: session.expiresAt, expiresInSeconds: session.expiresInSeconds, hasPin }
+    data: { email, scope: session.session.scope, role: resolvedRole, roles, token: session.token, expiresAt: session.expiresAt, expiresInSeconds: session.expiresInSeconds, hasPin }
   });
 }
 

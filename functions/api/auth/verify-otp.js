@@ -1,7 +1,7 @@
 import { issueSessionToken, jsonResponse, normalizeEmail, readJson } from "../../_lib/security.js";
 import { isRealOtpEnabled, verifyStoredOtp } from "../../_lib/otp.js";
 import { appendAppLog } from "../../_lib/app-logs.js";
-import { getUserInfo } from "../../_lib/user-roles.js";
+import { getUserInfo, getUserRoles } from "../../_lib/user-roles.js";
 
 export async function onRequestPost(context) {
   const env = context.env || {};
@@ -32,7 +32,8 @@ export async function onRequestPost(context) {
     }
   }
 
-  const session = await issueSessionToken(email, env, scope);
+  const roles = await getUserRoles(env, email);
+  const session = await issueSessionToken(email, env, scope, roles);
   await appendAppLog(env, { event: "otp_verify", scope: "auth", email, success: true, provider: isRealOtpEnabled(env) ? "email" : "mock", detail: `OTP verified and session issued (${scope}).`, request: context.request });
 
   let hasPin = false;
@@ -53,6 +54,7 @@ export async function onRequestPost(context) {
     data: {
       email,
       scope: session.session.scope,
+      roles,
       token: session.token,
       expiresAt: session.expiresAt,
       expiresInSeconds: session.expiresInSeconds,

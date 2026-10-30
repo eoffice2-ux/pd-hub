@@ -1,7 +1,7 @@
 import { generateOtp, getOtpTtlSeconds, isRealOtpEnabled, sendOtpEmail, storeOtp } from "../../../_lib/otp.js";
 import { isAdminEmail, jsonResponse, normalizeEmail, readJson } from "../../../_lib/security.js";
 import { appendAppLog } from "../../../_lib/app-logs.js";
-import { getUserRole } from "../../../_lib/user-roles.js";
+import { getUserRoles } from "../../../_lib/user-roles.js";
 
 export async function onRequestPost(context) {
   const env = context.env || {};
@@ -13,10 +13,11 @@ export async function onRequestPost(context) {
     await appendAppLog(env, { event: "otp_send", scope: "auth", email, success: false, detail: "Missing or invalid email.", request: context.request });
     return jsonResponse({ success: false, error: "Missing or invalid email." }, 400);
   }
-  // Allow: in ADMIN_EMAILS env OR has a valid role in pdc_user_roles sheet
+  // Allow: in ADMIN_EMAILS env OR has a valid admin/report role in pdc_user_roles
   const isEnvAdmin = isAdminEmail(email, env);
-  const sheetRole = isEnvAdmin ? null : await getUserRole(env, email);
-  if (!isEnvAdmin && !sheetRole) {
+  const roles = await getUserRoles(env, email);
+  const hasAccess = isEnvAdmin || roles.includes("super_user") || roles.includes("admin") || roles.includes("report_viewer");
+  if (!hasAccess) {
     await appendAppLog(env, { event: "otp_send", scope: "auth", email, success: false, detail: "Email not authorized for admin/report access.", request: context.request });
     return jsonResponse({ success: false, error: "This email is not authorized for admin or report access." }, 403);
   }

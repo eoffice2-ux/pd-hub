@@ -3,6 +3,7 @@ import { findTraineeRow, getPinValue, readTraineeTable } from "../../../_lib/tra
 import { isPsql } from "../../../_lib/repos/repo-utils.js";
 import { verifyTraineePinPsql } from "../../../_lib/repos/trainee-profile-repo.js";
 import { appendAppLog } from "../../../_lib/app-logs.js";
+import { getUserRoles } from "../../../_lib/user-roles.js";
 
 export async function onRequestPost(context) {
   const env = context.env || {};
@@ -22,6 +23,8 @@ export async function onRequestPost(context) {
     if (!emailCheck.ok) return emailCheck.response;
   }
 
+  const roles = await getUserRoles(env, email);
+
   const dbMode = String(env.DB_MODE || "gsheet").toLowerCase();
   if (dbMode === "mock") {
     const ok = String(body.pin || "") === String(env.MOCK_PIN || "1234");
@@ -29,9 +32,9 @@ export async function onRequestPost(context) {
       await appendAppLog(env, { event: "trainee_login", scope: "auth", email, success: false, detail: "Invalid PIN (mock)", request: context.request });
       return jsonResponse({ success: true, source: "mock", data: { ok: false } });
     }
-    const session = await issueSessionToken(email, env, "trainee");
+    const session = await issueSessionToken(email, env, "trainee", roles);
     await appendAppLog(env, { event: "trainee_login", scope: "auth", email, success: true, detail: "Trainee PIN login succeeded (mock)", request: context.request });
-    return jsonResponse({ success: true, source: "mock", data: { ok: true, token: session.token, expiresAt: session.expiresAt, expiresInSeconds: session.expiresInSeconds } });
+    return jsonResponse({ success: true, source: "mock", data: { ok: true, roles, token: session.token, expiresAt: session.expiresAt, expiresInSeconds: session.expiresInSeconds } });
   }
 
   if (isPsql(env, "TRAINEE_PROFILE")) {
@@ -41,14 +44,14 @@ export async function onRequestPost(context) {
         await appendAppLog(env, { event: "trainee_login", scope: "auth", email, success: false, detail: "Invalid PIN (psql)", request: context.request });
         return jsonResponse({ success: true, source: "psql", dbMode, row: null, data: { ok: false } });
       }
-      const session = await issueSessionToken(email, env, "trainee");
+      const session = await issueSessionToken(email, env, "trainee", roles);
       await appendAppLog(env, { event: "trainee_login", scope: "auth", email, success: true, detail: "Trainee PIN login succeeded (psql)", request: context.request });
       return jsonResponse({
         success: true,
         source: "psql",
         dbMode,
         row: null,
-        data: { ok: true, token: session.token, expiresAt: session.expiresAt, expiresInSeconds: session.expiresInSeconds }
+        data: { ok: true, roles, token: session.token, expiresAt: session.expiresAt, expiresInSeconds: session.expiresInSeconds }
       });
     } catch (err) {
       await appendAppLog(env, { event: "trainee_login", scope: "auth", email, success: false, detail: err?.message || String(err), request: context.request });
@@ -66,14 +69,14 @@ export async function onRequestPost(context) {
       return jsonResponse({ success: true, source: "gsheet", dbMode, row: found?.sheetRowNumber || null, data: { ok: false } });
     }
 
-    const session = await issueSessionToken(email, env, "trainee");
+    const session = await issueSessionToken(email, env, "trainee", roles);
     await appendAppLog(env, { event: "trainee_login", scope: "auth", email, success: true, detail: "Trainee PIN login succeeded (gsheet)", request: context.request });
     return jsonResponse({
       success: true,
       source: "gsheet",
       dbMode,
       row: found?.sheetRowNumber || null,
-      data: { ok: true, token: session.token, expiresAt: session.expiresAt, expiresInSeconds: session.expiresInSeconds }
+      data: { ok: true, roles, token: session.token, expiresAt: session.expiresAt, expiresInSeconds: session.expiresInSeconds }
     });
   } catch (err) {
     await appendAppLog(env, { event: "trainee_login", scope: "auth", email, success: false, detail: err?.message || String(err), request: context.request });

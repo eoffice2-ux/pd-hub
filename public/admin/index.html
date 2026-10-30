@@ -1270,8 +1270,14 @@
         localStorage.setItem(ADMIN_EXP_KEY, data.expiresAt || "");
         localStorage.setItem(ADMIN_EMAIL_KEY, data.email || "");
         localStorage.setItem("pdhub_admin_role", data.role || "admin");
+        if (window.syncMultiPortalSession) {
+          try { window.syncMultiPortalSession(data); } catch (_) {}
+        }
       }
       function clearAdminSession() {
+        if (window.clearMultiPortalSession) {
+          try { window.clearMultiPortalSession(); } catch (_) {}
+        }
         localStorage.removeItem(ADMIN_TOKEN_KEY);
         localStorage.removeItem(ADMIN_EXP_KEY);
         localStorage.removeItem(ADMIN_EMAIL_KEY);
@@ -2028,8 +2034,16 @@
             document.getElementById("googleClientSecret").placeholder = d.google.clientSecretMasked || "••••••••";
             const gStatus = document.getElementById("googleOauthStatus");
             if (gStatus) {
-              gStatus.className = d.google.isConfigured ? "badge bg-success" : "badge bg-warning";
-              gStatus.innerHTML = d.google.isConfigured ? '<i class="fas fa-check-circle me-1"></i>Active' : '<i class="fas fa-exclamation-circle me-1"></i>Not Set';
+              if (d.google.isConfigured) {
+                gStatus.className = "badge bg-success";
+                gStatus.innerHTML = '<i class="fas fa-check-circle me-1"></i>Active';
+              } else if (d.google.clientId && !d.google.hasSecret) {
+                gStatus.className = "badge bg-warning text-dark";
+                gStatus.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>Secret Required';
+              } else {
+                gStatus.className = "badge bg-secondary";
+                gStatus.innerHTML = '<i class="fas fa-circle-notch me-1"></i>Not Set';
+              }
             }
           }
           if (d.microsoft) {
@@ -2037,8 +2051,16 @@
             document.getElementById("msClientSecret").placeholder = d.microsoft.clientSecretMasked || "••••••••";
             const msStatus = document.getElementById("msOauthStatus");
             if (msStatus) {
-              msStatus.className = d.microsoft.isConfigured ? "badge bg-success" : "badge bg-warning";
-              msStatus.innerHTML = d.microsoft.isConfigured ? '<i class="fas fa-check-circle me-1"></i>Active' : '<i class="fas fa-exclamation-circle me-1"></i>Not Set';
+              if (d.microsoft.isConfigured) {
+                msStatus.className = "badge bg-success";
+                msStatus.innerHTML = '<i class="fas fa-check-circle me-1"></i>Active';
+              } else if (d.microsoft.clientId && !d.microsoft.hasSecret) {
+                msStatus.className = "badge bg-warning text-dark";
+                msStatus.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>Secret Required';
+              } else {
+                msStatus.className = "badge bg-secondary";
+                msStatus.innerHTML = '<i class="fas fa-circle-notch me-1"></i>Not Set';
+              }
             }
           }
         } catch (err) {

@@ -1,5 +1,5 @@
 import { jsonResponse, normalizeEmail, isAdminEmail } from "../../_lib/security.js";
-import { getUserInfo } from "../../_lib/user-roles.js";
+import { getUserInfo, getUserRoles } from "../../_lib/user-roles.js";
 
 export async function onRequestGet(context) {
   const env = context.env || {};
@@ -40,7 +40,7 @@ export async function onRequestGet(context) {
   try {
     const userInfo = await getUserInfo(env, email);
     const isEnvAdmin = isAdminEmail(email, env);
-    const sheetRole = userInfo ? userInfo.role : null;
+    const roles = await getUserRoles(env, email);
     const hasPin = userInfo && userInfo.pin ? true : false;
 
     let authorized = false;
@@ -48,9 +48,9 @@ export async function onRequestGet(context) {
     if (portal === "client") {
       authorized = true;
     } else if (portal === "admin") {
-      authorized = isEnvAdmin || sheetRole === "admin";
+      authorized = isEnvAdmin || roles.includes("super_user") || roles.includes("admin");
     } else if (portal === "report") {
-      authorized = isEnvAdmin || sheetRole === "admin" || sheetRole === "report_viewer";
+      authorized = isEnvAdmin || roles.includes("super_user") || roles.includes("admin") || roles.includes("report_viewer");
     } else {
       return jsonResponse({ success: false, error: "Invalid portal parameter." }, 400);
     }

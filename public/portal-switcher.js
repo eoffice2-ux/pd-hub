@@ -66,8 +66,13 @@
             min-width: 195px;
             padding: 6px;
             margin: 0;
-            list-style: none;
+            list-style: none !important;
             z-index: 10060;
+          }
+          #portalSwitcherMenu, #portalSwitcherMenu li {
+            list-style: none !important;
+            margin: 0;
+            padding: 0;
           }
           #portalSwitcherMenu.show {
             display: block;
@@ -172,6 +177,71 @@
       console.warn("Portal switcher init note:", e);
     }
   }
+
+  // Global helper to wipe sessions across all portals cleanly on logout
+  window.clearMultiPortalSession = function() {
+    try {
+      const keysToClear = [
+        "pdhub_admin_token", "pdhub_admin_exp", "pdhub_admin_email", "pdhub_admin_role",
+        "pdhub_report_token", "pdhub_report_exp", "pdhub_report_email", "pdhub_report_role",
+        "pdc_trainee_token", "pdc_email",
+        "pdhub_session_token", "pdhub_session_email", "pdhub_session_time", "pdhub_session_expires_at",
+        "adminSessionToken", "sessionToken", "userRoles", "userEmail", "traineeEmail", "clientEmail", "adminEmail"
+      ];
+      keysToClear.forEach(k => {
+        try { localStorage.removeItem(k); } catch (_) {}
+        try { sessionStorage.removeItem(k); } catch (_) {}
+      });
+
+      // Clear cookies
+      document.cookie = "pd_session=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      document.cookie = "pd_user=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    } catch (err) {
+      console.warn("clearMultiPortalSession note:", err);
+    }
+  };
+
+  // Global helper to sync multi-role session after PIN/OTP login
+  window.syncMultiPortalSession = function(data) {
+    if (!data || !data.token) return;
+    try {
+      const email = data.email || "";
+      const token = data.token;
+      const expiresAt = data.expiresAt || new Date(Date.now() + 8 * 3600 * 1000).toISOString();
+      const roles = Array.isArray(data.roles) ? data.roles : [data.role || data.scope || "trainee"];
+
+      localStorage.setItem("sessionToken", token);
+      localStorage.setItem("userEmail", email);
+      localStorage.setItem("userRoles", JSON.stringify(roles));
+
+      if (roles.includes("admin") || roles.includes("super_user")) {
+        localStorage.setItem("adminSessionToken", token);
+        localStorage.setItem("adminEmail", email);
+        localStorage.setItem("pdhub_admin_token", token);
+        localStorage.setItem("pdhub_admin_exp", expiresAt);
+        localStorage.setItem("pdhub_admin_email", email);
+        localStorage.setItem("pdhub_admin_role", roles.includes("super_user") ? "super_user" : "admin");
+      }
+      if (roles.includes("report_viewer") || roles.includes("admin") || roles.includes("super_user")) {
+        localStorage.setItem("pdhub_report_token", token);
+        localStorage.setItem("pdhub_report_exp", expiresAt);
+        localStorage.setItem("pdhub_report_email", email);
+        localStorage.setItem("pdhub_report_role", roles.includes("super_user") ? "super_user" : roles.includes("admin") ? "admin" : "report_viewer");
+      }
+      if (roles.includes("trainee")) {
+        localStorage.setItem("pdc_trainee_token", token);
+        localStorage.setItem("pdc_email", email);
+      }
+      if (roles.includes("client")) {
+        localStorage.setItem("pdhub_session_token", token);
+        localStorage.setItem("pdhub_session_email", email);
+        localStorage.setItem("pdhub_session_time", Date.now().toString());
+        localStorage.setItem("pdhub_session_expires_at", expiresAt);
+      }
+    } catch (e) {
+      console.warn("syncMultiPortalSession note:", e);
+    }
+  };
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", initPortalSwitcher);
