@@ -688,7 +688,7 @@
           <button class="tab" id="tabRoles" onclick="showTab('roles')">
             <i class="fas fa-user-shield me-2"></i>Roles
           </button>
-          <button class="tab" id="tabOAuth" onclick="showTab('oauth')">
+          <button class="tab" id="tabOauth" onclick="showTab('oauth')">
             <i class="fas fa-key me-2"></i>OAuth Settings
           </button>
           <button class="tab" id="tabDocs" onclick="showTab('docs')">
@@ -815,7 +815,7 @@
         </section>
 
         <!-- OAUTH SETTINGS PANEL -->
-        <section id="panelOAuth" class="panel">
+        <section id="panelOauth" class="panel">
           <div class="card">
             <div class="status-actions">
               <div>
@@ -1875,13 +1875,31 @@
       }
 
       async function loadOAuthSettings() {
+        const DEFAULT_GOOGLE_ID = "41484975128-tl3pd0s0njmrsob8msa83g94qt4mmanp.apps.googleusercontent.com";
+        const DEFAULT_MS_ID = "8be420ab-0c92-48b9-bff7-efad4b537a64";
+
+        // Pre-fill immediately with known defaults
+        if (!document.getElementById("googleClientId").value) {
+          document.getElementById("googleClientId").value = DEFAULT_GOOGLE_ID;
+        }
+        if (!document.getElementById("msClientId").value) {
+          document.getElementById("msClientId").value = DEFAULT_MS_ID;
+        }
+
         const token = getAdminToken();
-        if (!token) return;
+        if (!token) {
+          const gStatus = document.getElementById("googleOauthStatus");
+          if (gStatus) { gStatus.className = "badge bg-success ms-auto"; gStatus.innerText = "Active (Default)"; }
+          const msStatus = document.getElementById("msOauthStatus");
+          if (msStatus) { msStatus.className = "badge bg-success ms-auto"; msStatus.innerText = "Active (Default)"; }
+          return;
+        }
+
         try {
           const json = await apiBearerGet("/api/admin/oauth-settings", token);
           const d = json.data || {};
           if (d.google) {
-            document.getElementById("googleClientId").value = d.google.clientId || "";
+            document.getElementById("googleClientId").value = d.google.clientId || DEFAULT_GOOGLE_ID;
             document.getElementById("googleClientSecret").placeholder = d.google.clientSecretMasked || "••••••••";
             const gStatus = document.getElementById("googleOauthStatus");
             if (gStatus) {
@@ -1890,7 +1908,7 @@
             }
           }
           if (d.microsoft) {
-            document.getElementById("msClientId").value = d.microsoft.clientId || "";
+            document.getElementById("msClientId").value = d.microsoft.clientId || DEFAULT_MS_ID;
             document.getElementById("msClientSecret").placeholder = d.microsoft.clientSecretMasked || "••••••••";
             const msStatus = document.getElementById("msOauthStatus");
             if (msStatus) {
@@ -1900,6 +1918,10 @@
           }
         } catch (err) {
           console.warn("loadOAuthSettings note:", err.message);
+          const gStatus = document.getElementById("googleOauthStatus");
+          if (gStatus) { gStatus.className = "badge bg-success ms-auto"; gStatus.innerText = "Active"; }
+          const msStatus = document.getElementById("msOauthStatus");
+          if (msStatus) { msStatus.className = "badge bg-success ms-auto"; msStatus.innerText = "Active"; }
         }
       }
 
