@@ -1362,6 +1362,15 @@
       let autoOpenSectionId = urlParams.get("sectionId") || "";
       let targetView = urlParams.get("view") || "";
 
+      if (urlParams.get("oauth_error")) {
+        setTimeout(() => {
+          showAlert("Lỗi đăng nhập: " + urlParams.get("oauth_error"), "OAuth Error");
+          try {
+            window.history.replaceState({}, document.title, window.location.pathname);
+          } catch (_) {}
+        }, 300);
+      }
+
       /* =========================================================================
      2. CLOUDFLARE API BRIDGE
      Keeps the existing UI flow, but all calls now go to /api/trainee/*.

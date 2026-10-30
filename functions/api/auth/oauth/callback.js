@@ -31,21 +31,7 @@ export async function onRequestGet(context) {
   const error = url.searchParams.get("error");
   const errorDescription = url.searchParams.get("error_description");
 
-  if (error) {
-    return new Response(`<h3>Authentication Failed</h3><p>${error}: ${errorDescription || ""}</p><p><a href="/">Return to Home</a></p>`, {
-      status: 400,
-      headers: { "content-type": "text/html; charset=utf-8" }
-    });
-  }
-
-  if (!code) {
-    return new Response(`<h3>Authentication Error</h3><p>Missing authorization code from OAuth provider.</p><p><a href="/">Return to Home</a></p>`, {
-      status: 400,
-      headers: { "content-type": "text/html; charset=utf-8" }
-    });
-  }
-
-  // Decode state
+  // Decode state early
   let state = {};
   try {
     let b64 = stateStr.replace(/-/g, "+").replace(/_/g, "/");
@@ -59,6 +45,17 @@ export async function onRequestGet(context) {
   const provider = String(state.provider || "google").toLowerCase();
   const portal = String(state.portal || "trainee").toLowerCase();
   const origin = state.origin || `${url.protocol}//${url.host}`;
+  const portalPath = portal === "admin" ? "/admin" : (portal === "report" ? "/report.html" : (portal === "client" ? "/client" : "/trainee"));
+
+  if (error) {
+    const errorMsg = errorDescription ? `${error}: ${errorDescription}` : error;
+    return Response.redirect(`${origin}${portalPath}?oauth_error=${encodeURIComponent(errorMsg)}`, 302);
+  }
+
+  if (!code) {
+    return Response.redirect(`${origin}${portalPath}?oauth_error=${encodeURIComponent("Missing authorization code from OAuth provider.")}`, 302);
+  }
+
   const redirectUri = resolveOAuthRedirectUri(request, env);
   const settings = await getOAuthSettings(env);
 
@@ -136,9 +133,8 @@ export async function onRequestGet(context) {
       accessDenied = true;
     } else if (targetPortal === "admin" && !roles.includes("admin") && !roles.includes("super_user")) {
       accessDenied = true;
-    } else if (targetPortal === "client" && !roles.includes("client")) {
-      // Allow client portal self-onboarding or default to trainee
-      targetPortal = "client";
+    } else if (targetPortal === "client" && !roles.includes("client") && !roles.includes("admin") && !roles.includes("super_user")) {
+      accessDenied = true;
     }
 
     // Issue session token containing full multi-role bundle
@@ -164,6 +160,8 @@ export async function onRequestGet(context) {
         destPath = `/admin?access_denied=1&email=${encodeURIComponent(verifiedEmail)}`;
       } else if (portal === "report") {
         destPath = `/report.html?access_denied=1&email=${encodeURIComponent(verifiedEmail)}`;
+      } else if (portal === "client") {
+        destPath = `/client?access_denied=1&email=${encodeURIComponent(verifiedEmail)}`;
       }
     } else {
       if (targetPortal === "client") destPath = "/client";
@@ -206,6 +204,15 @@ export async function onRequestGet(context) {
         localStorage.setItem("pdhub_admin_exp", expiresAt);
         localStorage.setItem("pdhub_admin_email", email);
         localStorage.setItem("pdhub_admin_role", roles.includes("super_user") ? "super_user" : "admin");
+        localStorage.setItem("adminSessionToken", token);
+        localStorage.setItem("adminEmail", email);
+      } else {
+        localStorage.removeItem("pdhub_admin_token");
+        localStorage.removeItem("pdhub_admin_exp");
+        localStorage.removeItem("pdhub_admin_email");
+        localStorage.removeItem("pdhub_admin_role");
+        localStorage.removeItem("adminSessionToken");
+        localStorage.removeItem("adminEmail");
       }
 
       // 2. Report Portal Keys (if authorized)
@@ -214,6 +221,11 @@ export async function onRequestGet(context) {
         localStorage.setItem("pdhub_report_exp", expiresAt);
         localStorage.setItem("pdhub_report_email", email);
         localStorage.setItem("pdhub_report_role", roles.includes("super_user") ? "super_user" : roles.includes("admin") ? "admin" : "report_viewer");
+      } else {
+        localStorage.removeItem("pdhub_report_token");
+        localStorage.removeItem("pdhub_report_exp");
+        localStorage.removeItem("pdhub_report_email");
+        localStorage.removeItem("pdhub_report_role");
       }
 
       // 3. Trainee Portal Keys (Available for all signed in users)
@@ -221,19 +233,23 @@ export async function onRequestGet(context) {
       localStorage.setItem("pdc_email", email);
 
       // 4. Corporate Client Portal Keys (if authorized)
-      if (roles.includes("client")) {
+      if (roles.includes("client") || roles.includes("admin") || roles.includes("super_user")) {
         localStorage.setItem("pdhub_session_token", token);
         localStorage.setItem("pdhub_session_email", email);
         localStorage.setItem("pdhub_session_time", Date.now().toString());
         localStorage.setItem("pdhub_session_expires_at", expiresAt);
+        localStorage.setItem("clientEmail", email);
+      } else {
+        localStorage.removeItem("pdhub_session_token");
+        localStorage.removeItem("pdhub_session_email");
+        localStorage.removeItem("pdhub_session_time");
+        localStorage.removeItem("pdhub_session_expires_at");
+        localStorage.removeItem("clientEmail");
       }
 
-      // 5. Unified & Legacy Keys
+      // 5. Unified Keys
       localStorage.setItem("userEmail", email);
       localStorage.setItem("traineeEmail", email);
-      localStorage.setItem("clientEmail", email);
-      localStorage.setItem("adminEmail", email);
-      localStorage.setItem("adminSessionToken", token);
       localStorage.setItem("sessionToken", token);
       localStorage.setItem("userRoles", JSON.stringify(roles));
 
@@ -265,9 +281,6 @@ export async function onRequestGet(context) {
       request
     });
 
-    return new Response(`<h3>Authentication Failed</h3><p style="color:#dc2626;">${err.message || String(err)}</p><p><a href="/">Return to Home</a></p>`, {
-      status: 400,
-      headers: { "content-type": "text/html; charset=utf-8" }
-    });
+    return Response.redirect(`${origin}${portalPath}?oauth_error=${encodeURIComponent(err.message || String(err))}`, 302);
   }
 }

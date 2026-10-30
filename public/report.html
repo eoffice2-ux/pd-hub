@@ -1356,9 +1356,17 @@
         if (urlParams.get("access_denied") === "1" || urlParams.get("error") === "unauthorized") {
           const deniedEmail = urlParams.get("email") || "";
           showLoginMsg(
-            `Access Denied: Tài khoản ${deniedEmail ? deniedEmail + " " : ""}chưa được cấp quyền xem Báo cáo (Report Viewer). Vui lòng liên hệ Admin.`,
+            `Access Denied: Tài khoản ${deniedEmail ? "(" + deniedEmail + ") " : ""}chưa được cấp quyền xem Báo cáo (Report Viewer). Vui lòng liên hệ Admin.`,
             "bad"
           );
+          try {
+            window.history.replaceState({}, document.title, window.location.pathname);
+          } catch (_) {}
+          showPane("loginCard");
+          return;
+        }
+        if (urlParams.get("oauth_error")) {
+          showLoginMsg("Lỗi đăng nhập: " + urlParams.get("oauth_error"), "bad");
           try {
             window.history.replaceState({}, document.title, window.location.pathname);
           } catch (_) {}

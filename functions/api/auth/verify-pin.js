@@ -63,7 +63,7 @@ export async function onRequestPost(context) {
     const eventType = portal === "client" ? "client_login" : "admin_login";
 
     if (portal === "client") {
-      authorized = true;
+      authorized = isEnvAdmin || roles.includes("super_user") || roles.includes("admin") || roles.includes("client");
       scope = "client";
       resolvedRole = roles.includes("client") ? "client" : roles[0];
     } else if (portal === "admin") {

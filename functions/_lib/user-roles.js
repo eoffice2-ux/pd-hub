@@ -231,6 +231,22 @@ export async function getUserRoles(env, email) {
     rolesSet.add("trainee");
   }
 
+  // If user does not yet have "client", check if registered in client profile
+  if (!rolesSet.has("client") && clean) {
+    try {
+      if (getTableSource(env, "CLIENT_PROFILE") === "psql") {
+        const clientRes = await queryPostgres(env, `
+          SELECT "client id" FROM public.pdc_client_contract_info
+          WHERE LOWER(TRIM("client updater email")) = $1
+          LIMIT 1
+        `, [clean]);
+        if (clientRes.rows && clientRes.rows.length > 0) {
+          rolesSet.add("client");
+        }
+      }
+    } catch (_) {}
+  }
+
   // If user has super_user, ensure admin is also active
   if (rolesSet.has("super_user")) {
     rolesSet.add("admin");

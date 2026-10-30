@@ -46,7 +46,7 @@ export async function onRequestGet(context) {
     let authorized = false;
 
     if (portal === "client") {
-      authorized = true;
+      authorized = isEnvAdmin || roles.includes("super_user") || roles.includes("admin") || roles.includes("client");
     } else if (portal === "admin") {
       authorized = isEnvAdmin || roles.includes("super_user") || roles.includes("admin");
     } else if (portal === "report") {
@@ -56,7 +56,11 @@ export async function onRequestGet(context) {
     }
 
     if (!authorized) {
-      return jsonResponse({ success: false, error: `This email is not authorized for ${portal} access.` }, 403);
+      const portalLabel = portal === "client" ? "Cổng Doanh nghiệp (Client Portal)" : portal;
+      return jsonResponse({
+        success: false,
+        error: `Tài khoản email này chưa được cấp quyền truy cập ${portalLabel}. Vui lòng liên hệ PD Team để được hỗ trợ. / This email is not authorized for ${portal} access.`
+      }, 403);
     }
 
     return jsonResponse({

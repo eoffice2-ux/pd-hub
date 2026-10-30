@@ -1306,9 +1306,17 @@
         if (urlParams.get("access_denied") === "1" || urlParams.get("error") === "unauthorized") {
           const deniedEmail = urlParams.get("email") || "";
           showLogin(
-            `Access Denied: Tài khoản ${deniedEmail ? "<b>" + escapeHtml(deniedEmail) + "</b> " : ""}chưa được cấp quyền Quản trị viên (Admin). Vui lòng liên hệ Super User để được phân quyền.`,
+            `Access Denied: Tài khoản ${deniedEmail ? "(" + deniedEmail + ") " : ""}chưa được cấp quyền Quản trị viên (Admin). Vui lòng liên hệ Super User để được phân quyền.`,
             "bad"
           );
+          try {
+            window.history.replaceState({}, document.title, window.location.pathname);
+          } catch (_) {}
+          return;
+        }
+
+        if (urlParams.get("oauth_error")) {
+          showLogin("Lỗi đăng nhập: " + urlParams.get("oauth_error"), "bad");
           try {
             window.history.replaceState({}, document.title, window.location.pathname);
           } catch (_) {}

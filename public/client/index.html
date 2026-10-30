@@ -595,6 +595,8 @@
                   <small class="text-muted italic">Secure Login</small>
                 </div>
 
+                <div id="clientLoginError" class="alert alert-danger d-none mb-3" style="font-size: 13px; border-radius: 10px; line-height: 1.5;"></div>
+
                 <div id="loginStep1">
                   <label class="form-label small fw-bold text-muted"
                     >Email doanh nghiệp / Corporate Email</label
@@ -1505,6 +1507,11 @@
           showLoader(false);
           btn.disabled = false;
           btn.innerText = originalText;
+          const errBanner = document.getElementById("clientLoginError");
+          if (errBanner) {
+            errBanner.innerText = err.message || "Access Denied";
+            errBanner.classList.remove("d-none");
+          }
           showAlert(err.message, "Access Denied");
         }
       }
@@ -2164,6 +2171,43 @@
 
       // Kiểm tra session mỗi khi load lại trang
       window.onload = function () {
+        const urlParams = new URLSearchParams(window.location.search);
+        const errBanner = document.getElementById("clientLoginError");
+
+        if (urlParams.get("access_denied") === "1" || urlParams.get("error") === "unauthorized") {
+          const deniedEmail = urlParams.get("email") || "";
+          const msg = `Tài khoản ${deniedEmail ? "<b>" + escapeHTML(deniedEmail) + "</b> " : ""}chưa được cấp quyền truy cập Cổng Doanh nghiệp (Client Portal) hoặc chưa có Hồ sơ Doanh nghiệp trên hệ thống. Vui lòng liên hệ PD Team để được hỗ trợ. / This account is not authorized for Client Portal access.`;
+          if (errBanner) {
+            errBanner.innerHTML = '<i class="fas fa-exclamation-circle me-2"></i>' + msg;
+            errBanner.classList.remove("d-none");
+          }
+          showAlert(
+            `Tài khoản ${deniedEmail ? "(" + deniedEmail + ") " : ""}chưa được cấp quyền truy cập Cổng Doanh nghiệp (Client Portal) hoặc chưa có Hồ sơ Doanh nghiệp trên hệ thống. Vui lòng liên hệ PD Team để được hỗ trợ.\n\nThis account is not authorized for Client Portal access. Please contact the PD Team.`,
+            "Access Denied"
+          );
+          try {
+            window.history.replaceState({}, document.title, window.location.pathname);
+          } catch (_) {}
+          clearSession();
+          showPane("viewLogin");
+          return;
+        }
+
+        if (urlParams.get("oauth_error")) {
+          const oErr = urlParams.get("oauth_error");
+          if (errBanner) {
+            errBanner.innerText = "Lỗi đăng nhập: " + oErr;
+            errBanner.classList.remove("d-none");
+          }
+          showAlert("Lỗi đăng nhập: " + oErr, "OAuth Error");
+          try {
+            window.history.replaceState({}, document.title, window.location.pathname);
+          } catch (_) {}
+          clearSession();
+          showPane("viewLogin");
+          return;
+        }
+
         let savedEmail = localStorage.getItem("pdhub_session_email");
         let savedTime = localStorage.getItem("pdhub_session_time");
         let savedToken = localStorage.getItem("pdhub_session_token");
