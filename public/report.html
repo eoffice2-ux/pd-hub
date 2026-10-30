@@ -1274,10 +1274,30 @@
       let detailModal = null;
 
       function getReportToken() {
-        const token = localStorage.getItem(REPORT_TOKEN_KEY) || sessionStorage.getItem(REPORT_TOKEN_KEY) || "";
-        const expStr = localStorage.getItem(REPORT_EXP_KEY) || sessionStorage.getItem(REPORT_EXP_KEY) || "";
-        const exp = Date.parse(expStr);
+        let token = localStorage.getItem(REPORT_TOKEN_KEY) || sessionStorage.getItem(REPORT_TOKEN_KEY) || "";
+        let expStr = localStorage.getItem(REPORT_EXP_KEY) || sessionStorage.getItem(REPORT_EXP_KEY) || "";
+        let exp = Date.parse(expStr);
+
+        // Self-healing fallback: if legacy key missing/expired but OAuth session token exists
         if (!token || !exp || exp <= Date.now()) {
+          const fallbackToken = localStorage.getItem("sessionToken") || localStorage.getItem("adminSessionToken") || "";
+          const userRolesJson = localStorage.getItem("userRoles") || "[]";
+          let roles = [];
+          try { roles = JSON.parse(userRolesJson); } catch (_) {}
+
+          if (fallbackToken && (roles.includes("report_viewer") || roles.includes("admin") || roles.includes("super_user"))) {
+            token = fallbackToken;
+            const email = localStorage.getItem("userEmail") || localStorage.getItem("adminEmail") || "";
+            const expIso = new Date(Date.now() + 8 * 3600 * 1000).toISOString();
+            setReportSession({
+              token,
+              expiresAt: expIso,
+              email,
+              role: roles.includes("super_user") ? "super_user" : roles.includes("admin") ? "admin" : "report_viewer"
+            });
+            return token;
+          }
+
           clearReportSession();
           return "";
         }
@@ -1322,9 +1342,22 @@
       }
 
       async function checkAutoLogin() {
-        if (new URLSearchParams(window.location.search).get("debug") === "1") {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get("debug") === "1") {
           const dbg = document.getElementById("debugTokenContainer");
           if (dbg) dbg.classList.remove("hidden");
+        }
+        if (urlParams.get("access_denied") === "1" || urlParams.get("error") === "unauthorized") {
+          const deniedEmail = urlParams.get("email") || "";
+          showLoginMsg(
+            `Access Denied: Tài khoản ${deniedEmail ? deniedEmail + " " : ""}chưa được cấp quyền xem Báo cáo (Report Viewer). Vui lòng liên hệ Admin.`,
+            "bad"
+          );
+          try {
+            window.history.replaceState({}, document.title, window.location.pathname);
+          } catch (_) {}
+          showPane("loginCard");
+          return;
         }
         const token = getReportToken();
         if (token) {

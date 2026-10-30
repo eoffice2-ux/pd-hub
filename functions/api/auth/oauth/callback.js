@@ -128,34 +128,46 @@ export async function onRequestGet(context) {
 
     // Determine target portal and check authorization
     let targetPortal = portal;
+    let accessDenied = false;
+
     if (targetPortal === "report" && !roles.includes("report_viewer") && !roles.includes("admin") && !roles.includes("super_user")) {
-      targetPortal = "trainee"; // Redirect unauthorized report attempt to trainee
+      accessDenied = true;
     } else if (targetPortal === "admin" && !roles.includes("admin") && !roles.includes("super_user")) {
-      targetPortal = "trainee"; // Redirect unauthorized admin attempt to trainee
+      accessDenied = true;
     } else if (targetPortal === "client" && !roles.includes("client")) {
       // Allow client portal self-onboarding or default to trainee
       targetPortal = "client";
     }
 
     // Issue session token containing full multi-role bundle
-    const sessionRes = await issueSessionToken(verifiedEmail, env, targetPortal, roles);
+    const effectiveScope = accessDenied ? "trainee" : targetPortal;
+    const sessionRes = await issueSessionToken(verifiedEmail, env, effectiveScope, roles);
+    const expiresAt = sessionRes.expiresAt;
 
     // Log login event
     await appendAppLog(env, {
       event: `oauth_login_${provider}`,
-      scope: targetPortal,
+      scope: effectiveScope,
       email: verifiedEmail,
       success: true,
       provider,
-      detail: JSON.stringify({ roles, targetPortal, origin }),
+      detail: JSON.stringify({ roles, targetPortal, accessDenied, origin }),
       request
     });
 
     // Map portal destination URL
     let destPath = "/trainee";
-    if (targetPortal === "client") destPath = "/client";
-    else if (targetPortal === "report") destPath = "/report.html";
-    else if (targetPortal === "admin") destPath = "/admin";
+    if (accessDenied) {
+      if (portal === "admin") {
+        destPath = `/admin?access_denied=1&email=${encodeURIComponent(verifiedEmail)}`;
+      } else if (portal === "report") {
+        destPath = `/report.html?access_denied=1&email=${encodeURIComponent(verifiedEmail)}`;
+      }
+    } else {
+      if (targetPortal === "client") destPath = "/client";
+      else if (targetPortal === "report") destPath = "/report.html";
+      else if (targetPortal === "admin") destPath = "/admin";
+    }
 
     // Build landing HTML that sets localStorage and pd_session cookie, then redirects
     const finalRedirectUrl = `${origin}${destPath}`;
@@ -183,9 +195,38 @@ export async function onRequestGet(context) {
     try {
       const email = ${JSON.stringify(verifiedEmail)};
       const token = ${JSON.stringify(sessionRes.token)};
+      const expiresAt = ${JSON.stringify(expiresAt)};
       const roles = ${JSON.stringify(roles)};
 
-      // Store in localStorage for all portal scripts
+      // 1. Admin Portal Keys (if authorized)
+      if (roles.includes("admin") || roles.includes("super_user")) {
+        localStorage.setItem("pdhub_admin_token", token);
+        localStorage.setItem("pdhub_admin_exp", expiresAt);
+        localStorage.setItem("pdhub_admin_email", email);
+        localStorage.setItem("pdhub_admin_role", roles.includes("super_user") ? "super_user" : "admin");
+      }
+
+      // 2. Report Portal Keys (if authorized)
+      if (roles.includes("report_viewer") || roles.includes("admin") || roles.includes("super_user")) {
+        localStorage.setItem("pdhub_report_token", token);
+        localStorage.setItem("pdhub_report_exp", expiresAt);
+        localStorage.setItem("pdhub_report_email", email);
+        localStorage.setItem("pdhub_report_role", roles.includes("super_user") ? "super_user" : roles.includes("admin") ? "admin" : "report_viewer");
+      }
+
+      // 3. Trainee Portal Keys (Available for all signed in users)
+      localStorage.setItem("pdc_trainee_token", token);
+      localStorage.setItem("pdc_email", email);
+
+      // 4. Corporate Client Portal Keys (if authorized)
+      if (roles.includes("client")) {
+        localStorage.setItem("pdhub_session_token", token);
+        localStorage.setItem("pdhub_session_email", email);
+        localStorage.setItem("pdhub_session_time", Date.now().toString());
+        localStorage.setItem("pdhub_session_expires_at", expiresAt);
+      }
+
+      // 5. Unified & Legacy Keys
       localStorage.setItem("userEmail", email);
       localStorage.setItem("traineeEmail", email);
       localStorage.setItem("clientEmail", email);

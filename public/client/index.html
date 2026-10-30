@@ -2156,10 +2156,28 @@
 
       // Kiểm tra session mỗi khi load lại trang
       window.onload = function () {
-        const savedEmail = localStorage.getItem("pdhub_session_email");
-        const savedTime = localStorage.getItem("pdhub_session_time");
-        const savedToken = localStorage.getItem("pdhub_session_token");
-        const savedExpiresAt = localStorage.getItem("pdhub_session_expires_at");
+        let savedEmail = localStorage.getItem("pdhub_session_email");
+        let savedTime = localStorage.getItem("pdhub_session_time");
+        let savedToken = localStorage.getItem("pdhub_session_token");
+        let savedExpiresAt = localStorage.getItem("pdhub_session_expires_at");
+
+        // Self-healing fallback for OAuth login
+        if (!savedToken) {
+          const fallbackToken = localStorage.getItem("sessionToken");
+          const userRolesJson = localStorage.getItem("userRoles") || "[]";
+          let roles = [];
+          try { roles = JSON.parse(userRolesJson); } catch (_) {}
+          if (fallbackToken && roles.includes("client")) {
+            savedToken = fallbackToken;
+            savedEmail = localStorage.getItem("clientEmail") || localStorage.getItem("userEmail") || "";
+            savedTime = Date.now().toString();
+            savedExpiresAt = new Date(Date.now() + 8 * 3600 * 1000).toISOString();
+            localStorage.setItem("pdhub_session_token", savedToken);
+            localStorage.setItem("pdhub_session_email", savedEmail);
+            localStorage.setItem("pdhub_session_time", savedTime);
+            localStorage.setItem("pdhub_session_expires_at", savedExpiresAt);
+          }
+        }
 
         if (savedEmail && savedTime && savedToken) {
           const now = new Date().getTime();

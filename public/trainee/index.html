@@ -1370,7 +1370,18 @@
       const PDC_TOKEN_KEY = "pdc_trainee_token";
 
       function getSessionToken() {
-        return localStorage.getItem(PDC_TOKEN_KEY) || "";
+        let token = localStorage.getItem(PDC_TOKEN_KEY) || "";
+        if (!token) {
+          token = localStorage.getItem("sessionToken") || "";
+          if (token) {
+            localStorage.setItem(PDC_TOKEN_KEY, token);
+            if (!localStorage.getItem("pdc_email")) {
+              const email = localStorage.getItem("userEmail") || localStorage.getItem("traineeEmail") || "";
+              if (email) localStorage.setItem("pdc_email", email);
+            }
+          }
+        }
+        return token;
       }
 
       function setSessionToken(token) {
@@ -1689,6 +1700,13 @@
       const INTERNAL_DOMAIN = "@eiu.edu.vn";
       const INTERNAL_ORG = "Eastern International University";
       let userEmail = localStorage.getItem("pdc_email");
+      if (!userEmail) {
+        const fallbackEmail = localStorage.getItem("userEmail") || localStorage.getItem("traineeEmail");
+        if (fallbackEmail && getSessionToken()) {
+          userEmail = fallbackEmail;
+          localStorage.setItem("pdc_email", userEmail);
+        }
+      }
       if (userEmail && !getSessionToken()) {
         userEmail = null;
         localStorage.removeItem("pdc_email");

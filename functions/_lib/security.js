@@ -190,10 +190,15 @@ export async function requireAdminOrDebug(request, env = {}) {
 
   const adminAuth = await requireAdminSession(request, env);
   if (adminAuth.ok) {
-    if (!isAdminEmail(adminAuth.session.email, env)) {
+    const sessionRoles = Array.isArray(adminAuth.session.roles) ? adminAuth.session.roles : [adminAuth.session.scope];
+    const hasAdminRole = sessionRoles.includes("super_user") ||
+                         sessionRoles.includes("admin") ||
+                         isAdminEmail(adminAuth.session.email, env);
+
+    if (!hasAdminRole) {
       return {
         ok: false,
-        response: jsonResponse({ success: false, error: "Forbidden. Admin email is not allowed." }, 403)
+        response: jsonResponse({ success: false, error: "Forbidden. Admin role required." }, 403)
       };
     }
     return { ok: true, method: "admin-session", session: adminAuth.session };

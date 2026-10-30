@@ -13,9 +13,17 @@ export async function onRequestPost(context) {
   } else {
     const sessionAuth = await requireAdminSession(request, env);
     if (!sessionAuth.ok) return sessionAuth.response;
+    const sessionRoles = Array.isArray(sessionAuth.session.roles) ? sessionAuth.session.roles : [sessionAuth.session.scope];
     const role = await getUserRole(env, sessionAuth.session.email);
     const isEnvAdmin = isAdminEmail(sessionAuth.session.email, env);
-    if (!isEnvAdmin && role !== "admin" && role !== "report_viewer") {
+    const hasReportAccess = isEnvAdmin ||
+                            sessionRoles.includes("super_user") ||
+                            sessionRoles.includes("admin") ||
+                            sessionRoles.includes("report_viewer") ||
+                            role === "admin" ||
+                            role === "super_user" ||
+                            role === "report_viewer";
+    if (!hasReportAccess) {
       return jsonResponse({ success: false, error: "Forbidden. Requires admin or report_viewer role." }, 403);
     }
     viewerEmail = sessionAuth.session.email;
