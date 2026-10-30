@@ -238,7 +238,6 @@ export async function batchReassignTraineesOrganization(env, {
     targetCompanyName: finalTargetName
   };
 }
-}
 
 export async function updatePendingOrg(env, { pd_id, name, name_en, status }) {
   const tableName = quoteIdentifierPath(
