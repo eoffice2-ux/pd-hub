@@ -67,9 +67,20 @@ export async function onRequestPost(context) {
     return jsonResponse({ success: false, error: `Invalid roles. Allowed roles: ${VALID_ROLES.join(", ")}` }, 400);
   }
 
+  const companyId = parsed.data.companyId || parsed.data.company_id || "";
+  const companyName = parsed.data.companyName || parsed.data.company_name || "";
+  const clientScope = parsed.data.clientScope || parsed.data.client_scope || null;
+
   try {
-    const result = await setUserRoles(env, targetEmail, validSet, auth.email);
-    await appendAppLog(env, { event: "admin_role_assign", scope: "admin", email: auth.email, success: true, detail: JSON.stringify({ targetEmail, roles: validSet }), request: context.request });
+    const result = await setUserRoles(env, targetEmail, validSet, auth.email, { companyId, companyName, clientScope });
+    await appendAppLog(env, {
+      event: "admin_role_assign",
+      scope: "admin",
+      email: auth.email,
+      success: true,
+      detail: JSON.stringify({ targetEmail, roles: validSet, companyId, companyName, clientScope }),
+      request: context.request
+    });
     return jsonResponse({ success: true, ...result });
   } catch (err) {
     await appendAppLog(env, { event: "admin_role_assign", scope: "admin", email: auth.email, success: false, detail: err.message || String(err), request: context.request });

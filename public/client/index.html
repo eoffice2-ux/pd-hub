@@ -465,6 +465,13 @@
           >
           <a
             class="nav-link active fw-bold"
+            id="navTrainees"
+            style="cursor: pointer"
+            onclick="showTraineesTab()"
+            ><i class="fas fa-user-graduate me-2"></i>Trainees / Học viên</a
+          >
+          <a
+            class="nav-link fw-bold"
             id="navInquiry"
             style="cursor: pointer"
             onclick="showInquiryTab()"
@@ -749,6 +756,113 @@
                   >
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW TRAINEES (NEW) -->
+      <div id="viewTrainees" class="view-pane active">
+        <div class="card p-4 mx-auto shadow-sm" style="max-width: 1200px; border-radius: 16px; border: none">
+          <div class="d-flex flex-wrap justify-content-between align-items-center border-bottom pb-3 mb-4 gap-3">
+            <div>
+              <h4 class="fw-bold text-primary mb-1">
+                <i class="fas fa-user-graduate me-2"></i>Danh Sách Học Viên & Hồ Sơ Đào Tạo
+              </h4>
+              <p class="text-muted small mb-0" id="traineesSubtitle">
+                Trainee Profiles, Course Enrollments & Attendance Progress
+              </p>
+            </div>
+            <div class="d-flex gap-2 align-items-center">
+              <button class="btn btn-outline-secondary btn-sm" onclick="loadTraineesData()">
+                <i class="fas fa-sync-alt me-1"></i> Làm mới / Refresh
+              </button>
+              <button class="btn btn-primary btn-sm fw-bold shadow-sm" onclick="exportTraineesCsv()">
+                <i class="fas fa-file-csv me-1"></i> Xuất CSV / Export
+              </button>
+            </div>
+          </div>
+
+          <!-- KPI Summary Cards -->
+          <div class="row g-3 mb-4" id="traineesKpis">
+            <div class="col-sm-6 col-lg-3">
+              <div class="card p-3 border-0 shadow-sm" style="background:#f8fafc; border-radius:12px;">
+                <div class="text-muted small fw-bold">Tổng Học Viên / Trainees</div>
+                <div class="fs-4 fw-bold text-primary mt-1" id="kpiTotalTrainees">-</div>
+              </div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+              <div class="card p-3 border-0 shadow-sm" style="background:#f8fafc; border-radius:12px;">
+                <div class="text-muted small fw-bold">Lượt Học / Enrollments</div>
+                <div class="fs-4 fw-bold text-success mt-1" id="kpiTotalEnrollments">-</div>
+              </div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+              <div class="card p-3 border-0 shadow-sm" style="background:#f8fafc; border-radius:12px;">
+                <div class="text-muted small fw-bold">Tỷ Lệ Điểm Danh / Attendance</div>
+                <div class="fs-4 fw-bold text-info mt-1" id="kpiAvgAttendance">-</div>
+              </div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+              <div class="card p-3 border-0 shadow-sm" style="background:#f8fafc; border-radius:12px;">
+                <div class="text-muted small fw-bold">Khảo Sát / Survey Completion</div>
+                <div class="fs-4 fw-bold text-warning mt-1" id="kpiAvgSurvey">-</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- EIU Specific Type Switcher (Staff vs Student) -->
+          <div id="eiuTypeSwitcher" class="mb-4 d-none">
+            <div class="d-flex gap-2 border-bottom pb-2">
+              <button class="btn btn-sm btn-primary fw-bold" id="btnTypeAll" onclick="setEiuTypeFilter('all')">
+                <i class="fas fa-users me-1"></i> Tất cả EIU (<span id="countTypeAll">0</span>)
+              </button>
+              <button class="btn btn-sm btn-outline-primary fw-bold" id="btnTypeStaff" onclick="setEiuTypeFilter('Staff')">
+                <i class="fas fa-briefcase me-1"></i> Giảng viên / Nhân viên (Staff) (<span id="countTypeStaff">0</span>)
+              </button>
+              <button class="btn btn-sm btn-outline-primary fw-bold" id="btnTypeStudent" onclick="setEiuTypeFilter('Student')">
+                <i class="fas fa-graduation-cap me-1"></i> Sinh viên (Student) (<span id="countTypeStudent">0</span>)
+              </button>
+            </div>
+          </div>
+
+          <!-- EIU School / Department Summary Grid -->
+          <div id="eiuSchoolGrid" class="mb-4 d-none">
+            <div class="small fw-bold text-muted mb-2">Thống Kê Theo Đơn Vị / School & Department Breakdown:</div>
+            <div class="row g-2" id="eiuSchoolCardsContainer"></div>
+          </div>
+
+          <!-- Filter & Search Toolbar -->
+          <div class="row g-2 align-items-center mb-3">
+            <div class="col-md-5">
+              <div class="input-group">
+                <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
+                <input type="text" id="traineeSearchInput" class="form-control" placeholder="Tìm theo tên, email, SĐT, chức vụ..." oninput="filterTraineesTable()">
+              </div>
+            </div>
+            <div class="col-md-3" id="schoolFilterCol">
+              <select id="schoolFilterSelect" class="form-select" onchange="filterTraineesTable()">
+                <option value="">-- Tất cả Đơn vị / Schools --</option>
+              </select>
+            </div>
+            <div class="col-md-2">
+              <select id="attendanceFilterSelect" class="form-select" onchange="filterTraineesTable()">
+                <option value="">Tất cả điểm danh</option>
+                <option value="enrolled">Có tham gia khóa học</option>
+                <option value="perfect">Điểm danh 100%</option>
+                <option value="incomplete">Chưa đủ 100%</option>
+              </select>
+            </div>
+            <div class="col-md-2 text-md-end text-muted small" id="traineeCountLabel">
+              Đang hiển thị: 0 học viên
+            </div>
+          </div>
+
+          <!-- Trainees Table / Group Container -->
+          <div id="traineesTableContainer" class="table-responsive">
+            <div class="text-center p-4">
+              <div class="spinner-border text-primary" role="status"></div>
+              <p class="mt-2 text-muted">Đang tải danh sách học viên...</p>
             </div>
           </div>
         </div>
@@ -1873,10 +1987,17 @@
 
       // --- PHẦN ĐIỀU HƯỚNG TABS ---
       function setActiveTab(activeId) {
-        ["navInquiry", "navCorporate", "navPersonal"].forEach((id) => {
+        ["navTrainees", "navInquiry", "navCorporate", "navPersonal"].forEach((id) => {
           const el = document.getElementById(id);
           if (el) el.classList.toggle("active", id === activeId);
         });
+      }
+
+      function showTraineesTab() {
+        setActiveTab("navTrainees");
+        showPane("viewTrainees");
+        document.title = "PD Hub Corporate — Trainees";
+        loadTraineesData();
       }
 
       // Hàm hiển thị tab Nhu cầu đào tạo
@@ -1909,20 +2030,398 @@
       }
 
       // Gắn vào hàm xử lý sau khi Login thành công
-      // SỬA LẠI ĐOẠN LOGIN THÀNH CÔNG: thay vì showPane('viewCorporate'), gọi hàm khởi tạo
       function onLoginSuccess() {
         document.getElementById("mainNav").style.display = "flex";
 
-        // Nếu khách vào bằng direct link có chứa ?inquiryid=
         if (URL_TARGET_INQUIRY && URL_TARGET_INQUIRY.trim() !== "") {
           showInquiryTab();
         } else {
-          showInquiryTab(); // Mặc định vào trang Inquiry trước theo yêu cầu của bạn
+          showTraineesTab(); // Mặc định vào tab Trainees để xem hồ sơ đào tạo học viên
         }
       }
 
-      // --- PHẦN LOGIC INQUIRY ---
-      let currentInquiries = [];
+      // --- PHẦN LOGIC TRAINEES & EIU GROUPING ---
+      let cachedTraineesPayload = null;
+      let currentEiuTypeFilter = "all";
+
+      async function loadTraineesData() {
+        const container = document.getElementById("traineesTableContainer");
+        if (container) {
+          container.innerHTML = `
+            <div class="text-center p-4">
+              <div class="spinner-border text-primary" role="status"></div>
+              <p class="mt-2 text-muted">Đang tải danh sách học viên & lịch sử đào tạo...</p>
+            </div>
+          `;
+        }
+
+        try {
+          const res = await apiJson("/api/client/trainees");
+          cachedTraineesPayload = res.data || {};
+          renderTraineesView();
+        } catch (err) {
+          if (container) {
+            container.innerHTML = `<div class="alert alert-danger">Không thể tải danh sách học viên: ${escapeHTML(err.message)}</div>`;
+          }
+          showAlert(err.message, "Lỗi tải dữ liệu");
+        }
+      }
+
+      function setEiuTypeFilter(type) {
+        currentEiuTypeFilter = type;
+        const btnAll = document.getElementById("btnTypeAll");
+        const btnStaff = document.getElementById("btnTypeStaff");
+        const btnStudent = document.getElementById("btnTypeStudent");
+
+        if (btnAll) btnAll.className = type === "all" ? "btn btn-sm btn-primary fw-bold" : "btn btn-sm btn-outline-primary fw-bold";
+        if (btnStaff) btnStaff.className = type === "Staff" ? "btn btn-sm btn-primary fw-bold" : "btn btn-sm btn-outline-primary fw-bold";
+        if (btnStudent) btnStudent.className = type === "Student" ? "btn btn-sm btn-primary fw-bold" : "btn btn-sm btn-outline-primary fw-bold";
+
+        filterTraineesTable();
+      }
+
+      function renderTraineesView() {
+        if (!cachedTraineesPayload) return;
+        const d = cachedTraineesPayload;
+        const summary = d.summary || {};
+        const clientInfo = d.clientInfo || {};
+        const isEiu = Boolean(clientInfo.isEiu);
+
+        // Update Subtitle
+        const subtitle = document.getElementById("traineesSubtitle");
+        if (subtitle) {
+          const orgLabel = clientInfo.clientNameVn || clientInfo.clientId || "Doanh nghiệp";
+          subtitle.innerText = `${orgLabel} — Quản lý học viên, tỷ lệ điểm danh & khảo sát`;
+        }
+
+        // Update KPIs
+        document.getElementById("kpiTotalTrainees").innerText = summary.totalTrainees ?? 0;
+        document.getElementById("kpiTotalEnrollments").innerText = summary.totalEnrollments ?? 0;
+        document.getElementById("kpiAvgAttendance").innerText = (summary.overallAttendancePct ?? 0) + "%";
+        document.getElementById("kpiAvgSurvey").innerText = (summary.overallSurveyPct ?? 0) + "%";
+
+        // Setup EIU specific view if applicable
+        const eiuSwitcher = document.getElementById("eiuTypeSwitcher");
+        const eiuGrid = document.getElementById("eiuSchoolGrid");
+        const schoolFilterCol = document.getElementById("schoolFilterCol");
+        const schoolSelect = document.getElementById("schoolFilterSelect");
+
+        if (isEiu) {
+          eiuSwitcher?.classList.remove("d-none");
+          eiuGrid?.classList.remove("d-none");
+          schoolFilterCol?.classList.remove("d-none");
+
+          const byType = d.groups?.byType || {};
+          document.getElementById("countTypeAll").innerText = summary.totalTrainees || 0;
+          document.getElementById("countTypeStaff").innerText = byType.Staff?.count || 0;
+          document.getElementById("countTypeStudent").innerText = byType.Student?.count || 0;
+
+          // Render School cards & populate dropdown
+          const bySchool = d.groups?.bySchool || {};
+          const schoolKeys = Object.keys(bySchool).sort();
+
+          if (schoolSelect) {
+            schoolSelect.innerHTML = '<option value="">-- Tất cả Đơn vị / Schools --</option>';
+            schoolKeys.forEach(name => {
+              const opt = document.createElement("option");
+              opt.value = name;
+              opt.textContent = `${name} (${bySchool[name].count})`;
+              schoolSelect.appendChild(opt);
+            });
+          }
+
+          const cardsContainer = document.getElementById("eiuSchoolCardsContainer");
+          if (cardsContainer) {
+            cardsContainer.innerHTML = schoolKeys.map(key => {
+              const s = bySchool[key];
+              const attPct = s.totalSlots > 0 ? Math.round((s.checkedSlots / s.totalSlots) * 100) : 0;
+              return `
+                <div class="col-md-4 col-sm-6">
+                  <div class="p-2 border rounded bg-white shadow-sm h-100" style="cursor:pointer;" onclick="selectSchoolCard('${escapeHTML(key)}')">
+                    <div class="fw-bold small text-primary text-truncate">${escapeHTML(s.name)}</div>
+                    <div class="d-flex justify-content-between align-items-center mt-1 text-muted" style="font-size:11px;">
+                      <span>👥 <b>${s.count}</b> HV (${s.staffCount} Staff, ${s.studentCount} SV)</span>
+                      <span class="badge bg-light text-dark border">${attPct}% Check-in</span>
+                    </div>
+                  </div>
+                </div>
+              `;
+            }).join("");
+          }
+        } else {
+          eiuSwitcher?.classList.add("d-none");
+          eiuGrid?.classList.add("d-none");
+          schoolFilterCol?.classList.add("d-none");
+        }
+
+        filterTraineesTable();
+      }
+
+      function selectSchoolCard(schoolName) {
+        const sel = document.getElementById("schoolFilterSelect");
+        if (sel) {
+          sel.value = sel.value === schoolName ? "" : schoolName;
+          filterTraineesTable();
+        }
+      }
+
+      function filterTraineesTable() {
+        if (!cachedTraineesPayload) return;
+        const trainees = cachedTraineesPayload.trainees || [];
+        const isEiu = Boolean(cachedTraineesPayload.clientInfo?.isEiu);
+
+        const search = (document.getElementById("traineeSearchInput")?.value || "").toLowerCase().trim();
+        const schoolFilter = (document.getElementById("schoolFilterSelect")?.value || "").trim();
+        const attendanceFilter = (document.getElementById("attendanceFilterSelect")?.value || "").trim();
+
+        const filtered = trainees.filter(t => {
+          // 1. EIU Type Filter (Staff vs Student)
+          if (isEiu && currentEiuTypeFilter !== "all" && t.type !== currentEiuTypeFilter) {
+            return false;
+          }
+          // 2. School Filter
+          if (schoolFilter && t.schoolName !== schoolFilter) {
+            return false;
+          }
+          // 3. Attendance Filter
+          if (attendanceFilter === "enrolled" && t.totalCourses === 0) return false;
+          if (attendanceFilter === "perfect" && (t.attendance.pct === null || t.attendance.pct < 100)) return false;
+          if (attendanceFilter === "incomplete" && (t.totalCourses > 0 && t.attendance.pct === 100)) return false;
+          // 4. Search Filter
+          if (search) {
+            const matchName = String(t.fullName || "").toLowerCase().includes(search);
+            const matchEmail = String(t.email || "").toLowerCase().includes(search);
+            const matchPhone = String(t.phone || "").toLowerCase().includes(search);
+            const matchPos = String(t.position || "").toLowerCase().includes(search);
+            const matchSchool = String(t.schoolName || "").toLowerCase().includes(search);
+            const matchDept = String(t.departmentName || "").toLowerCase().includes(search);
+            return matchName || matchEmail || matchPhone || matchPos || matchSchool || matchDept;
+          }
+          return true;
+        });
+
+        document.getElementById("traineeCountLabel").innerText = `Đang hiển thị: ${filtered.length} / ${trainees.length} học viên`;
+        renderTraineesTable(filtered);
+      }
+
+      function renderTraineesTable(list) {
+        const container = document.getElementById("traineesTableContainer");
+        if (!list || list.length === 0) {
+          container.innerHTML = `<div class="alert alert-warning text-center py-4">Không tìm thấy học viên nào phù hợp với bộ lọc hiện tại.</div>`;
+          return;
+        }
+
+        const isEiu = Boolean(cachedTraineesPayload?.clientInfo?.isEiu);
+
+        let html = `
+          <table class="table table-hover align-middle mb-0" style="font-size: 13px;">
+            <thead class="table-light">
+              <tr>
+                <th>Học Viên / Email</th>
+                ${isEiu ? '<th>Loại (Type)</th><th>Khoa / Phòng ban</th>' : '<th>Chức vụ / Vị trí</th>'}
+                <th class="text-center">Số Lớp</th>
+                <th>Điểm Danh (Check-in)</th>
+                <th>Khảo Sát</th>
+                <th class="text-end">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody>
+        `;
+
+        list.forEach((t, index) => {
+          const att = t.attendance || {};
+          const attPct = att.pct !== null ? `${att.pct}%` : "---";
+          const attBarClass = att.pct >= 80 ? "bg-success" : att.pct >= 50 ? "bg-warning" : "bg-danger";
+
+          const surv = t.surveys || {};
+          const survBadge = surv.required > 0
+            ? (surv.submitted >= surv.required
+                ? `<span class="badge bg-success-subtle text-success border border-success-subtle"><i class="fas fa-check-circle me-1"></i>${surv.submitted}/${surv.required}</span>`
+                : `<span class="badge bg-warning-subtle text-warning border border-warning-subtle"><i class="fas fa-clock me-1"></i>${surv.submitted}/${surv.required}</span>`)
+            : `<span class="badge bg-light text-muted border">-</span>`;
+
+          const typeBadge = t.type === "Staff"
+            ? '<span class="badge bg-primary-subtle text-primary border border-primary-subtle">👨‍💼 Staff</span>'
+            : t.type === "Student"
+            ? '<span class="badge bg-info-subtle text-info border border-info-subtle">🎓 Student</span>'
+            : '<span class="badge bg-secondary-subtle text-secondary border">Industry</span>';
+
+          html += `
+            <tr>
+              <td>
+                <div class="fw-bold text-dark">${escapeHTML(t.fullName)}</div>
+                <div class="text-muted small">${escapeHTML(t.email)}</div>
+                ${t.phone ? `<div class="text-muted" style="font-size:11px;"><i class="fas fa-phone-alt me-1"></i>${escapeHTML(t.phone)}</div>` : ''}
+              </td>
+              ${isEiu ? `
+                <td>${typeBadge}</td>
+                <td>
+                  <div class="fw-semibold text-truncate" style="max-width:200px;">${escapeHTML(t.schoolName)}</div>
+                  <div class="text-muted small text-truncate" style="max-width:200px;">${escapeHTML(t.departmentName || t.position || '')}</div>
+                </td>
+              ` : `
+                <td>
+                  <div class="fw-semibold">${escapeHTML(t.position || "---")}</div>
+                  <div class="text-muted small">${escapeHTML(t.departmentName || "")}</div>
+                </td>
+              `}
+              <td class="text-center fw-bold text-primary">${t.totalCourses}</td>
+              <td style="min-width: 140px;">
+                <div class="d-flex justify-content-between small mb-1">
+                  <span>${att.checkedSlots || 0}/${att.totalSlots || 0} slots</span>
+                  <b>${attPct}</b>
+                </div>
+                <div class="progress" style="height: 6px;">
+                  <div class="progress-bar ${attBarClass}" role="progressbar" style="width: ${att.pct || 0}%;"></div>
+                </div>
+              </td>
+              <td>${survBadge}</td>
+              <td class="text-end">
+                <button class="btn btn-sm btn-outline-primary fw-bold" onclick="viewTraineeProfileDetails('${escapeHTML(t.email)}')">
+                  <i class="fas fa-eye me-1"></i> Chi tiết
+                </button>
+              </td>
+            </tr>
+          `;
+        });
+
+        html += `</tbody></table>`;
+        container.innerHTML = html;
+      }
+
+      function viewTraineeProfileDetails(email) {
+        if (!cachedTraineesPayload) return;
+        const trainee = (cachedTraineesPayload.trainees || []).find(t => t.email.toLowerCase() === email.toLowerCase());
+        if (!trainee) return showAlert("Không tìm thấy thông tin học viên.", "Notice");
+
+        document.getElementById("traineeModalTitle").innerHTML = `<i class="fas fa-id-card me-2"></i> Hồ Sơ Đào Tạo: ${escapeHTML(trainee.fullName)}`;
+
+        const body = document.getElementById("traineeModalBody");
+        const courses = trainee.courses || [];
+
+        let coursesHtml = "";
+        if (courses.length === 0) {
+          coursesHtml = `<div class="alert alert-secondary text-center small my-3">Học viên chưa đăng ký hoặc chưa được xếp lớp khóa đào tạo nào.</div>`;
+        } else {
+          coursesHtml = `
+            <div class="table-responsive mt-3">
+              <table class="table table-bordered table-sm bg-white" style="font-size:12px;">
+                <thead class="table-light">
+                  <tr>
+                    <th>Khóa Học / Lớp</th>
+                    <th>Thời Gian</th>
+                    <th class="text-center">Điểm Danh</th>
+                    <th class="text-center">Khảo Sát</th>
+                    <th class="text-center">Chứng Chỉ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${courses.map(c => `
+                    <tr>
+                      <td>
+                        <div class="fw-bold">${escapeHTML(c.courseName || c.courseId)}</div>
+                        <div class="text-muted small">${escapeHTML(c.sectionName || c.sectionId)}</div>
+                      </td>
+                      <td class="text-muted" style="white-space:nowrap;">
+                        ${c.learningStart ? escapeHTML(c.learningStart.substring(0, 10)) : "TBD"}
+                        ${c.learningEnd ? `<br>đến ${escapeHTML(c.learningEnd.substring(0, 10))}` : ""}
+                      </td>
+                      <td class="text-center align-middle">
+                        <span class="badge ${c.attendancePct >= 80 ? 'bg-success' : 'bg-warning text-dark'}">
+                          ${c.checkedSlots}/${c.totalSlots} (${c.attendancePct !== null ? c.attendancePct + '%' : '---'})
+                        </span>
+                      </td>
+                      <td class="text-center align-middle">
+                        ${c.totalSurveys > 0
+                          ? (c.submittedSurveys >= c.totalSurveys ? '<span class="text-success"><i class="fas fa-check-circle"></i> Đã làm</span>' : '<span class="text-warning"><i class="fas fa-clock"></i> Chưa làm</span>')
+                          : '<span class="text-muted">-</span>'}
+                      </td>
+                      <td class="text-center align-middle">
+                        ${c.certificateLink
+                          ? `<a href="${escapeHTML(c.certificateLink)}" target="_blank" class="btn btn-xs btn-outline-success"><i class="fas fa-award me-1"></i>Xem</a>`
+                          : '<span class="text-muted">Chưa cấp</span>'}
+                      </td>
+                    </tr>
+                  `).join("")}
+                </tbody>
+              </table>
+            </div>
+          `;
+        }
+
+        body.innerHTML = `
+          <div class="card p-3 mb-3 border-0 shadow-sm bg-white rounded-3">
+            <div class="row g-2">
+              <div class="col-sm-6">
+                <div class="text-muted small">Họ và Tên:</div>
+                <div class="fw-bold text-dark fs-6">${escapeHTML(trainee.fullName)}</div>
+              </div>
+              <div class="col-sm-6">
+                <div class="text-muted small">Email:</div>
+                <div class="fw-semibold text-dark">${escapeHTML(trainee.email)}</div>
+              </div>
+              <div class="col-sm-6">
+                <div class="text-muted small">Số Điện Thoại:</div>
+                <div class="text-dark">${escapeHTML(trainee.phone || "---")}</div>
+              </div>
+              <div class="col-sm-6">
+                <div class="text-muted small">Đơn vị / Khoa:</div>
+                <div class="text-dark fw-semibold">${escapeHTML(trainee.schoolName || trainee.organizationName || "---")}</div>
+              </div>
+              <div class="col-sm-6">
+                <div class="text-muted small">Chức Vụ / Bộ Môn:</div>
+                <div class="text-dark">${escapeHTML(trainee.departmentName || trainee.position || "---")}</div>
+              </div>
+              <div class="col-sm-6">
+                <div class="text-muted small">Phân Loại (Type):</div>
+                <div class="text-dark">${escapeHTML(trainee.type)}</div>
+              </div>
+            </div>
+          </div>
+
+          <h6 class="fw-bold text-primary mb-2">
+            <i class="fas fa-graduation-cap me-1"></i> Các Khóa Đào Tạo Đã Tham Gia (${courses.length})
+          </h6>
+          ${coursesHtml}
+        `;
+
+        new bootstrap.Modal(document.getElementById("traineeProfileModal")).show();
+      }
+
+      function exportTraineesCsv() {
+        if (!cachedTraineesPayload || !cachedTraineesPayload.trainees) {
+          return showAlert("Chưa có dữ liệu học viên để xuất.", "Notice");
+        }
+
+        const trainees = cachedTraineesPayload.trainees;
+        const isEiu = Boolean(cachedTraineesPayload.clientInfo?.isEiu);
+
+        const headers = ["Full Name", "Email", "Phone", isEiu ? "Type" : "Position", "School / Organization", "Department", "Enrolled Courses", "Checked-in Slots", "Total Slots", "Attendance %", "Surveys Done"];
+        const rows = trainees.map(t => [
+          `"${(t.fullName || "").replace(/"/g, '""')}"`,
+          `"${(t.email || "").replace(/"/g, '""')}"`,
+          `"${(t.phone || "").replace(/"/g, '""')}"`,
+          `"${(isEiu ? t.type : t.position || "").replace(/"/g, '""')}"`,
+          `"${(t.schoolName || t.organizationName || "").replace(/"/g, '""')}"`,
+          `"${(t.departmentName || "").replace(/"/g, '""')}"`,
+          t.totalCourses || 0,
+          t.attendance?.checkedSlots || 0,
+          t.attendance?.totalSlots || 0,
+          t.attendance?.pct !== null ? t.attendance.pct + "%" : "0%",
+          `${t.surveys?.submitted || 0}/${t.surveys?.required || 0}`
+        ]);
+
+        const csvContent = "\uFEFF" + [headers.join(","), ...rows.map(r => r.join(","))].join("\r\n");
+        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `Trainees_${cachedTraineesPayload.clientInfo?.clientId || 'List'}_${new Date().toISOString().slice(0, 10)}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
 
       async function loadInquiryData() {
         const container = document.getElementById("inquiryListContainer");
@@ -2295,6 +2794,26 @@
           >
             Create PIN
           </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Trainee Training Profile Modal -->
+    <div class="modal fade" id="traineeProfileModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content" style="border-radius: 16px; border: none">
+          <div class="modal-header bg-primary text-white" style="border-radius: 16px 16px 0 0">
+            <h5 class="modal-title fw-bold" id="traineeModalTitle">
+              <i class="fas fa-id-card me-2"></i> Hồ Sơ Đào Tạo Học Viên
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body p-4" id="traineeModalBody" style="background-color: #f8fafc;">
+            <!-- Trainee details inserted dynamically -->
+          </div>
+          <div class="modal-footer bg-white">
+            <button type="button" class="btn btn-secondary fw-bold" data-bs-dismiss="modal">Đóng / Close</button>
+          </div>
         </div>
       </div>
     </div>

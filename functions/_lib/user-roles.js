@@ -231,7 +231,7 @@ export async function getUserRoles(env, email) {
     rolesSet.add("trainee");
   }
 
-  // If user does not yet have "client", check if registered in client profile
+  // If user does not yet have "client", check if registered in client profile or inquiries
   if (!rolesSet.has("client") && clean) {
     try {
       if (getTableSource(env, "CLIENT_PROFILE") === "psql") {
@@ -245,6 +245,19 @@ export async function getUserRoles(env, email) {
         }
       }
     } catch (_) {}
+
+    if (!rolesSet.has("client")) {
+      try {
+        const inqRes = await queryPostgres(env, `
+          SELECT "client id" FROM public."pdc_inquiry management"
+          WHERE LOWER(TRIM("client representative email")) = $1
+          LIMIT 1
+        `, [clean]);
+        if (inqRes.rows && inqRes.rows.length > 0) {
+          rolesSet.add("client");
+        }
+      } catch (_) {}
+    }
   }
 
   // If user has super_user, ensure admin is also active
@@ -279,13 +292,17 @@ export async function getUserRole(env, email) {
 export async function listUserRoles(env) {
   if (getTableSource(env, "USER_ROLES") === "psql") {
     try {
-      // Ensure roles column exists
+      // Ensure roles, company_id, company_name, client_scope columns exist
       try {
         await queryPostgres(env, `ALTER TABLE public.pdc_user_roles ADD COLUMN IF NOT EXISTS "roles" TEXT`);
+        await queryPostgres(env, `ALTER TABLE public.pdc_user_roles ADD COLUMN IF NOT EXISTS "company_id" TEXT`);
+        await queryPostgres(env, `ALTER TABLE public.pdc_user_roles ADD COLUMN IF NOT EXISTS "company_name" TEXT`);
+        await queryPostgres(env, `ALTER TABLE public.pdc_user_roles ADD COLUMN IF NOT EXISTS "client_scope" JSONB`);
       } catch (_) {}
 
       const res = await queryPostgres(env, `
-        SELECT "email", "role", "roles", "assigned_by" AS "assignedBy", "assigned_at" AS "assignedAt", "pin number" AS "pin"
+        SELECT "email", "role", "roles", "company_id", "company_name", "client_scope",
+               "assigned_by" AS "assignedBy", "assigned_at" AS "assignedAt", "pin number" AS "pin"
         FROM public.pdc_user_roles
         ORDER BY "assigned_at" DESC
       `);
@@ -296,6 +313,9 @@ export async function listUserRoles(env) {
           email: normalizeEmail(r.email),
           role: String(r.role || roles[0] || "").toLowerCase().trim(),
           roles: roles.length > 0 ? roles : [String(r.role || "").toLowerCase().trim()].filter(Boolean),
+          companyId: r.company_id || "",
+          companyName: r.company_name || "",
+          clientScope: r.client_scope || null,
           assignedAt: r.assignedAt ? (typeof r.assignedAt === "string" ? r.assignedAt : new Date(r.assignedAt).toISOString()) : "",
           rowIndex: i + 1
         };
@@ -311,7 +331,10 @@ export async function listUserRoles(env) {
       const roles = parseRolesList(r.roles || r.role, r.role);
       return {
         ...r,
-        roles: roles.length > 0 ? roles : [r.role].filter(Boolean)
+        roles: roles.length > 0 ? roles : [r.role].filter(Boolean),
+        companyId: "",
+        companyName: "",
+        clientScope: null
       };
     });
   } catch (_) {
@@ -321,8 +344,9 @@ export async function listUserRoles(env) {
 
 /**
  * Assign or update a set of roles for an email (upsert).
+ * Supports options: { companyId, companyName, clientScope }
  */
-export async function setUserRoles(env, targetEmail, rolesArray, callerEmail) {
+export async function setUserRoles(env, targetEmail, rolesArray, callerEmail, options = {}) {
   const target = normalizeEmail(targetEmail);
   const caller = normalizeEmail(callerEmail);
   const cleanRoles = parseRolesList(rolesArray);
@@ -332,10 +356,16 @@ export async function setUserRoles(env, targetEmail, rolesArray, callerEmail) {
 
   const primaryRole = cleanRoles[0] || "trainee";
   const rolesJson = JSON.stringify(cleanRoles);
+  const companyId = options.companyId ? String(options.companyId).trim() : null;
+  const companyName = options.companyName ? String(options.companyName).trim() : null;
+  const clientScope = options.clientScope ? JSON.stringify(options.clientScope) : null;
 
   if (getTableSource(env, "USER_ROLES") === "psql") {
     try {
       await queryPostgres(env, `ALTER TABLE public.pdc_user_roles ADD COLUMN IF NOT EXISTS "roles" TEXT`);
+      await queryPostgres(env, `ALTER TABLE public.pdc_user_roles ADD COLUMN IF NOT EXISTS "company_id" TEXT`);
+      await queryPostgres(env, `ALTER TABLE public.pdc_user_roles ADD COLUMN IF NOT EXISTS "company_name" TEXT`);
+      await queryPostgres(env, `ALTER TABLE public.pdc_user_roles ADD COLUMN IF NOT EXISTS "client_scope" JSONB`);
     } catch (_) {}
 
     const checkSql = `SELECT "email" FROM public.pdc_user_roles WHERE LOWER(TRIM("email")) = $1 LIMIT 1`;
@@ -345,16 +375,25 @@ export async function setUserRoles(env, targetEmail, rolesArray, callerEmail) {
     if (isUpdate) {
       await queryPostgres(env, `
         UPDATE public.pdc_user_roles
-        SET "role" = $2, "roles" = $3, "assigned_by" = $4, "assigned_at" = NOW()
+        SET "role" = $2, "roles" = $3, "assigned_by" = $4, "assigned_at" = NOW(),
+            "company_id" = $5, "company_name" = $6, "client_scope" = $7::jsonb
         WHERE LOWER(TRIM("email")) = $1
-      `, [target, primaryRole, rolesJson, caller]);
+      `, [target, primaryRole, rolesJson, caller, companyId, companyName, clientScope]);
     } else {
       await queryPostgres(env, `
-        INSERT INTO public.pdc_user_roles ("email", "role", "roles", "assigned_by", "assigned_at")
-        VALUES ($1, $2, $3, $4, NOW())
-      `, [target, primaryRole, rolesJson, caller]);
+        INSERT INTO public.pdc_user_roles ("email", "role", "roles", "assigned_by", "assigned_at", "company_id", "company_name", "client_scope")
+        VALUES ($1, $2, $3, $4, NOW(), $5, $6, $7::jsonb)
+      `, [target, primaryRole, rolesJson, caller, companyId, companyName, clientScope]);
     }
-    return { action: isUpdate ? "updated" : "created", email: target, role: primaryRole, roles: cleanRoles };
+    return {
+      action: isUpdate ? "updated" : "created",
+      email: target,
+      role: primaryRole,
+      roles: cleanRoles,
+      companyId,
+      companyName,
+      clientScope: options.clientScope || null
+    };
   }
 
   await ensureRolesSheetExists(env);
@@ -443,6 +482,9 @@ export async function getUserInfo(env, email) {
         email: normalizeEmail(r.email),
         role: String(r.role || roles[0] || "").toLowerCase().trim(),
         roles,
+        companyId: r.company_id || "",
+        companyName: r.company_name || "",
+        clientScope: r.client_scope || null,
         assignedBy: r.assigned_by || r.assignedBy || "",
         assignedAt: r.assigned_at ? String(r.assigned_at) : "",
         pin: pinVal

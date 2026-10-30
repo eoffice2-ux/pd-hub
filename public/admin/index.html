@@ -847,7 +847,7 @@
                       <input type="checkbox" id="chkRoleTrainee" value="trainee" checked> 🎓 Trainee
                     </label>
                     <label style="display:flex; align-items:center; gap:5px; font-size:13px; cursor:pointer;">
-                      <input type="checkbox" id="chkRoleClient" value="client"> 🏢 Client
+                      <input type="checkbox" id="chkRoleClient" value="client" onchange="toggleClientOrgField(this.checked)"> 🏢 Client
                     </label>
                     <label style="display:flex; align-items:center; gap:5px; font-size:13px; cursor:pointer;">
                       <input type="checkbox" id="chkRoleReport" value="report_viewer"> 📊 Report Viewer
@@ -863,6 +863,28 @@
                 <button onclick="assignRoles(this)" style="white-space: nowrap; padding: 12px 20px; font-weight:600;">
                   Save Roles
                 </button>
+              </div>
+
+              <!-- Client Organization & Scope Box (Revealed when Client role is selected) -->
+              <div id="clientOrgConfigBox" class="hidden" style="margin-top: 14px; padding: 14px; background: #fff; border: 1px solid #cbd5e1; border-radius: 10px;">
+                <div style="font-weight: 700; color: #003087; margin-bottom: 8px; font-size: 13px; display: flex; align-items: center; gap: 6px;">
+                  <i class="fas fa-building"></i> Đơn vị Quản lý của Client / Assigned Company & EIU Scope
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                  <div>
+                    <label class="small muted"><b>Mã / Tên Tổ chức (Company ID / Name)</b></label>
+                    <input type="text" id="roleClientCompany" placeholder="Nhập mã công ty (vd: EIU hoặc OCE...)" style="margin-top:4px;" />
+                    <small class="muted" style="font-size: 11px;">Nếu email thuộc @eiu.edu.vn, hệ thống tự động gán EIU.</small>
+                  </div>
+                  <div>
+                    <label class="small muted"><b>Phạm vi EIU (Chỉ áp dụng nếu đơn vị là EIU)</b></label>
+                    <select id="roleClientScopeType" style="margin-top:4px; padding: 8px; border-radius:6px; border:1px solid #cbd5e1; width:100%;">
+                      <option value="all">Tất cả EIU (Staff & Student)</option>
+                      <option value="Staff">Chỉ xem Giảng viên / Nhân viên (Staff only)</option>
+                      <option value="Student">Chỉ xem Sinh viên (Student only)</option>
+                    </select>
+                  </div>
+                </div>
               </div>
               <div class="small muted" style="margin-top: 12px; background: rgba(0, 48, 135, 0.04); border-left: 3px solid var(--c-navy); padding: 8px 12px; border-radius: 6px;">
                 <i class="fas fa-info-circle me-1"></i><b>Lưu ý:</b> Chỉ tài khoản có vai trò <code>super_user</code> hoặc nằm trong <code>ADMIN_EMAILS</code> mới có quyền phân quyền hoặc cấu hình OAuth.
@@ -1136,6 +1158,21 @@
               </div>
               <div class="toolbar action-toolbar">
                 <button onclick="loadPendingOrgs()">&#8635; Refresh</button>
+              </div>
+            </div>
+
+            <!-- View Mode Switcher -->
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top: 14px; flex-wrap: wrap; gap: 8px;">
+              <div class="toolbar" style="gap: 8px;">
+                <button id="btnViewPendingQueue" class="primary" onclick="switchPendingOrgsView('pending')">
+                  <i class="fas fa-list me-1"></i> 1. Pending Orgs Queue (pdc_pending_organizations)
+                </button>
+                <button id="btnViewAllTraineeOrgs" class="light" onclick="switchPendingOrgsView('all_trainees')">
+                  <i class="fas fa-users-cog me-1"></i> 2. All Orgs Used by Trainees (Find Wrong Company)
+                </button>
+              </div>
+              <div id="usedOrgSearchBox" class="hidden" style="display:flex; gap:6px;">
+                <input type="text" id="traineeUsedOrgSearchInput" placeholder="Filter company ID / name..." style="padding:6px 10px; font-size:12px; border:1px solid #cbd5e1; border-radius:6px;" oninput="debounceTraineeUsedOrgSearch()" />
               </div>
             </div>
 
@@ -1894,17 +1931,18 @@
             return;
           }
           el.innerHTML =
-            "<table><thead><tr><th>#</th><th>Email</th><th>Roles (Quyền truy cập)</th><th>Assigned by</th><th>Time</th><th>Actions</th></tr></thead><tbody>" +
+            "<table><thead><tr><th>#</th><th>Email</th><th>Roles (Quyền truy cập)</th><th>Assigned Company / Scope</th><th>Assigned by</th><th>Time</th><th>Actions</th></tr></thead><tbody>" +
             list
               .map(
                 (r, i) => `<tr>
         <td>${i + 1}</td>
         <td><b>${escapeHtml(r.email)}</b></td>
         <td>${renderRoleBadges(r.roles || [r.role])}</td>
+        <td>${renderOrgScopeBadge(r)}</td>
         <td class="muted small">${escapeHtml(r.assignedBy || "-")}</td>
         <td class="muted small">${escapeHtml(r.assignedAt || "-")}</td>
         <td>
-          <button class="secondary" style="padding:4px 8px; font-size:11px; margin-right:4px;" onclick="populateEditRoles('${escapeHtml(r.email)}', ${JSON.stringify(r.roles || [r.role]).replace(/"/g, '&quot;')})">Edit</button>
+          <button class="secondary" style="padding:4px 8px; font-size:11px; margin-right:4px;" onclick="populateEditRoles('${escapeHtml(r.email)}', ${JSON.stringify(r.roles || [r.role]).replace(/"/g, '&quot;')}, '${escapeHtml(r.companyId || "")}', ${JSON.stringify(r.clientScope || null).replace(/"/g, '&quot;')})">Edit</button>
           <button class="danger" style="padding:4px 8px; font-size:11px;" onclick="removeRole('${escapeHtml(r.email)}', this)">Delete</button>
         </td>
       </tr>`,
@@ -1930,14 +1968,52 @@
         }).join(" ");
       }
 
-      function populateEditRoles(email, roles) {
+      function renderOrgScopeBadge(r) {
+        const roles = r.roles || [r.role];
+        if (!roles.includes("client")) return '<span class="muted small">-</span>';
+        const cid = r.companyId || (r.email.endsWith("@eiu.edu.vn") ? "EIU" : "");
+        if (!cid) return '<span class="badge bg-light text-muted border">Unassigned</span>';
+        if (cid.toUpperCase() === "EIU") {
+          const sc = r.clientScope?.traineeType || "all";
+          const scLabel = sc === "all" ? "All" : sc;
+          return `<span class="badge bg-primary-subtle text-primary border border-primary-subtle" title="EIU Scope: ${scLabel}"><i class="fas fa-university me-1"></i>EIU (${scLabel})</span>`;
+        }
+        return `<span class="badge bg-info-subtle text-dark border" title="${escapeHtml(r.companyName || cid)}"><i class="fas fa-building me-1"></i>${escapeHtml(cid)}</span>`;
+      }
+
+      function toggleClientOrgField(isClientChecked) {
+        const box = document.getElementById("clientOrgConfigBox");
+        if (!box) return;
+        if (isClientChecked) {
+          box.classList.remove("hidden");
+          const email = (document.getElementById("roleEmail")?.value || "").trim().toLowerCase();
+          const compInput = document.getElementById("roleClientCompany");
+          if (email.endsWith("@eiu.edu.vn") && compInput && !compInput.value) {
+            compInput.value = "EIU";
+          }
+        } else {
+          box.classList.add("hidden");
+        }
+      }
+
+      function populateEditRoles(email, roles, companyId, clientScope) {
         document.getElementById("roleEmail").value = email;
         const set = new Set((roles || []).map(r => String(r).toLowerCase().trim()));
         document.getElementById("chkRoleTrainee").checked = set.has("trainee");
-        document.getElementById("chkRoleClient").checked = set.has("client");
+        const isClient = set.has("client");
+        document.getElementById("chkRoleClient").checked = isClient;
         document.getElementById("chkRoleReport").checked = set.has("report_viewer");
         document.getElementById("chkRoleAdmin").checked = set.has("admin");
         document.getElementById("chkRoleSuper").checked = set.has("super_user");
+
+        toggleClientOrgField(isClient);
+        if (isClient) {
+          document.getElementById("roleClientCompany").value = companyId || (email.endsWith("@eiu.edu.vn") ? "EIU" : "");
+          if (clientScope && clientScope.traineeType) {
+            document.getElementById("roleClientScopeType").value = clientScope.traineeType;
+          }
+        }
+
         document.getElementById("roleEmail").scrollIntoView({ behavior: "smooth" });
       }
 
@@ -1949,6 +2025,14 @@
           warnEl.classList.remove("hidden");
         } else {
           warnEl.classList.add("hidden");
+        }
+
+        const chkClient = document.getElementById("chkRoleClient");
+        if (chkClient?.checked) {
+          const compInput = document.getElementById("roleClientCompany");
+          if (email.endsWith("@eiu.edu.vn") && compInput && !compInput.value) {
+            compInput.value = "EIU";
+          }
         }
       }
 
@@ -1977,6 +2061,24 @@
           return;
         }
 
+        let companyId = "";
+        let companyName = "";
+        let clientScope = null;
+
+        if (selectedRoles.includes("client")) {
+          companyId = (document.getElementById("roleClientCompany")?.value || "").trim();
+          if (!companyId && email.endsWith("@eiu.edu.vn")) {
+            companyId = "EIU";
+          }
+          if (companyId.toUpperCase() === "EIU") {
+            companyName = "Eastern International University";
+            const scopeType = document.getElementById("roleClientScopeType")?.value || "all";
+            clientScope = { traineeType: scopeType };
+          } else {
+            companyName = companyId;
+          }
+        }
+
         const token = getAdminToken();
         if (!token) return;
         const old = btn.innerText;
@@ -1986,9 +2088,12 @@
           const json = await apiBearerPost("/api/admin/roles", token, {
             email,
             roles: selectedRoles,
+            companyId,
+            companyName,
+            clientScope
           });
           msg.className = "empty ok";
-          msg.innerText = `✓ Phân quyền thành công: ${email} → [${selectedRoles.join(", ")}]`;
+          msg.innerText = `✓ Phân quyền thành công: ${email} → [${selectedRoles.join(", ")}]${companyId ? ` (Org: ${companyId})` : ''}`;
           msg.classList.remove("hidden");
           loadRoles();
         } catch (err) {
@@ -2529,9 +2634,31 @@
           });
       }
 
-// ---- Pending Orgs Tab ----
+// ---- Pending Orgs & Batch Reassign Tab ----
+      let currentPendingView = "pending"; // 'pending' | 'all_trainees'
       let pendingOrgsSort  = "created_at";
       let pendingOrgsOrder = "desc";
+      let cachedPendingOrgsRows = [];
+      let cachedUsedTraineeOrgs = [];
+
+      function switchPendingOrgsView(view) {
+        currentPendingView = view;
+        const btnQueue = document.getElementById("btnViewPendingQueue");
+        const btnAll = document.getElementById("btnViewAllTraineeOrgs");
+        const searchBox = document.getElementById("usedOrgSearchBox");
+
+        if (view === "pending") {
+          if (btnQueue) { btnQueue.className = "primary"; }
+          if (btnAll) { btnAll.className = "light"; }
+          if (searchBox) { searchBox.classList.add("hidden"); }
+          loadPendingOrgs();
+        } else {
+          if (btnQueue) { btnQueue.className = "light"; }
+          if (btnAll) { btnAll.className = "primary"; }
+          if (searchBox) { searchBox.classList.remove("hidden"); }
+          loadAllUsedTraineeOrgs();
+        }
+      }
 
       function setPendingOrgsSort(col) {
         if (pendingOrgsSort === col) {
@@ -2540,7 +2667,102 @@
           pendingOrgsSort  = col;
           pendingOrgsOrder = col === "created_at" ? "desc" : "asc";
         }
-        loadPendingOrgs();
+        if (currentPendingView === "pending") {
+          loadPendingOrgs();
+        }
+      }
+
+      let traineeUsedOrgSearchTimer = null;
+      function debounceTraineeUsedOrgSearch() {
+        clearTimeout(traineeUsedOrgSearchTimer);
+        traineeUsedOrgSearchTimer = setTimeout(() => {
+          loadAllUsedTraineeOrgs();
+        }, 300);
+      }
+
+      async function loadAllUsedTraineeOrgs() {
+        const token = getAdminToken();
+        if (!token) return;
+
+        const tableEl   = document.getElementById("pendingOrgsTable");
+        const summaryEl = document.getElementById("pendingOrgsSummary");
+        if (tableEl) tableEl.innerHTML = '<div class="empty muted">Loading all organizations used by trainees...</div>';
+
+        const q = (document.getElementById("traineeUsedOrgSearchInput")?.value || "").trim();
+        try {
+          const url = `/api/admin/pending-orgs?view=trainee_orgs&search=${encodeURIComponent(q)}`;
+          const json = await apiBearerGet(url, token);
+          const rows = json.data || [];
+          cachedUsedTraineeOrgs = rows;
+
+          const totalUniqueOrgs = rows.length;
+          const totalTrainees = rows.reduce((sum, r) => sum + (r.traineeCount || 0), 0);
+          const pendingCount = rows.filter(r => r.isPendingOrg).length;
+          const officialCount = rows.filter(r => r.isOfficialOce).length;
+          const customCount = rows.filter(r => !r.isPendingOrg && !r.isOfficialOce).length;
+
+          if (summaryEl) {
+            summaryEl.innerHTML = [
+              metric("Unique Org IDs Used", String(totalUniqueOrgs), "ok"),
+              metric("Total Trainees Mapped", String(totalTrainees), "ok"),
+              metric("Official OCE", String(officialCount), "ok"),
+              metric("Unverified / Pending (pd_*)", String(pendingCount), pendingCount > 0 ? "warn" : ""),
+              metric("Custom / Raw Orgs", String(customCount), customCount > 0 ? "bad" : ""),
+            ].join("");
+          }
+
+          if (!rows.length) {
+            tableEl.innerHTML = '<div class="empty ok"><i class="fas fa-check-circle me-1"></i>No organizations found matching search.</div>';
+            return;
+          }
+
+          const headerCells = [
+            `<th># Organization ID</th>`,
+            `<th>Organization Name (trainee profile)</th>`,
+            `<th>Type / OCE Status</th>`,
+            `<th>How Many & Who (Trainees)</th>`,
+            `<th>Action</th>`,
+          ].join("");
+
+          const bodyRows = rows.map((r, i) => {
+            let statusPill = "";
+            if (r.isOfficialOce) {
+              statusPill = `<span class="badge bg-success"><i class="fas fa-check me-1"></i>Official OCE (${escapeHtml(r.oceId)})</span>`;
+            } else if (r.isPendingOrg) {
+              statusPill = `<span class="badge bg-warning text-dark"><i class="fas fa-clock me-1"></i>Pending pd_* (${escapeHtml(r.pendingStatus || 'pending')})</span>`;
+            } else {
+              statusPill = `<span class="badge bg-danger"><i class="fas fa-exclamation-triangle me-1"></i>Custom / Non-OCE</span>`;
+            }
+
+            const traineesCount = r.traineeCount || 0;
+            const traineesList = r.trainees || [];
+            const previewNames = traineesList.slice(0, 2).map(t => escapeHtml(t.fullName)).join(", ") + (traineesCount > 2 ? ` +${traineesCount - 2}` : "");
+
+            return `<tr>
+              <td><code class="small fw-bold">${escapeHtml(r.orgId)}</code></td>
+              <td><b>${escapeHtml(r.orgName)}</b></td>
+              <td>${statusPill}</td>
+              <td>
+                <span class="badge ${traineesCount > 0 ? 'bg-primary' : 'bg-secondary'}" style="cursor:pointer;" onclick="openBatchReassignModal(${i}, 'used_org')">
+                  👥 ${traineesCount} trainee(s)
+                </span>
+                <span class="muted small" style="margin-left:6px; font-size:11px;">${previewNames}</span>
+              </td>
+              <td>
+                <button class="primary" style="padding: 4px 10px; font-size: 11px; border-radius: 4px;" onclick="openBatchReassignModal(${i}, 'used_org')">
+                  <i class="fas fa-exchange-alt me-1"></i>Reassign / Fix
+                </button>
+              </td>
+            </tr>`;
+          }).join("");
+
+          tableEl.innerHTML = `<table>
+            <thead><tr>${headerCells}</tr></thead>
+            <tbody>${bodyRows}</tbody>
+          </table>`;
+        } catch (err) {
+          if (tableEl) tableEl.innerHTML = `<div class="empty bad">${escapeHtml(err.message)}</div>`;
+        }
       }
 
       async function loadPendingOrgs() {
@@ -2565,6 +2787,7 @@
           const url = `/api/admin/pending-orgs?sort=${encodeURIComponent(pendingOrgsSort)}&order=${encodeURIComponent(pendingOrgsOrder)}`;
           const json = await apiBearerGet(url, token);
           const rows = json.data || [];
+          cachedPendingOrgsRows = rows;
 
           // Summary metrics
           const total      = rows.length;
@@ -2572,10 +2795,12 @@
           const unverified = rows.filter(r => r.resolved_status === "Unverified").length;
           const verified   = rows.filter(r => r.resolved_status === "Verified").length;
           const removed    = rows.filter(r => r.resolved_status === "Removed").length;
+          const totalTraineesUsingPending = rows.reduce((sum, r) => sum + (r.trainee_count || 0), 0);
 
           if (summaryEl) {
             summaryEl.innerHTML = [
               metric("Total pending orgs", String(total),      "ok"),
+              metric("Trainees Waiting",   String(totalTraineesUsingPending), totalTraineesUsingPending > 0 ? "warn" : "ok"),
               metric("OCE List Updated",   String(oceUpdated), oceUpdated > 0 ? "ok" : ""),
               metric("Unverified",         String(unverified), unverified > 0 ? "warn" : ""),
               metric("Verified",           String(verified),   "ok"),
@@ -2594,6 +2819,7 @@
             `<th style="cursor:pointer" onclick="setPendingOrgsSort('name')">#&nbsp; Company VN${arrowFor("name")}</th>`,
             `<th>Company EN</th>`,
             `<th>PD ID</th>`,
+            `<th>Trainees (How Many & Who)</th>`,
             `<th>Submitted by</th>`,
             `<th style="cursor:pointer" onclick="setPendingOrgsSort('created_at')">Date Submitted${arrowFor("created_at")}</th>`,
             `<th style="cursor:pointer" onclick="setPendingOrgsSort('status')">Status${arrowFor("status")}</th>`,
@@ -2603,20 +2829,40 @@
           const bodyRows = rows.map((r, i) => {
             const statusBadge = renderPendingOrgStatus(r.resolved_status);
             let actionHtml = "";
+            const safePdId = escapeHtml(r.pd_id).replace(/'/g, "\\'");
+            const safeName = escapeHtml(r.name || "").replace(/'/g, "\\'");
+            const safeNameEn = escapeHtml(r.name_en || "").replace(/'/g, "\\'");
+            const safeStatus = escapeHtml(r.status || "pending").replace(/'/g, "\\'");
+
             if (r.resolved_status === "OCE List Updated") {
-              actionHtml = `<span class="badge bg-light text-muted" title="Linked to OCE list; editing locked"><i class="fas fa-lock me-1"></i>Locked</span>`;
+              actionHtml = `<span class="badge bg-light text-muted" title="Linked to OCE list"><i class="fas fa-lock me-1"></i>Locked</span>`;
             } else {
-              const safePdId = escapeHtml(r.pd_id).replace(/'/g, "\\'");
-              const safeName = escapeHtml(r.name || "").replace(/'/g, "\\'");
-              const safeNameEn = escapeHtml(r.name_en || "").replace(/'/g, "\\'");
-              const safeStatus = escapeHtml(r.status || "pending").replace(/'/g, "\\'");
-              actionHtml = `<button class="light" style="padding: 3px 8px; font-size: 12px; border-radius: 4px;" onclick="openEditPendingOrg('${safePdId}', '${safeName}', '${safeNameEn}', '${safeStatus}')"><i class="fas fa-edit me-1"></i>Edit</button>`;
+              actionHtml = `
+                <div style="display:flex; gap:4px;">
+                  <button class="primary" style="padding: 3px 8px; font-size: 11px; border-radius: 4px;" onclick="openBatchReassignModal(${i}, 'pending')" title="Reassign all trainees to official company">
+                    <i class="fas fa-exchange-alt me-1"></i>Reassign (${r.trainee_count || 0})
+                  </button>
+                  <button class="light" style="padding: 3px 8px; font-size: 11px; border-radius: 4px;" onclick="openEditPendingOrg('${safePdId}', '${safeName}', '${safeNameEn}', '${safeStatus}')">
+                    <i class="fas fa-edit me-1"></i>Edit
+                  </button>
+                </div>
+              `;
             }
+
+            const traineesCount = r.trainee_count || 0;
+            const traineesList = r.trainees || [];
+            const previewNames = traineesList.slice(0, 2).map(t => escapeHtml(t.fullName)).join(", ") + (traineesCount > 2 ? ` +${traineesCount - 2}` : "");
 
             return `<tr>
               <td><b>${i + 1}</b>&nbsp; ${escapeHtml(r.name)}</td>
               <td>${escapeHtml(r.name_en || "-")}</td>
               <td><code class="small">${escapeHtml(r.pd_id)}</code></td>
+              <td>
+                <span class="badge ${traineesCount > 0 ? 'bg-primary' : 'bg-secondary'}" style="cursor:pointer;" onclick="openBatchReassignModal(${i}, 'pending')">
+                  👥 ${traineesCount} trainee(s)
+                </span>
+                <span class="muted small" style="margin-left:6px; font-size:11px;">${previewNames}</span>
+              </td>
               <td class="muted small">${escapeHtml(r.submitted_by || "-")}</td>
               <td class="muted small">${formatTime(r.created_at)}</td>
               <td>${statusBadge}</td>
@@ -2631,6 +2877,195 @@
 
         } catch (err) {
           if (tableEl) tableEl.innerHTML = `<div class="empty bad">${escapeHtml(err.message)}</div>`;
+        }
+      }
+
+      // --- BATCH REASSIGNMENT LOGIC ---
+      let activeReassignContext = null;
+
+      function openBatchReassignModal(index, sourceView) {
+        let rowData = null;
+        if (sourceView === "pending") {
+          rowData = cachedPendingOrgsRows[index];
+          if (!rowData) return;
+          activeReassignContext = {
+            sourceOrgId: rowData.pd_id,
+            sourceOrgName: rowData.name,
+            pendingPdId: rowData.pd_id,
+            trainees: rowData.trainees || []
+          };
+        } else {
+          rowData = cachedUsedTraineeOrgs[index];
+          if (!rowData) return;
+          activeReassignContext = {
+            sourceOrgId: rowData.orgId,
+            sourceOrgName: rowData.orgName,
+            pendingPdId: rowData.isPendingOrg ? rowData.orgId : "",
+            trainees: rowData.trainees || []
+          };
+        }
+
+        document.getElementById("reassignSourceOrgId").innerText = activeReassignContext.sourceOrgId;
+        document.getElementById("reassignSourceOrgName").innerText = activeReassignContext.sourceOrgName;
+        document.getElementById("reassignSourceTraineeCount").innerText = `${activeReassignContext.trainees.length} Trainees`;
+
+        // Render trainee list with checkboxes
+        const listEl = document.getElementById("reassignTraineesList");
+        if (activeReassignContext.trainees.length === 0) {
+          listEl.innerHTML = `<div class="text-muted p-2 small">Không có học viên nào đang liên kết với mã công ty này.</div>`;
+        } else {
+          listEl.innerHTML = activeReassignContext.trainees.map((t, idx) => `
+            <div style="display:flex; justify-content:space-between; align-items:center; padding: 4px 6px; border-bottom: 1px solid #f1f5f9; font-size:12px;">
+              <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+                <input type="checkbox" class="chk-reassign-trainee" value="${escapeHtml(t.email)}" checked onchange="updateReassignSelectedCount()" />
+                <b>${escapeHtml(t.fullName)}</b> (${escapeHtml(t.email)})
+              </label>
+              <span class="muted small">${escapeHtml(t.position || t.phone || "")}</span>
+            </div>
+          `).join("");
+        }
+
+        document.getElementById("reassignSelectAllTrainees").checked = true;
+        updateReassignSelectedCount();
+        clearSelectedTargetCompany();
+
+        const errEl = document.getElementById("batchReassignError");
+        if (errEl) { errEl.innerText = ""; errEl.classList.add("hidden"); }
+
+        document.getElementById("batchReassignOrgModal").classList.remove("hidden");
+      }
+
+      function closeBatchReassignModal() {
+        document.getElementById("batchReassignOrgModal").classList.add("hidden");
+        activeReassignContext = null;
+      }
+
+      function toggleSelectAllReassignTrainees(checked) {
+        document.querySelectorAll(".chk-reassign-trainee").forEach(chk => {
+          chk.checked = checked;
+        });
+        updateReassignSelectedCount();
+      }
+
+      function updateReassignSelectedCount() {
+        const count = document.querySelectorAll(".chk-reassign-trainee:checked").length;
+        document.getElementById("reassignSelectedCount").innerText = count;
+      }
+
+      let searchTargetCompanyTimer = null;
+      function searchTargetCompanyDebounced(query) {
+        clearTimeout(searchTargetCompanyTimer);
+        const resultsEl = document.getElementById("targetCompanySearchResults");
+        if (!query || query.trim().length < 2) {
+          resultsEl.style.display = "none";
+          return;
+        }
+
+        searchTargetCompanyTimer = setTimeout(async () => {
+          const token = getAdminToken();
+          if (!token) return;
+          try {
+            resultsEl.innerHTML = '<div style="padding:8px; font-size:12px; color:#64748b;"><i class="fas fa-spinner fa-spin me-1"></i>Searching official OCE list...</div>';
+            resultsEl.style.display = "block";
+
+            const res = await apiBearerGet(`/api/admin/pending-orgs?search_oce=${encodeURIComponent(query.trim())}`, token);
+            const items = res.data || [];
+            if (items.length === 0) {
+              resultsEl.innerHTML = '<div style="padding:8px; font-size:12px; color:#64748b;">No matching official companies found.</div>';
+              return;
+            }
+
+            resultsEl.innerHTML = items.map(c => `
+              <div style="padding: 8px 10px; border-bottom: 1px solid #f1f5f9; cursor: pointer; font-size: 12px;"
+                   onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#fff'"
+                   onclick="selectTargetCompany('${escapeHtml(c.company_id).replace(/'/g, "\\'")}', '${escapeHtml(c.company_name_vn || c.company_name_en).replace(/'/g, "\\'")}')">
+                <div style="font-weight:600; color:#003087;">[${escapeHtml(c.company_id)}] ${escapeHtml(c.company_name_vn)}</div>
+                ${c.company_name_en ? `<div style="font-size:11px; color:#64748b;">${escapeHtml(c.company_name_en)}</div>` : ''}
+                ${c.tax_code ? `<div style="font-size:11px; color:#94a3b8;">Tax code: ${escapeHtml(c.tax_code)}</div>` : ''}
+              </div>
+            `).join("");
+          } catch (e) {
+            resultsEl.innerHTML = `<div style="padding:8px; font-size:12px; color:#dc2626;">Error: ${escapeHtml(e.message)}</div>`;
+          }
+        }, 250);
+      }
+
+      function selectTargetCompany(companyId, companyName) {
+        document.getElementById("selectedTargetCompanyIdHidden").value = companyId;
+        document.getElementById("selectedTargetCompanyNameHidden").value = companyName;
+
+        document.getElementById("selectedTargetCompanyId").innerText = companyId;
+        document.getElementById("selectedTargetCompanyName").innerText = companyName;
+
+        document.getElementById("selectedTargetCompanyDisplay").classList.remove("hidden");
+        document.getElementById("targetCompanySearchResults").style.display = "none";
+        document.getElementById("targetCompanySearchInput").value = "";
+      }
+
+      function clearSelectedTargetCompany() {
+        document.getElementById("selectedTargetCompanyIdHidden").value = "";
+        document.getElementById("selectedTargetCompanyNameHidden").value = "";
+        document.getElementById("selectedTargetCompanyDisplay").classList.add("hidden");
+        document.getElementById("targetCompanySearchInput").value = "";
+        document.getElementById("targetCompanySearchResults").style.display = "none";
+      }
+
+      async function executeBatchReassignment() {
+        if (!activeReassignContext) return;
+        const targetCompanyId = document.getElementById("selectedTargetCompanyIdHidden").value.trim();
+        const targetCompanyName = document.getElementById("selectedTargetCompanyNameHidden").value.trim();
+        const errEl = document.getElementById("batchReassignError");
+
+        if (!targetCompanyId) {
+          errEl.innerText = "Vui lòng tìm và chọn một công ty chính thức từ danh sách OCE.";
+          errEl.classList.remove("hidden");
+          return;
+        }
+
+        const selectedEmails = [];
+        document.querySelectorAll(".chk-reassign-trainee:checked").forEach(chk => {
+          selectedEmails.push(chk.value);
+        });
+
+        if (selectedEmails.length === 0) {
+          errEl.innerText = "Vui lòng chọn ít nhất 1 học viên để cập nhật.";
+          errEl.classList.remove("hidden");
+          return;
+        }
+
+        const token = getAdminToken();
+        if (!token) return;
+
+        const btn = document.getElementById("btnExecuteBatchReassign");
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Đang cập nhật...';
+
+        try {
+          const payload = {
+            action: "batch_reassign",
+            sourceOrgId: activeReassignContext.sourceOrgId,
+            sourceOrgName: activeReassignContext.sourceOrgName,
+            traineeEmails: selectedEmails,
+            targetCompanyId,
+            targetCompanyName,
+            pendingPdId: activeReassignContext.pendingPdId
+          };
+
+          const res = await apiBearerPost("/api/admin/pending-orgs", token, payload);
+          alert(res.message || "Cập nhật thành công!");
+          closeBatchReassignModal();
+
+          if (currentPendingView === "pending") {
+            loadPendingOrgs();
+          } else {
+            loadAllUsedTraineeOrgs();
+          }
+        } catch (err) {
+          errEl.innerText = err.message || String(err);
+          errEl.classList.remove("hidden");
+        } finally {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fas fa-check-circle me-1"></i> Cập Nhật Hàng Loạt / Batch Update';
         }
       }
 
@@ -2733,6 +3168,102 @@
       })();
     </script>
 
+    <!-- Batch Reassign Org Modal -->
+    <div
+      id="batchReassignOrgModal"
+      class="hidden"
+      style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(15, 23, 42, 0.65);
+        backdrop-filter: blur(4px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+      "
+    >
+      <div
+        class="card"
+        style="
+          width: 720px;
+          max-width: 95vw;
+          max-height: 90vh;
+          overflow-y: auto;
+          padding: 24px;
+          border-top: 4px solid var(--c-navy) !important;
+          background: #fff;
+          border-radius: 14px;
+          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
+        "
+      >
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 14px;">
+          <h3 style="margin:0; font-family: var(--pd-heading-font); font-size: 18px; font-weight: 700; color: var(--c-navy);">
+            <i class="fas fa-exchange-alt me-2"></i>Batch Reassign Trainees to Correct Company
+          </h3>
+          <button class="light" style="border:none; background:none; cursor:pointer; font-size:22px; line-height:1; color:#64748b;" onclick="closeBatchReassignModal()">&times;</button>
+        </div>
+
+        <!-- Current Source Company Box -->
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-bottom: 14px;">
+          <div class="small muted fw-bold">Hiện tại (Wrong / Pending Company):</div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+            <div>
+              <span id="reassignSourceOrgId" class="badge bg-secondary" style="font-family: monospace;"></span>
+              <b id="reassignSourceOrgName" style="margin-left: 8px; font-size: 14px;"></b>
+            </div>
+            <span id="reassignSourceTraineeCount" class="badge bg-primary" style="font-size: 12px;"></span>
+          </div>
+        </div>
+
+        <!-- Trainee Selection Section -->
+        <div style="margin-bottom: 14px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <label class="small fw-bold">
+              <input type="checkbox" id="reassignSelectAllTrainees" checked onchange="toggleSelectAllReassignTrainees(this.checked)" />
+              Danh sách học viên bị ảnh hưởng / Affected Trainees (<span id="reassignSelectedCount">0</span> selected)
+            </label>
+            <span class="muted small" style="font-size:11px;">Tất cả học viên chọn sẽ được cập nhật sang công ty mới</span>
+          </div>
+          <div id="reassignTraineesList" style="max-height: 180px; overflow-y: auto; border: 1px solid #cbd5e1; border-radius: 8px; padding: 6px; background: #fff;"></div>
+        </div>
+
+        <!-- Target Company Picker Section -->
+        <div style="margin-bottom: 16px;">
+          <label class="small fw-bold" style="display:block; margin-bottom:4px;">
+            Chọn Công ty Đúng (Target Company from OCE List) <span style="color:red">*</span>
+          </label>
+          <div style="position: relative;">
+            <input type="text" id="targetCompanySearchInput" placeholder="Gõ tên công ty, mã OCE... hoặc mã số thuế để tìm kiếm..." style="width:100%; padding: 8px 12px; border:1px solid #cbd5e1; border-radius:6px;" oninput="searchTargetCompanyDebounced(this.value)" autocomplete="off" />
+            <div id="targetCompanySearchResults" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1px solid #cbd5e1; border-radius:6px; max-height:200px; overflow-y:auto; z-index:100; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1);"></div>
+          </div>
+
+          <div id="selectedTargetCompanyDisplay" class="hidden" style="margin-top: 8px; padding: 10px; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 6px; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <span class="badge bg-success" id="selectedTargetCompanyId"></span>
+              <b id="selectedTargetCompanyName" style="margin-left: 8px; color: #065f46;"></b>
+            </div>
+            <button class="light" style="border:none; background:none; color:#059669; font-weight:600; font-size:12px; cursor:pointer;" onclick="clearSelectedTargetCompany()">Thay đổi / Change</button>
+          </div>
+          <input type="hidden" id="selectedTargetCompanyIdHidden" />
+          <input type="hidden" id="selectedTargetCompanyNameHidden" />
+        </div>
+
+        <div id="batchReassignError" class="small bad hidden" style="margin-bottom: 12px; padding: 8px; background: #fee2e2; color: #b91c1c; border-radius: 6px;"></div>
+
+        <div style="display:flex; justify-content:flex-end; gap:8px;">
+          <button class="light" onclick="closeBatchReassignModal()" style="padding: 8px 16px; border-radius:6px;">Cancel</button>
+          <button id="btnExecuteBatchReassign" onclick="executeBatchReassignment()" style="background: var(--c-navy); color:#fff; border:none; padding:8px 20px; border-radius:6px; font-weight:700;">
+            <i class="fas fa-check-circle me-1"></i> Cập Nhật Hàng Loạt / Batch Update
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Pending Org Modal -->
     <div
       id="editPendingOrgModal"
       class="hidden"

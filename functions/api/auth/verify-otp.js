@@ -33,6 +33,26 @@ export async function onRequestPost(context) {
   }
 
   const roles = await getUserRoles(env, email);
+
+  // Strict Client Role Check: only users granted Client access can verify OTP and obtain a client session
+  if (scope === "client") {
+    const hasClientAccess = roles.includes("client") || roles.includes("admin") || roles.includes("super_user");
+    if (!hasClientAccess) {
+      await appendAppLog(env, {
+        event: "otp_verify",
+        scope: "client",
+        email,
+        success: false,
+        detail: `Client session denied. User ${email} does not have client/admin role.`,
+        request: context.request
+      });
+      return jsonResponse({
+        success: false,
+        error: "Access denied. Your account has not been granted Client Portal access. Please contact the PD team."
+      }, 403);
+    }
+  }
+
   const session = await issueSessionToken(email, env, scope, roles);
   await appendAppLog(env, { event: "otp_verify", scope: "auth", email, success: true, provider: isRealOtpEnabled(env) ? "email" : "mock", detail: `OTP verified and session issued (${scope}).`, request: context.request });
 

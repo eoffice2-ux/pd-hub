@@ -1,6 +1,7 @@
 import { jsonResponse, normalizeEmail, readJson } from "../../_lib/security.js";
 import { generateOtp, getOtpTtlSeconds, isRealOtpEnabled, sendOtpEmail, storeOtp } from "../../_lib/otp.js";
 import { appendAppLog } from "../../_lib/app-logs.js";
+import { getUserRoles } from "../../_lib/user-roles.js";
 
 export async function onRequestPost(context) {
   const env = context.env || {};
@@ -12,6 +13,26 @@ export async function onRequestPost(context) {
   if (!email || !email.includes("@")) {
     await appendAppLog(env, { event: "otp_send", scope: "auth", email, success: false, detail: `Missing or invalid email (${scope}).`, request: context.request });
     return jsonResponse({ success: false, error: "Missing or invalid email." }, 400);
+  }
+
+  // Strict Client Role Check: only users granted Client access can request OTP for client scope
+  if (scope === "client") {
+    const roles = await getUserRoles(env, email);
+    const hasClientAccess = roles.includes("client") || roles.includes("admin") || roles.includes("super_user");
+    if (!hasClientAccess) {
+      await appendAppLog(env, {
+        event: "otp_send",
+        scope: "client",
+        email,
+        success: false,
+        detail: `Client OTP denied. User ${email} does not have client/admin role.`,
+        request: context.request
+      });
+      return jsonResponse({
+        success: false,
+        error: "Access denied. Your account has not been granted Client Portal access. Please contact the PD team."
+      }, 403);
+    }
   }
 
   if (!isRealOtpEnabled(env)) {

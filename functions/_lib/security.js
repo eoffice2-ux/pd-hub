@@ -134,10 +134,14 @@ export async function requireSessionScope(request, env = {}, allowedScopes = ["c
   const allowed = new Set([...(allowedScopes || []), "all"]);
   const userRoles = new Set(verified.session.roles || [verified.session.scope]);
 
-  // If user has super_user, allow admin
+  // If user has super_user or admin, also grant client scope so portal switching works cleanly
   if (userRoles.has("super_user")) {
     userRoles.add("admin");
     userRoles.add("report_viewer");
+    userRoles.add("client");
+  } else if (userRoles.has("admin")) {
+    userRoles.add("report_viewer");
+    userRoles.add("client");
   }
 
   // Check if any user role overlaps with allowed scopes
