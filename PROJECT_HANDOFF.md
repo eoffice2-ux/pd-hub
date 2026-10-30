@@ -15,8 +15,9 @@
 | **Live Production URL** | **[https://pd-onestop.pages.dev](https://pd-onestop.pages.dev)** |
 | **Hosting Platform** | Cloudflare Pages + Pages Functions (`nodejs_compat` enabled) |
 | **Primary Relational DB** | PostgreSQL via Cloudflare Hyperdrive pool (`env.HYPERDRIVE`) |
-| **Fallback / Secondary DB** | Google Sheets API v4 (Service Account JWT) |
+| **Fallback / Secondary DB** | Google Sheets API v4 (Strictly ignored when table source is `psql`; all new tables target PostgreSQL exclusively) |
 | **Transactional Email** | Dual-GAS (`GAS1` / `GAS2`) + Brevo REST API v3 rotation |
+| **Federated Authentication** | Google Identity Services + Microsoft 365 Entra ID (`common` multi-tenant) with universal account support |
 
 ---
 
