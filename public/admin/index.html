@@ -111,6 +111,16 @@
         border-radius: 12px;
         font-size: 14px;
       }
+      input[type="checkbox"],
+      input[type="radio"] {
+        width: 16px !important;
+        height: 16px !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        flex-shrink: 0;
+        accent-color: var(--c-navy);
+        cursor: pointer;
+      }
       input:focus {
         border-color: rgba(0, 48, 135, 0.55);
         box-shadow: 0 0 0 4px rgba(0, 48, 135, 0.12);
@@ -486,15 +496,23 @@
         border: 1px solid rgba(245, 158, 11, 0.15) !important;
       }
       .badge.bg-primary,
-      .badge.bg-info {
+      .badge.bg-info,
+      .badge.bg-primary-subtle,
+      .badge.bg-info-subtle {
         background: #f0f4ff !important;
         color: var(--c-navy) !important;
         border: 1px solid rgba(0, 48, 135, 0.18) !important;
       }
-      .badge.bg-secondary {
+      .badge.bg-secondary,
+      .badge.bg-secondary-subtle {
         background: #f1f5f9 !important;
         color: #334155 !important;
         border: 1px solid rgba(148, 163, 184, 0.15) !important;
+      }
+      .badge.bg-light {
+        background: #f8fafc !important;
+        color: #475569 !important;
+        border: 1px solid rgba(148, 163, 184, 0.25) !important;
       }
       .feature-icon,
       .text-primary.me-3,
@@ -877,8 +895,9 @@
                     <div id="roleClientCompanyResults" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1px solid #cbd5e1; border-radius:6px; max-height:180px; overflow-y:auto; z-index:100; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1);"></div>
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-top: 4px;">
                       <small class="muted" style="font-size: 11px;">Gõ để tìm kiếm công ty từ OCE list.</small>
-                      <button type="button" class="light" style="font-size:10px; padding:2px 6px; border-radius:4px;" onclick="setRoleCompanyQuick('EIU')">Chọn nhanh EIU</button>
+                      <button type="button" class="light" style="font-size:10px; padding:2px 6px; border-radius:4px;" onclick="setRoleCompanyQuick('EIU', 'Eastern International University')">Chọn nhanh EIU</button>
                     </div>
+                    <div id="roleClientCompanyPreview" class="hidden small" style="margin-top:4px; padding:4px 8px; background:#ecfdf5; color:#047857; border-radius:4px; font-weight:600;"></div>
                   </div>
                   <div>
                     <label class="small muted"><b>Phạm vi EIU (Chỉ áp dụng nếu đơn vị là EIU)</b></label>
@@ -1946,7 +1965,7 @@
         <td class="muted small">${escapeHtml(r.assignedBy || "-")}</td>
         <td class="muted small">${escapeHtml(r.assignedAt || "-")}</td>
         <td>
-          <button class="secondary" style="padding:4px 8px; font-size:11px; margin-right:4px;" onclick="populateEditRoles('${escapeHtml(r.email)}', ${JSON.stringify(r.roles || [r.role]).replace(/"/g, '&quot;')}, '${escapeHtml(r.companyId || "")}', ${JSON.stringify(r.clientScope || null).replace(/"/g, '&quot;')})">Edit</button>
+          <button class="secondary" style="padding:4px 8px; font-size:11px; margin-right:4px;" onclick="populateEditRoles('${escapeHtml(r.email)}', ${JSON.stringify(r.roles || [r.role]).replace(/"/g, '&quot;')}, '${escapeHtml(r.companyId || "")}', ${JSON.stringify(r.clientScope || null).replace(/"/g, '&quot;')}, '${escapeHtml(r.companyName || "").replace(/'/g, "\\'")}')">Edit</button>
           <button class="danger" style="padding:4px 8px; font-size:11px;" onclick="removeRole('${escapeHtml(r.email)}', this)">Delete</button>
         </td>
       </tr>`,
@@ -1982,7 +2001,8 @@
           const scLabel = sc === "all" ? "All" : sc;
           return `<span class="badge bg-primary-subtle text-primary border border-primary-subtle" title="EIU Scope: ${scLabel}"><i class="fas fa-university me-1"></i>EIU (${scLabel})</span>`;
         }
-        return `<span class="badge bg-info-subtle text-dark border" title="${escapeHtml(r.companyName || cid)}"><i class="fas fa-building me-1"></i>${escapeHtml(cid)}</span>`;
+        const namePart = r.companyName && r.companyName !== cid ? ` · ${escapeHtml(r.companyName)}` : '';
+        return `<span class="badge bg-info-subtle text-dark border" title="${escapeHtml(r.companyName || cid)}"><i class="fas fa-building me-1"></i><b>${escapeHtml(cid)}</b>${namePart}</span>`;
       }
 
       function toggleClientOrgField(isClientChecked) {
@@ -2000,9 +2020,24 @@
         }
       }
 
-      function setRoleCompanyQuick(cid) {
+      function setRoleCompanyQuick(cid, cname) {
         const input = document.getElementById("roleClientCompany");
-        if (input) input.value = cid;
+        if (input) {
+          input.value = cid;
+          input.dataset.companyName = cname || "";
+        }
+        const prev = document.getElementById("roleClientCompanyPreview");
+        if (prev) {
+          if (cname && cname !== cid) {
+            prev.innerText = `Đã chọn: ${cname} (${cid})`;
+            prev.classList.remove("hidden");
+          } else if (cid) {
+            prev.innerText = `Đã chọn: ${cid}`;
+            prev.classList.remove("hidden");
+          } else {
+            prev.classList.add("hidden");
+          }
+        }
         const resBox = document.getElementById("roleClientCompanyResults");
         if (resBox) resBox.style.display = "none";
       }
@@ -2031,21 +2066,25 @@
               return;
             }
 
-            resultsEl.innerHTML = items.map(c => `
+            resultsEl.innerHTML = items.map(c => {
+              const compName = c.company_name_vn || c.company_name_en || c.company_id;
+              const safeName = escapeHtml(compName).replace(/'/g, "\\'");
+              const safeId = escapeHtml(c.company_id).replace(/'/g, "\\'");
+              return `
               <div style="padding: 6px 10px; border-bottom: 1px solid #f1f5f9; cursor: pointer; font-size: 11px;"
                    onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#fff'"
-                   onclick="setRoleCompanyQuick('${escapeHtml(c.company_id).replace(/'/g, "\\'")}')">
+                   onclick="setRoleCompanyQuick('${safeId}', '${safeName}')">
                 <span class="badge bg-secondary" style="font-family:monospace;">${escapeHtml(c.company_id)}</span>
-                <b style="margin-left:4px;">${escapeHtml(c.company_name_vn || c.company_name_en)}</b>
+                <b style="margin-left:4px;">${escapeHtml(compName)}</b>
               </div>
-            `).join("");
+            `;}).join("");
           } catch (e) {
             resultsEl.innerHTML = `<div style="padding:6px 10px; font-size:11px; color:#dc2626;">Error: ${escapeHtml(e.message)}</div>`;
           }
         }, 250);
       }
 
-      function populateEditRoles(email, roles, companyId, clientScope) {
+      function populateEditRoles(email, roles, companyId, clientScope, companyName) {
         document.getElementById("roleEmail").value = email;
         const set = new Set((roles || []).map(r => String(r).toLowerCase().trim()));
         document.getElementById("chkRoleTrainee").checked = set.has("trainee");
@@ -2057,7 +2096,23 @@
 
         toggleClientOrgField(isClient);
         if (isClient) {
-          document.getElementById("roleClientCompany").value = companyId || (email.endsWith("@eiu.edu.vn") ? "EIU" : "");
+          const compInput = document.getElementById("roleClientCompany");
+          if (compInput) {
+            compInput.value = companyId || (email.endsWith("@eiu.edu.vn") ? "EIU" : "");
+            compInput.dataset.companyName = companyName || "";
+          }
+          const prev = document.getElementById("roleClientCompanyPreview");
+          if (prev) {
+            if (companyName && companyName !== companyId) {
+              prev.innerText = `Đã chọn: ${companyName} (${companyId})`;
+              prev.classList.remove("hidden");
+            } else if (companyId) {
+              prev.innerText = `Đã chọn: ${companyId}`;
+              prev.classList.remove("hidden");
+            } else {
+              prev.classList.add("hidden");
+            }
+          }
           if (clientScope && clientScope.traineeType) {
             document.getElementById("roleClientScopeType").value = clientScope.traineeType;
           }
@@ -2124,7 +2179,8 @@
             const scopeType = document.getElementById("roleClientScopeType")?.value || "all";
             clientScope = { traineeType: scopeType };
           } else {
-            companyName = companyId;
+            const storedName = document.getElementById("roleClientCompany")?.dataset?.companyName;
+            companyName = storedName || companyId;
           }
         }
 
