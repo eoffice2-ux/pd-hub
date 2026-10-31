@@ -104,6 +104,7 @@
         filter: drop-shadow(0 4px 9px rgba(13, 110, 253, 0.12));
       }
 
+      #viewTrainees h4,
       #viewInquiryList h4,
       #viewInquiryDetail h4,
       #viewCorporate h4,
@@ -111,6 +112,7 @@
         color: var(--pd-indigo);
         letter-spacing: -0.25px;
       }
+      #viewTrainees > .card,
       #viewInquiryList .card,
       #viewInquiryDetail .card,
       #viewCorporate .card,
@@ -328,6 +330,7 @@
           letter-spacing: 10px !important;
           font-size: 1.25rem !important;
         }
+        #viewTrainees > .card,
         #viewInquiryList .card,
         #viewInquiryDetail .card,
         #viewCorporate .card,
@@ -336,6 +339,7 @@
           padding: 16px !important;
           border-radius: 16px !important;
         }
+        #viewTrainees h4,
         #viewInquiryList h4,
         #viewInquiryDetail h4,
         #viewCorporate h4,
@@ -367,6 +371,7 @@
         #navItems .nav-link {
           white-space: nowrap;
         }
+        #viewTrainees > .card,
         #viewInquiryList .card,
         #viewInquiryDetail .card,
         #viewCorporate .card,
@@ -628,12 +633,12 @@
                     <hr class="flex-grow-1 my-0 text-muted" style="opacity:0.2;">
                   </div>
 
-                  <a href="/api/auth/oauth/login?provider=google&portal=client" class="btn btn-outline-secondary w-100 py-2 mb-2 fw-semibold d-flex align-items-center justify-content-center gap-2" style="border-radius: 8px; font-size: 14px; background: #fff;">
+                  <a href="/api/auth/oauth/login?provider=google&portal=client" class="btn-oauth w-100 mb-2">
                     <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
                     <span>Sign in with Google</span>
                   </a>
 
-                  <a href="/api/auth/oauth/login?provider=microsoft&portal=client" class="btn btn-outline-secondary w-100 py-2 fw-semibold d-flex align-items-center justify-content-center gap-2" style="border-radius: 8px; font-size: 14px; background: #fff;">
+                  <a href="/api/auth/oauth/login?provider=microsoft&portal=client" class="btn-oauth w-100 mb-2">
                     <svg width="18" height="18" viewBox="0 0 23 23"><path fill="#f35325" d="M1 1h10v10H1z"/><path fill="#81bc06" d="M12 1h10v10H12z"/><path fill="#05a6f0" d="M1 12h10v10H1z"/><path fill="#ffba08" d="M12 12h10v10H12z"/></svg>
                     <span>Sign in with Microsoft</span>
                   </a>
@@ -786,25 +791,25 @@
           <!-- KPI Summary Cards -->
           <div class="row g-3 mb-4" id="traineesKpis">
             <div class="col-sm-6 col-lg-3">
-              <div class="card p-3 border-0 shadow-sm" style="background:#f8fafc; border-radius:12px;">
+              <div class="p-3 border rounded-3 bg-white shadow-sm">
                 <div class="text-muted small fw-bold">Tổng Học Viên / Trainees</div>
                 <div class="fs-4 fw-bold text-primary mt-1" id="kpiTotalTrainees">-</div>
               </div>
             </div>
             <div class="col-sm-6 col-lg-3">
-              <div class="card p-3 border-0 shadow-sm" style="background:#f8fafc; border-radius:12px;">
+              <div class="p-3 border rounded-3 bg-white shadow-sm">
                 <div class="text-muted small fw-bold">Lượt Học / Enrollments</div>
                 <div class="fs-4 fw-bold text-success mt-1" id="kpiTotalEnrollments">-</div>
               </div>
             </div>
             <div class="col-sm-6 col-lg-3">
-              <div class="card p-3 border-0 shadow-sm" style="background:#f8fafc; border-radius:12px;">
+              <div class="p-3 border rounded-3 bg-white shadow-sm">
                 <div class="text-muted small fw-bold">Tỷ Lệ Điểm Danh / Attendance</div>
                 <div class="fs-4 fw-bold text-info mt-1" id="kpiAvgAttendance">-</div>
               </div>
             </div>
             <div class="col-sm-6 col-lg-3">
-              <div class="card p-3 border-0 shadow-sm" style="background:#f8fafc; border-radius:12px;">
+              <div class="p-3 border rounded-3 bg-white shadow-sm">
                 <div class="text-muted small fw-bold">Khảo Sát / Survey Completion</div>
                 <div class="fs-4 fw-bold text-warning mt-1" id="kpiAvgSurvey">-</div>
               </div>

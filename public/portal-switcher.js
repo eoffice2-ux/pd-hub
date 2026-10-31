@@ -21,13 +21,25 @@
         const style = document.createElement("style");
         style.id = "portalSwitcherStyles";
         style.textContent = `
+          .pd-oce-header-inner .pd-oce-dept {
+            margin-left: auto;
+            margin-right: 14px;
+          }
           #portalSwitcherDropdown {
             position: relative;
-            margin-left: auto;
+            margin-left: 0;
             display: inline-flex;
             align-items: center;
             z-index: 10050;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+          }
+          @media (max-width: 576px) {
+            .pd-oce-header-inner .pd-oce-dept {
+              display: none;
+            }
+            #portalSwitcherDropdown {
+              margin-left: auto;
+            }
           }
           #portalSwitcherBtn {
             display: inline-flex;
