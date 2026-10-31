@@ -312,6 +312,8 @@ header h6,
   justify-content: space-between !important;
   align-items: center !important;
   width: 100% !important;
+  flex-wrap: wrap !important;
+  row-gap: 0.75rem !important;
 }
 
 .pd-page-title h2 {
@@ -350,15 +352,30 @@ header h6,
 .pd-app-tabs {
   display: flex !important;
   flex-direction: row !important;
-  flex-wrap: nowrap !important;
-  gap: 0.5rem !important;
+  flex-wrap: wrap !important;
+  gap: 0.4rem 0.5rem !important;
   background: var(--c-surface) !important;
   border: 1px solid rgba(0, 26, 78, 0.1) !important;
-  border-radius: 999px !important;
+  border-radius: 1rem !important;
   padding: 0.35rem !important;
   box-shadow: 0 4px 12px rgba(0, 26, 78, 0.05) !important;
   width: auto !important;
-  overflow-x: auto !important;
+  max-width: 100% !important;
+}
+
+@media (max-width: 991.98px) {
+  .pd-local-tabs {
+    margin: 1rem auto 1.5rem !important;
+  }
+  .pd-local-tabs .pd-page-title {
+    width: 100%;
+    margin-bottom: 0.25rem;
+  }
+  #navItems.pd-app-tabs,
+  .pd-app-tabs {
+    width: 100% !important;
+    justify-content: flex-start !important;
+  }
 }
 
 #navItems.pd-app-tabs .nav-link,

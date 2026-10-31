@@ -1,4 +1,4 @@
-import { jsonResponse, requireAdminOrDebug, requireAdminSession, isAdminEmail, normalizeEmail } from "../../_lib/security.js";
+import { jsonResponse, requireAdminOrDebug, requireAdminSession, requireReportSession, isAdminEmail, normalizeEmail } from "../../_lib/security.js";
 import { getCoreSpreadsheetId, getFeedbackSpreadsheetId, getSheetValues, quoteSheetName } from "../../_lib/google-sheets.js";
 import { getTableSource, getTableSheetName, getTablePsqlName, quoteIdentifierPath } from "../../_lib/data-source.js";
 import { queryPostgres } from "../../_lib/postgres.js";
@@ -12,7 +12,7 @@ export async function onRequestGet(context) {
   const debugAuth = await requireAdminOrDebug(request, env);
   if (!debugAuth.ok) {
     // Not admin/debug - check if they have report_viewer role
-    const sessionAuth = await requireAdminSession(request, env);
+    const sessionAuth = await requireReportSession(request, env);
     if (!sessionAuth.ok) return sessionAuth.response;
     const sessionRoles = Array.isArray(sessionAuth.session.roles) ? sessionAuth.session.roles : [sessionAuth.session.scope];
     const role = await getUserRole(env, sessionAuth.session.email);

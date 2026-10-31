@@ -172,6 +172,10 @@ export async function requireAdminSession(request, env = {}) {
   return requireSessionScope(request, env, [ADMIN_SCOPE]);
 }
 
+export async function requireReportSession(request, env = {}) {
+  return requireSessionScope(request, env, ["report_viewer", ADMIN_SCOPE, "super_user"]);
+}
+
 export function getAdminEmails(env = {}) {
   return String(env.ADMIN_EMAILS || env.ADMIN_EMAIL || "")
     .split(/[;,\n]/)

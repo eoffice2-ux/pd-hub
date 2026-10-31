@@ -10,6 +10,7 @@
 import { jsonResponse, normalizeEmail, readJson, requireAdminSession, isAdminEmail } from "../../_lib/security.js";
 import { getUserRoles, isSuperUser, listUserRoles, setUserRoles, deleteUserRole, VALID_ROLES } from "../../_lib/user-roles.js";
 import { appendAppLog } from "../../_lib/app-logs.js";
+import { queryPostgres } from "../../_lib/postgres.js";
 
 async function isAuthorizedRoleManager(request, env) {
   // Must have a valid admin session first
@@ -36,7 +37,16 @@ export async function onRequestGet(context) {
 
   try {
     const roles = await listUserRoles(env);
-    return jsonResponse({ success: true, data: roles });
+    let departments = [];
+    try {
+      const deptRes = await queryPostgres(env, `
+        SELECT id, name, school_office_type
+        FROM public.setting_school_office
+        ORDER BY school_office_type ASC, name ASC
+      `);
+      departments = deptRes.rows || [];
+    } catch (_) {}
+    return jsonResponse({ success: true, data: roles, departments });
   } catch (err) {
     return jsonResponse({ success: false, error: err.message || String(err) }, 500);
   }

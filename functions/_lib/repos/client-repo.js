@@ -286,7 +286,13 @@ export async function getClientTraineesPsql(env, email, options = {}) {
   }
 
   // 2. Fetch Section Enrollments & Courses for all retrieved trainees
-  const traineeIds = rawTrainees.map(r => r.trainee_id || r.email).filter(Boolean);
+  // Collect both email and trainee_id code since sa."trainee id" historically stores either email or code
+  const traineeIdentifierSet = new Set();
+  rawTrainees.forEach(r => {
+    if (r.email) traineeIdentifierSet.add(String(r.email).toLowerCase().trim());
+    if (r.trainee_id) traineeIdentifierSet.add(String(r.trainee_id).toLowerCase().trim());
+  });
+  const traineeIds = Array.from(traineeIdentifierSet);
   let courseHistoryMap = new Map();
 
   if (traineeIds.length > 0) {
@@ -338,7 +344,7 @@ export async function getClientTraineesPsql(env, email, options = {}) {
         WHERE LOWER(TRIM(sa."trainee id"::text)) = ANY($1::text[])
           AND COALESCE(LOWER(TRIM(sa."registration status"::text)), '') <> 'withdrawn'
       `;
-      const histRes = await queryPostgres(env, historySql, [traineeIds.map(s => s.toLowerCase().trim())]);
+      const histRes = await queryPostgres(env, historySql, [traineeIds]);
       (histRes.rows || []).forEach(row => {
         const tid = String(row.trainee_id || "").toLowerCase().trim();
         if (!courseHistoryMap.has(tid)) courseHistoryMap.set(tid, []);
@@ -369,18 +375,42 @@ export async function getClientTraineesPsql(env, email, options = {}) {
       // Apply EIU clientScope if configured
       if (isEiu && clientScope) {
         const type = resolveTraineeType(r.email, r.raw_type, r.position);
-        if (clientScope.traineeType && clientScope.traineeType !== "all" && type !== clientScope.traineeType) {
+        const reqType = clientScope.traineeType || clientScope.trainee_type;
+        if (reqType && reqType.toLowerCase() !== "all" && type.toLowerCase() !== reqType.toLowerCase()) {
           return false;
         }
-        if (clientScope.schoolId && r.school_id && String(r.school_id).toLowerCase() !== String(clientScope.schoolId).toLowerCase()) {
-          return false;
+        // Support department(s) filter: array or single schoolId
+        const allowedDepts = Array.isArray(clientScope.departments) ? clientScope.departments : (clientScope.schoolId ? [clientScope.schoolId] : []);
+        if (allowedDepts.length > 0) {
+          const sName = String(r.school_name || r.team_school || "").toLowerCase().trim();
+          const dName = String(r.department_name || "").toLowerCase().trim();
+          const sId = String(r.school_id || "").toLowerCase().trim();
+          const dId = String(r.department_id || "").toLowerCase().trim();
+          const matched = allowedDepts.some(d => {
+            const cleanD = String(d || "").toLowerCase().trim();
+            if (!cleanD) return false;
+            return sId === cleanD || dId === cleanD || sName.includes(cleanD) || dName.includes(cleanD) || cleanD.includes(sName) || cleanD.includes(dName);
+          });
+          if (!matched) return false;
         }
       }
       return true;
     })
     .map(r => {
-    const tid = String(r.trainee_id || r.email || "").toLowerCase().trim();
-    const courses = courseHistoryMap.get(tid) || [];
+    const emailKey = String(r.email || "").toLowerCase().trim();
+    const codeKey = String(r.trainee_id || "").toLowerCase().trim();
+    const listA = courseHistoryMap.get(emailKey) || [];
+    const listB = (codeKey && codeKey !== emailKey) ? (courseHistoryMap.get(codeKey) || []) : [];
+    const mergedCourses = [...listA];
+    const seenSecs = new Set(listA.map(c => String(c.section_id || '')));
+    listB.forEach(c => {
+      const sId = String(c.section_id || '');
+      if (!seenSecs.has(sId)) {
+        seenSecs.add(sId);
+        mergedCourses.push(c);
+      }
+    });
+    const courses = mergedCourses;
     const type = resolveTraineeType(r.email, r.raw_type, r.position);
 
     let traineeCheckedSlots = 0;
