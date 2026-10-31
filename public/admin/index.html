@@ -952,7 +952,7 @@
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                   <div style="position: relative;">
-                    <label class="small muted"><b>Mã / Tên Tổ chức (Company ID / Name)</b></label>
+                    <label class="small muted"><b>Tên Tổ chức / Công ty (Company Name)</b></label>
                     <input type="text" id="roleClientCompany" placeholder="Nhập tên hoặc mã công ty (vd: EIU hoặc OCE...)" style="margin-top:4px;" oninput="searchRoleClientCompanyDebounced(this.value)" autocomplete="off" />
                     <div id="roleClientCompanyResults" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1px solid #cbd5e1; border-radius:6px; max-height:180px; overflow-y:auto; z-index:100; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1);"></div>
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-top: 4px;">
@@ -962,12 +962,21 @@
                     <div id="roleClientCompanyPreview" class="hidden small" style="margin-top:4px; padding:4px 8px; background:#ecfdf5; color:#047857; border-radius:4px; font-weight:600;"></div>
                   </div>
                   <div>
-                    <label class="small muted"><b>Phạm vi Đối tượng (Type: Staff / Student)</b></label>
-                    <select id="roleClientScopeType" style="margin-top:4px; padding: 8px; border-radius:6px; border:1px solid #cbd5e1; width:100%;">
-                      <option value="all">Tất cả (Staff & Student / Toàn bộ)</option>
-                      <option value="Staff">Chỉ xem Giảng viên / Nhân viên (Staff only)</option>
-                      <option value="Student">Chỉ xem Sinh viên (Student only)</option>
-                    </select>
+                    <label class="small muted"><b>Phạm vi Đối tượng (Type: Industry / Staff / Student)</b></label>
+                    <div id="roleClientTypeCheckboxes" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:6px;">
+                      <label class="dept-pill-checkbox">
+                        <input type="checkbox" id="roleTypeIndustry" value="Industry" checked>
+                        <span>Khối Doanh nghiệp (Industry)</span>
+                      </label>
+                      <label class="dept-pill-checkbox" id="roleTypeStaffWrapper">
+                        <input type="checkbox" id="roleTypeStaff" value="Staff" checked>
+                        <span>Cán bộ - Giảng viên (Staff)</span>
+                      </label>
+                      <label class="dept-pill-checkbox" id="roleTypeStudentWrapper">
+                        <input type="checkbox" id="roleTypeStudent" value="Student" checked>
+                        <span>Sinh viên (Student)</span>
+                      </label>
+                    </div>
                   </div>
                 </div>
 
@@ -1048,7 +1057,7 @@
 
                   <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
                     <div style="position:relative;">
-                      <label class="small muted"><b>Mã / Tên Tổ chức (Company ID / Name)</b></label>
+                      <label class="small muted"><b>Tên Tổ chức / Công ty (Company Name)</b></label>
                       <input type="text" id="modalRoleClientCompany" placeholder="vd: EIU hoặc OCE..." style="margin-top:4px;" oninput="searchModalRoleClientCompanyDebounced(this.value)" autocomplete="off" />
                       <div id="modalRoleClientCompanyResults" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1px solid #cbd5e1; border-radius:6px; max-height:180px; overflow-y:auto; z-index:100; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1);"></div>
                       <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
@@ -1058,12 +1067,21 @@
                       <div id="modalRoleClientCompanyPreview" class="hidden small" style="margin-top:4px; padding:4px 8px; background:#ecfdf5; color:#047857; border-radius:4px; font-weight:600;"></div>
                     </div>
                     <div>
-                      <label class="small muted"><b>Phạm vi Đối tượng (Type: Staff / Student)</b></label>
-                      <select id="modalRoleClientScopeType" style="margin-top:4px; padding:8px; border-radius:6px; border:1px solid #cbd5e1; width:100%;">
-                        <option value="all">Tất cả (Staff & Student / Toàn bộ)</option>
-                        <option value="Staff">Chỉ xem Giảng viên / Nhân viên (Staff only)</option>
-                        <option value="Student">Chỉ xem Sinh viên (Student only)</option>
-                      </select>
+                      <label class="small muted"><b>Phạm vi Đối tượng (Type: Industry / Staff / Student)</b></label>
+                      <div id="modalRoleClientTypeCheckboxes" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:6px;">
+                        <label class="dept-pill-checkbox">
+                          <input type="checkbox" id="modalRoleTypeIndustry" value="Industry" checked>
+                          <span>Khối Doanh nghiệp (Industry)</span>
+                        </label>
+                        <label class="dept-pill-checkbox" id="modalRoleTypeStaffWrapper">
+                          <input type="checkbox" id="modalRoleTypeStaff" value="Staff" checked>
+                          <span>Cán bộ - Giảng viên (Staff)</span>
+                        </label>
+                        <label class="dept-pill-checkbox" id="modalRoleTypeStudentWrapper">
+                          <input type="checkbox" id="modalRoleTypeStudent" value="Student" checked>
+                          <span>Sinh viên (Student)</span>
+                        </label>
+                      </div>
                     </div>
                   </div>
 
@@ -2125,16 +2143,78 @@
         if (!container) return;
         const selSet = new Set((selectedDepts || []).map(d => String(d || "").toLowerCase().trim()));
         container.innerHTML = (window.eiuDepartmentsList || []).map(d => {
-          const isChecked = selSet.has(String(d.id || "").toLowerCase().trim()) || selSet.has(String(d.name || "").toLowerCase().trim());
-          const cleanId = escapeHtml(d.id || d.name);
           const cleanName = escapeHtml(d.name || d.id);
+          const isChecked = selSet.has(String(d.id || "").toLowerCase().trim()) || selSet.has(String(d.name || "").toLowerCase().trim());
           return `
             <label class="dept-pill-checkbox">
-              <input type="checkbox" value="${cleanId}" ${isChecked ? "checked" : ""}>
-              <span>${cleanId} (${cleanName})</span>
+              <input type="checkbox" value="${cleanName}" data-dept-id="${escapeHtml(d.id || '')}" ${isChecked ? "checked" : ""}>
+              <span>${cleanName}</span>
             </label>
           `;
         }).join("");
+      }
+
+      function resolveDeptDisplayName(val) {
+        if (!val) return "";
+        const clean = String(val).toLowerCase().trim();
+        const found = (window.eiuDepartmentsList || []).find(d => 
+          String(d.id || "").toLowerCase().trim() === clean || 
+          String(d.name || "").toLowerCase().trim() === clean
+        );
+        return found ? (found.name || found.id) : val;
+      }
+
+      function getSelectedTypes(prefix = "roleType") {
+        const types = [];
+        if (document.getElementById(prefix + "Industry")?.checked) types.push("Industry");
+        if (document.getElementById(prefix + "Staff")?.checked) types.push("Staff");
+        if (document.getElementById(prefix + "Student")?.checked) types.push("Student");
+        return types;
+      }
+
+      function setSelectedTypes(prefix = "roleType", typesArray = ["Industry", "Staff", "Student"]) {
+        const set = new Set((typesArray || []).map(t => String(t || "").toLowerCase().trim()));
+        if (set.has("all")) {
+          set.add("industry");
+          set.add("staff");
+          set.add("student");
+        }
+        const chkInd = document.getElementById(prefix + "Industry");
+        const chkStaff = document.getElementById(prefix + "Staff");
+        const chkStud = document.getElementById(prefix + "Student");
+        if (chkInd) chkInd.checked = set.has("industry");
+        if (chkStaff) chkStaff.checked = set.has("staff");
+        if (chkStud) chkStud.checked = set.has("student");
+      }
+
+      function checkRoleEiuDepartmentVisibility(prefix = "") {
+        const compInput = document.getElementById(prefix ? "modalRoleClientCompany" : "roleClientCompany");
+        const deptsBox = document.getElementById(prefix ? "modalRoleClientDeptsBox" : "roleClientDeptsBox");
+        const staffWrap = document.getElementById(prefix ? "modalRoleTypeStaffWrapper" : "roleTypeStaffWrapper");
+        const studWrap = document.getElementById(prefix ? "modalRoleTypeStudentWrapper" : "roleTypeStudentWrapper");
+        const typePrefix = prefix ? "modalRoleType" : "roleType";
+
+        const cid = (compInput?.dataset?.companyId || compInput?.value || "").trim().toUpperCase();
+        const isEiu = cid === "EIU" || cid.includes("EASTERN") || cid.includes("MIỀN ĐÔNG");
+
+        if (isEiu) {
+          if (deptsBox) deptsBox.classList.remove("hidden");
+          if (staffWrap) staffWrap.style.display = "";
+          if (studWrap) studWrap.style.display = "";
+        } else {
+          if (deptsBox) deptsBox.classList.add("hidden");
+          if (staffWrap) staffWrap.style.display = "none";
+          if (studWrap) studWrap.style.display = "none";
+          // Default to Industry checked, uncheck staff/student
+          const chkInd = document.getElementById(typePrefix + "Industry");
+          const chkStaff = document.getElementById(typePrefix + "Staff");
+          const chkStud = document.getElementById(typePrefix + "Student");
+          if (chkInd) chkInd.checked = true;
+          if (chkStaff) chkStaff.checked = false;
+          if (chkStud) chkStud.checked = false;
+          // Uncheck all departments when not EIU
+          toggleAllDepts(prefix ? "modalRoleClientDeptsContainer" : "roleClientDeptsContainer", false);
+        }
       }
 
       function toggleAllDepts(containerId, checkAll) {
@@ -2157,26 +2237,26 @@
         const roles = r.roles || [r.role];
         const isClient = roles.includes("client");
         const cid = r.companyId || (r.email.endsWith("@eiu.edu.vn") ? "EIU" : "");
+        const displayName = r.companyName || (cid.toUpperCase() === "EIU" ? "Eastern International University" : cid);
 
-        // 1. Company Column
+        // 1. Company Column (Title/Name prioritized)
         let compHtml = '<span class="muted small">-</span>';
         if (isClient) {
-          if (!cid) {
+          if (!cid && !r.companyName) {
             compHtml = '<span class="badge bg-light text-muted border">Unassigned</span>';
-          } else if (cid.toUpperCase() === "EIU") {
-            compHtml = '<span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace"><i class="fas fa-university me-1"></i>EIU</span>';
+          } else if (cid.toUpperCase() === "EIU" || displayName.includes("Eastern International")) {
+            compHtml = '<span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace"><i class="fas fa-university me-1"></i>Eastern International University</span>';
           } else {
-            const namePart = r.companyName && r.companyName !== cid ? `<br><small class="text-muted">${escapeHtml(r.companyName)}</small>` : '';
-            compHtml = `<span class="badge bg-info-subtle text-dark border font-monospace"><i class="fas fa-building me-1"></i>${escapeHtml(cid)}</span>${namePart}`;
+            compHtml = `<span class="badge bg-info-subtle text-dark border"><i class="fas fa-building me-1"></i>${escapeHtml(displayName)}</span>`;
           }
         }
 
-        // 2. Department(s) Column
+        // 2. Department(s) Column (Resolved to human-readable names)
         let deptHtml = '<span class="muted small">-</span>';
         if (isClient) {
           const depts = r.clientScope?.departments;
           if (Array.isArray(depts) && depts.length > 0) {
-            deptHtml = depts.map(d => `<span class="badge bg-secondary me-1" style="font-size:10.5px;">${escapeHtml(d)}</span>`).join("");
+            deptHtml = depts.map(d => `<span class="badge bg-secondary me-1" style="font-size:10.5px;">${escapeHtml(resolveDeptDisplayName(d))}</span>`).join("");
           } else if (cid.toUpperCase() === "EIU") {
             deptHtml = '<span class="badge bg-light text-muted border">Tất cả Khoa (All)</span>';
           } else {
@@ -2184,17 +2264,26 @@
           }
         }
 
-        // 3. Type (Staff / Student) Column
+        // 3. Type (Industry / Staff / Student) Column
         let typeHtml = '<span class="muted small">-</span>';
         if (isClient) {
-          const rawT = r.clientScope?.traineeType || r.clientScope?.trainee_type || "all";
-          if (rawT === "Staff") {
-            typeHtml = '<span class="badge bg-success-subtle text-success border border-success-subtle"><i class="fas fa-user-tie me-1"></i>Staff Only</span>';
-          } else if (rawT === "Student") {
-            typeHtml = '<span class="badge bg-info-subtle text-primary border border-primary-subtle"><i class="fas fa-graduation-cap me-1"></i>Student Only</span>';
-          } else {
-            typeHtml = '<span class="badge bg-light text-muted border">All (Staff & SV)</span>';
+          const types = Array.isArray(r.clientScope?.traineeTypes) 
+            ? r.clientScope.traineeTypes 
+            : (r.clientScope?.traineeType && r.clientScope.traineeType.toLowerCase() !== "all" 
+                ? [r.clientScope.traineeType] 
+                : ["Industry", "Staff", "Student"]);
+
+          const badges = [];
+          if (types.some(t => String(t).toLowerCase() === "industry")) {
+            badges.push('<span class="badge bg-secondary-subtle text-dark border me-1"><i class="fas fa-industry me-1"></i>Industry</span>');
           }
+          if (types.some(t => String(t).toLowerCase() === "staff")) {
+            badges.push('<span class="badge bg-success-subtle text-success border border-success-subtle me-1"><i class="fas fa-user-tie me-1"></i>Staff</span>');
+          }
+          if (types.some(t => String(t).toLowerCase() === "student")) {
+            badges.push('<span class="badge bg-info-subtle text-primary border border-primary-subtle me-1"><i class="fas fa-graduation-cap me-1"></i>Student</span>');
+          }
+          typeHtml = badges.length > 0 ? badges.join("") : '<span class="badge bg-light text-muted border">All</span>';
         }
 
         const safeJsonRoles = JSON.stringify(roles).replace(/"/g, '&quot;');
@@ -2292,7 +2381,9 @@
           const email = (document.getElementById("roleEmail")?.value || "").trim().toLowerCase();
           const compInput = document.getElementById("roleClientCompany");
           if (email.endsWith("@eiu.edu.vn") && compInput && !compInput.value) {
-            compInput.value = "EIU";
+            setRoleCompanyQuick("EIU", "Eastern International University");
+          } else {
+            checkRoleEiuDepartmentVisibility("");
           }
           renderDepartmentCheckboxes("roleClientDeptsContainer", []);
         } else {
@@ -2303,13 +2394,14 @@
       function setRoleCompanyQuick(cid, cname) {
         const input = document.getElementById("roleClientCompany");
         if (input) {
-          input.value = cid;
+          input.value = cname || cid;
+          input.dataset.companyId = cid || "";
           input.dataset.companyName = cname || "";
         }
         const prev = document.getElementById("roleClientCompanyPreview");
         if (prev) {
-          if (cname && cname !== cid) {
-            prev.innerText = `Đã chọn: ${cname} (${cid})`;
+          if (cname) {
+            prev.innerText = `Đã chọn: ${cname}`;
             prev.classList.remove("hidden");
           } else if (cid) {
             prev.innerText = `Đã chọn: ${cid}`;
@@ -2320,6 +2412,7 @@
         }
         const resBox = document.getElementById("roleClientCompanyResults");
         if (resBox) resBox.style.display = "none";
+        checkRoleEiuDepartmentVisibility("");
       }
 
       let roleClientCompSearchTimer = null;
@@ -2327,6 +2420,7 @@
         clearTimeout(roleClientCompSearchTimer);
         const resultsEl = document.getElementById("roleClientCompanyResults");
         if (!resultsEl) return;
+        checkRoleEiuDepartmentVisibility("");
         if (!query || query.trim().length < 2) {
           resultsEl.style.display = "none";
           return;
@@ -2354,8 +2448,7 @@
               <div style="padding: 6px 10px; border-bottom: 1px solid #f1f5f9; cursor: pointer; font-size: 11px;"
                    onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#fff'"
                    onclick="setRoleCompanyQuick('${safeId}', '${safeName}')">
-                <span class="badge bg-secondary" style="font-family:monospace;">${escapeHtml(c.company_id)}</span>
-                <b style="margin-left:4px;">${escapeHtml(compName)}</b>
+                <b style="font-size:12px;">${escapeHtml(compName)}</b>
               </div>
             `;}).join("");
           } catch (e) {
@@ -2382,26 +2475,30 @@
         toggleModalClientOrg(isClient);
         if (isClient) {
           const compInput = document.getElementById("modalRoleClientCompany");
+          const cid = companyId || (email.endsWith("@eiu.edu.vn") ? "EIU" : "");
+          const cname = companyName || (cid === "EIU" ? "Eastern International University" : cid);
           if (compInput) {
-            compInput.value = companyId || (email.endsWith("@eiu.edu.vn") ? "EIU" : "");
-            compInput.dataset.companyName = companyName || "";
+            compInput.value = cname || "";
+            compInput.dataset.companyId = cid || "";
+            compInput.dataset.companyName = cname || "";
           }
           const prev = document.getElementById("modalRoleClientCompanyPreview");
           if (prev) {
-            if (companyName && companyName !== companyId) {
-              prev.innerText = `Đã chọn: ${companyName} (${companyId})`;
+            if (cname) {
+              prev.innerText = `Đã chọn: ${cname}`;
               prev.classList.remove("hidden");
-            } else if (companyId) {
-              prev.innerText = `Đã chọn: ${companyId}`;
+            } else if (cid) {
+              prev.innerText = `Đã chọn: ${cid}`;
               prev.classList.remove("hidden");
             } else {
               prev.classList.add("hidden");
             }
           }
-          if (clientScope && (clientScope.traineeType || clientScope.trainee_type)) {
-            document.getElementById("modalRoleClientScopeType").value = clientScope.traineeType || clientScope.trainee_type;
-          }
+          
+          const types = clientScope?.traineeTypes || (clientScope?.traineeType ? [clientScope.traineeType] : ["Industry", "Staff", "Student"]);
+          setSelectedTypes("modalRoleType", types);
           renderDepartmentCheckboxes("modalRoleClientDeptsContainer", clientScope?.departments || []);
+          checkRoleEiuDepartmentVisibility("modal");
         }
 
         const msg = document.getElementById("modalRoleMsg");
@@ -2428,7 +2525,9 @@
           const email = (document.getElementById("modalUserEmail")?.value || "").trim().toLowerCase();
           const compInput = document.getElementById("modalRoleClientCompany");
           if (email.endsWith("@eiu.edu.vn") && compInput && !compInput.value) {
-            compInput.value = "EIU";
+            setModalRoleCompanyQuick("EIU", "Eastern International University");
+          } else {
+            checkRoleEiuDepartmentVisibility("modal");
           }
           renderDepartmentCheckboxes("modalRoleClientDeptsContainer", []);
         } else {
@@ -2439,13 +2538,14 @@
       function setModalRoleCompanyQuick(cid, cname) {
         const input = document.getElementById("modalRoleClientCompany");
         if (input) {
-          input.value = cid;
+          input.value = cname || cid;
+          input.dataset.companyId = cid || "";
           input.dataset.companyName = cname || "";
         }
         const prev = document.getElementById("modalRoleClientCompanyPreview");
         if (prev) {
-          if (cname && cname !== cid) {
-            prev.innerText = `Đã chọn: ${cname} (${cid})`;
+          if (cname) {
+            prev.innerText = `Đã chọn: ${cname}`;
             prev.classList.remove("hidden");
           } else if (cid) {
             prev.innerText = `Đã chọn: ${cid}`;
@@ -2456,6 +2556,7 @@
         }
         const resBox = document.getElementById("modalRoleClientCompanyResults");
         if (resBox) resBox.style.display = "none";
+        checkRoleEiuDepartmentVisibility("modal");
       }
 
       let modalRoleClientCompSearchTimer = null;
@@ -2463,6 +2564,7 @@
         clearTimeout(modalRoleClientCompSearchTimer);
         const resultsEl = document.getElementById("modalRoleClientCompanyResults");
         if (!resultsEl) return;
+        checkRoleEiuDepartmentVisibility("modal");
         if (!query || query.trim().length < 2) {
           resultsEl.style.display = "none";
           return;
@@ -2490,8 +2592,7 @@
               <div style="padding: 6px 10px; border-bottom: 1px solid #f1f5f9; cursor: pointer; font-size: 11px;"
                    onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#fff'"
                    onclick="setModalRoleCompanyQuick('${safeId}', '${safeName}')">
-                <span class="badge bg-secondary" style="font-family:monospace;">${escapeHtml(c.company_id)}</span>
-                <b style="margin-left:4px;">${escapeHtml(compName)}</b>
+                <b style="font-size:12px;">${escapeHtml(compName)}</b>
               </div>
             `;}).join("");
           } catch (e) {
@@ -2530,20 +2631,22 @@
         let clientScope = null;
 
         if (selectedRoles.includes("client")) {
-          companyId = (document.getElementById("modalRoleClientCompany")?.value || "").trim();
+          const compInput = document.getElementById("modalRoleClientCompany");
+          companyId = (compInput?.dataset?.companyId || compInput?.value || "").trim();
+          companyName = (compInput?.dataset?.companyName || compInput?.value || "").trim();
           if (!companyId && email.endsWith("@eiu.edu.vn")) {
             companyId = "EIU";
+            companyName = "Eastern International University";
           }
-          const scopeType = document.getElementById("modalRoleClientScopeType")?.value || "all";
+          const selectedTypes = getSelectedTypes("modalRoleType");
           const depts = getSelectedDepts("modalRoleClientDeptsContainer");
 
-          if (companyId.toUpperCase() === "EIU") {
+          if (companyId.toUpperCase() === "EIU" || companyName.includes("Eastern International")) {
+            companyId = "EIU";
             companyName = "Eastern International University";
-            clientScope = { traineeType: scopeType, departments: depts };
+            clientScope = { traineeTypes: selectedTypes, traineeType: selectedTypes.length === 1 ? selectedTypes[0] : "all", departments: depts };
           } else {
-            const storedName = document.getElementById("modalRoleClientCompany")?.dataset?.companyName;
-            companyName = storedName || companyId;
-            clientScope = { traineeType: scopeType, departments: depts };
+            clientScope = { traineeTypes: selectedTypes.length > 0 ? selectedTypes : ["Industry"], traineeType: "Industry", departments: [] };
           }
         }
 
@@ -2592,7 +2695,7 @@
         if (chkClient?.checked) {
           const compInput = document.getElementById("roleClientCompany");
           if (email.endsWith("@eiu.edu.vn") && compInput && !compInput.value) {
-            compInput.value = "EIU";
+            setRoleCompanyQuick("EIU", "Eastern International University");
           }
         }
       }
@@ -2627,20 +2730,22 @@
         let clientScope = null;
 
         if (selectedRoles.includes("client")) {
-          companyId = (document.getElementById("roleClientCompany")?.value || "").trim();
+          const compInput = document.getElementById("roleClientCompany");
+          companyId = (compInput?.dataset?.companyId || compInput?.value || "").trim();
+          companyName = (compInput?.dataset?.companyName || compInput?.value || "").trim();
           if (!companyId && email.endsWith("@eiu.edu.vn")) {
             companyId = "EIU";
+            companyName = "Eastern International University";
           }
-          const scopeType = document.getElementById("roleClientScopeType")?.value || "all";
+          const selectedTypes = getSelectedTypes("roleType");
           const depts = getSelectedDepts("roleClientDeptsContainer");
 
-          if (companyId.toUpperCase() === "EIU") {
+          if (companyId.toUpperCase() === "EIU" || companyName.includes("Eastern International")) {
+            companyId = "EIU";
             companyName = "Eastern International University";
-            clientScope = { traineeType: scopeType, departments: depts };
+            clientScope = { traineeTypes: selectedTypes, traineeType: selectedTypes.length === 1 ? selectedTypes[0] : "all", departments: depts };
           } else {
-            const storedName = document.getElementById("roleClientCompany")?.dataset?.companyName;
-            companyName = storedName || companyId;
-            clientScope = { traineeType: scopeType, departments: depts };
+            clientScope = { traineeTypes: selectedTypes.length > 0 ? selectedTypes : ["Industry"], traineeType: "Industry", departments: [] };
           }
         }
 

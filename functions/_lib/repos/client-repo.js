@@ -12,7 +12,40 @@ export async function resolveClientAccessContextPsql(env, email) {
   const clean = cleanEmail(email);
   if (!clean) return null;
 
-  // 1. Direct contract profile
+  // 1. Assigned company and client scope in pdc_user_roles (highest priority for client management)
+  const userInfo = await getUserInfo(env, clean);
+  if (userInfo && (userInfo.companyId || userInfo.clientScope || userInfo.roles?.includes("client") || userInfo.role === "client")) {
+    let companyId = userInfo.companyId || (clean.endsWith("@eiu.edu.vn") ? "EIU" : "");
+    let companyName = userInfo.companyName || "";
+    if (!companyName && companyId.toUpperCase() === "EIU") {
+      companyName = "Eastern International University";
+    }
+    let parsedScope = userInfo.clientScope;
+    if (typeof parsedScope === "string") {
+      try { parsedScope = JSON.parse(parsedScope); } catch (_) {}
+    }
+    if (companyId) {
+      return {
+        clientId: companyId,
+        clientNameVn: companyName || companyId,
+        clientNameEn: companyName || companyId,
+        isEiu: companyId.toUpperCase() === "EIU" || clean.endsWith("@eiu.edu.vn"),
+        clientScope: parsedScope || null,
+        source: "roles",
+        profile: {
+          "client id": companyId,
+          "client updater email": clean,
+          "client name vn": companyName || companyId,
+          "client name en": companyName || companyId,
+          "tax code": "",
+          "representative name vn": "",
+          "representative position vn": ""
+        }
+      };
+    }
+  }
+
+  // 2. Direct contract profile
   const directProfile = await psqlFindOne(env, "CLIENT_PROFILE", { "client updater email": clean });
   if (directProfile && directProfile["client id"]) {
     return {
@@ -23,32 +56,6 @@ export async function resolveClientAccessContextPsql(env, email) {
       clientScope: null,
       source: "contract",
       profile: directProfile
-    };
-  }
-
-  // 2. Assigned company in pdc_user_roles
-  const userInfo = await getUserInfo(env, clean);
-  if (userInfo && userInfo.companyId) {
-    let companyName = userInfo.companyName || "";
-    if (!companyName && userInfo.companyId.toUpperCase() === "EIU") {
-      companyName = "Eastern International University";
-    }
-    return {
-      clientId: userInfo.companyId,
-      clientNameVn: companyName,
-      clientNameEn: companyName,
-      isEiu: userInfo.companyId.toUpperCase() === "EIU" || clean.endsWith("@eiu.edu.vn"),
-      clientScope: userInfo.clientScope || null,
-      source: "roles",
-      profile: {
-        "client id": userInfo.companyId,
-        "client updater email": clean,
-        "client name vn": companyName,
-        "client name en": companyName,
-        "tax code": "",
-        "representative name vn": "",
-        "representative position vn": ""
-      }
     };
   }
 
@@ -297,61 +304,127 @@ export async function getClientTraineesPsql(env, email, options = {}) {
 
   if (traineeIds.length > 0) {
     try {
-      const historySql = `
+      // 1. Fetch attendee registrations
+      const regRes = await queryPostgres(env, `
         SELECT 
-          sa."trainee id" AS trainee_id,
-          sm."section id" AS section_id,
-          COALESCE(NULLIF(sm."section name en", ''), sm."section id") AS section_name,
-          sm."course id" AS course_id,
-          COALESCE(NULLIF(cm."course name en", ''), sm."section name en", sm."course id") AS course_name,
-          COALESCE(sm."section date"::text, sm."date start"::text, '') AS learning_start,
-          '' AS learning_end,
-          COALESCE(sm."section status", '') AS section_status,
-          COALESCE(att_plan.total_slots, 0) AS total_slots,
-          COALESCE(att_log.checked_slots, 0) AS checked_slots,
-          COALESCE(fb_req.total_surveys, 0) AS total_surveys,
-          COALESCE(fb_sub.submitted_surveys, 0) AS submitted_surveys,
+          LOWER(TRIM(sa."trainee id"::text)) AS trainee_id,
+          LOWER(TRIM(sa."section id"::text)) AS section_id,
           COALESCE(sa."certificate status", '') AS certificate_link
         FROM public."pdc_section attendee management" sa
-        JOIN public."pdc_section management" sm 
-          ON LOWER(TRIM(sm."section id"::text)) = LOWER(TRIM(sa."section id"::text))
-        LEFT JOIN public."pdc_course master list" cm 
-          ON LOWER(TRIM(cm."course id"::text)) = LOWER(TRIM(sm."course id"::text))
-        LEFT JOIN (
-          SELECT LOWER(TRIM("section id"::text)) AS sec_id, COUNT(*)::int AS total_slots
-          FROM public."pdc_section checkin management"
-          GROUP BY LOWER(TRIM("section id"::text))
-        ) att_plan ON att_plan.sec_id = LOWER(TRIM(sa."section id"::text))
-        LEFT JOIN (
-          SELECT LOWER(TRIM("section id"::text)) AS sec_id, LOWER(TRIM("trainee id"::text)) AS tr_id, COUNT(DISTINCT "checkin slot id")::int AS checked_slots
-          FROM public."pdc_section checkin log"
-          GROUP BY LOWER(TRIM("section id"::text)), LOWER(TRIM("trainee id"::text))
-        ) att_log ON att_log.sec_id = LOWER(TRIM(sa."section id"::text))
-                 AND att_log.tr_id = LOWER(TRIM(sa."trainee id"::text))
-        LEFT JOIN (
-          SELECT LOWER(TRIM("section id"::text)) AS sec_id, COUNT(*)::int AS total_surveys
-          FROM public.pdc_fb_sectionforms
-          GROUP BY LOWER(TRIM("section id"::text))
-        ) fb_req ON fb_req.sec_id = LOWER(TRIM(sa."section id"::text))
-        LEFT JOIN (
-          SELECT LOWER(TRIM(sf."section id"::text)) AS sec_id, LOWER(TRIM(sub."trainee_id"::text)) AS tr_id, COUNT(DISTINCT sub."mapping_id")::int AS submitted_surveys
-          FROM public.pdc_fb_submissions sub
-          JOIN public.pdc_fb_sectionforms sf
-            ON LOWER(TRIM(sf."id"::text)) = LOWER(TRIM(sub."mapping_id"::text))
-          GROUP BY LOWER(TRIM(sf."section id"::text)), LOWER(TRIM(sub."trainee_id"::text))
-        ) fb_sub ON fb_sub.sec_id = LOWER(TRIM(sa."section id"::text))
-                AND fb_sub.tr_id = LOWER(TRIM(sa."trainee id"::text))
         WHERE LOWER(TRIM(sa."trainee id"::text)) = ANY($1::text[])
           AND COALESCE(LOWER(TRIM(sa."registration status"::text)), '') <> 'withdrawn'
-      `;
-      const histRes = await queryPostgres(env, historySql, [traineeIds]);
-      (histRes.rows || []).forEach(row => {
-        const tid = String(row.trainee_id || "").toLowerCase().trim();
+      `, [traineeIds]);
+      const attendeeRows = regRes.rows || [];
+
+      // 2. Fetch section & course metadata for enrolled sections
+      const enrolledSectionIds = Array.from(new Set(attendeeRows.map(r => r.section_id).filter(Boolean)));
+      const sectionInfoMap = new Map();
+      if (enrolledSectionIds.length > 0) {
+        try {
+          const secRes = await queryPostgres(env, `
+            SELECT 
+              LOWER(TRIM(sm."section id"::text)) AS section_id,
+              COALESCE(NULLIF(sm."section name en", ''), sm."section name", sm."section id") AS section_name,
+              sm."course id" AS course_id,
+              COALESCE(NULLIF(cm."course name en", ''), cm."course name", sm."section name en", sm."section name", sm."course id") AS course_name,
+              COALESCE(sm."section date"::text, '') AS learning_start,
+              COALESCE(sm."section status", '') AS section_status
+            FROM public."pdc_section management" sm
+            LEFT JOIN public."pdc_course master list" cm
+              ON LOWER(TRIM(cm."course id"::text)) = LOWER(TRIM(sm."course id"::text))
+            WHERE LOWER(TRIM(sm."section id"::text)) = ANY($1::text[])
+          `, [enrolledSectionIds]);
+          (secRes.rows || []).forEach(s => sectionInfoMap.set(s.section_id, s));
+        } catch (eSec) {
+          console.warn("Notice: could not query section details:", eSec.message);
+        }
+      }
+
+      // 3. Check-in slot plans & logs
+      const planCountMap = new Map();
+      const logCountMap = new Map();
+      if (enrolledSectionIds.length > 0) {
+        try {
+          const planRes = await queryPostgres(env, `
+            SELECT LOWER(TRIM("section id"::text)) AS sec_id, COUNT(*)::int AS total_slots
+            FROM public."pdc_section checkin management"
+            WHERE LOWER(TRIM("section id"::text)) = ANY($1::text[])
+            GROUP BY LOWER(TRIM("section id"::text))
+          `, [enrolledSectionIds]);
+          (planRes.rows || []).forEach(p => planCountMap.set(p.sec_id, Number(p.total_slots || 0)));
+
+          const logRes = await queryPostgres(env, `
+            SELECT LOWER(TRIM("section id"::text)) AS sec_id, LOWER(TRIM("trainee id"::text)) AS tr_id, COUNT(DISTINCT "checkin slot id")::int AS checked_slots
+            FROM public."pdc_section checkin log"
+            WHERE LOWER(TRIM("section id"::text)) = ANY($1::text[])
+              AND LOWER(TRIM("trainee id"::text)) = ANY($2::text[])
+            GROUP BY LOWER(TRIM("section id"::text)), LOWER(TRIM("trainee id"::text))
+          `, [enrolledSectionIds, traineeIds]);
+          (logRes.rows || []).forEach(l => logCountMap.set(`${l.sec_id}:${l.tr_id}`, Number(l.checked_slots || 0)));
+        } catch (eCheckin) {
+          console.warn("Notice: could not query checkin logs:", eCheckin.message);
+        }
+      }
+
+      // 4. Feedback forms & submissions
+      const formCountMap = new Map();
+      const subCountMap = new Map();
+      if (enrolledSectionIds.length > 0) {
+        try {
+          const formRes = await queryPostgres(env, `
+            SELECT LOWER(TRIM("section id"::text)) AS sec_id, COUNT(*)::int AS total_forms
+            FROM public.pdc_fb_sectionforms
+            WHERE LOWER(TRIM("section id"::text)) = ANY($1::text[])
+            GROUP BY LOWER(TRIM("section id"::text))
+          `, [enrolledSectionIds]);
+          (formRes.rows || []).forEach(f => formCountMap.set(f.sec_id, Number(f.total_forms || 0)));
+
+          const subRes = await queryPostgres(env, `
+            SELECT LOWER(TRIM(sf."section id"::text)) AS sec_id, LOWER(TRIM(sub."trainee_id"::text)) AS tr_id, COUNT(DISTINCT sub."mapping_id")::int AS submitted_forms
+            FROM public.pdc_fb_submissions sub
+            JOIN public.pdc_fb_sectionforms sf
+              ON LOWER(TRIM(COALESCE(sf."mapping id"::text, sf."mapping_id"::text, sf."id"::text))) = LOWER(TRIM(sub."mapping_id"::text))
+            WHERE LOWER(TRIM(sf."section id"::text)) = ANY($1::text[])
+              AND LOWER(TRIM(sub."trainee_id"::text)) = ANY($2::text[])
+            GROUP BY LOWER(TRIM(sf."section id"::text)), LOWER(TRIM(sub."trainee_id"::text))
+          `, [enrolledSectionIds, traineeIds]);
+          (subRes.rows || []).forEach(s => subCountMap.set(`${s.sec_id}:${s.tr_id}`, Number(s.submitted_forms || 0)));
+        } catch (eFb) {
+          console.warn("Notice: could not query feedback submissions:", eFb.message);
+        }
+      }
+
+      // 5. Combine into courseHistoryMap
+      attendeeRows.forEach(att => {
+        const tid = att.trainee_id;
+        const sid = att.section_id;
+        const sec = sectionInfoMap.get(sid) || {};
+        const totalSlots = planCountMap.get(sid) || 0;
+        const checkedSlots = logCountMap.get(`${sid}:${tid}`) || 0;
+        const totalSurveys = formCountMap.get(sid) || 0;
+        const submittedSurveys = subCountMap.get(`${sid}:${tid}`) || 0;
+
+        const row = {
+          trainee_id: tid,
+          section_id: sid,
+          section_name: sec.section_name || sid,
+          course_id: sec.course_id || "",
+          course_name: sec.course_name || sec.section_name || sid,
+          learning_start: sec.learning_start || "",
+          learning_end: "",
+          section_status: sec.section_status || "",
+          total_slots: totalSlots,
+          checked_slots: checkedSlots,
+          total_surveys: totalSurveys,
+          submitted_surveys: submittedSurveys,
+          certificate_link: att.certificate_link || ""
+        };
+
         if (!courseHistoryMap.has(tid)) courseHistoryMap.set(tid, []);
         courseHistoryMap.get(tid).push(row);
       });
     } catch (e) {
-      console.warn("Notice: could not load full course history details for trainees:", e.message);
+      console.warn("Notice: could not load course history details for trainees:", e.message);
     }
   }
 
@@ -375,22 +448,42 @@ export async function getClientTraineesPsql(env, email, options = {}) {
       // Apply EIU clientScope if configured
       if (isEiu && clientScope) {
         const type = resolveTraineeType(r.email, r.raw_type, r.position);
-        const reqType = clientScope.traineeType || clientScope.trainee_type;
-        if (reqType && reqType.toLowerCase() !== "all" && type.toLowerCase() !== reqType.toLowerCase()) {
-          return false;
+
+        // 1. Trainee type filtering (support traineeTypes array or legacy traineeType string)
+        const allowedTypes = Array.isArray(clientScope.traineeTypes) 
+          ? clientScope.traineeTypes.map(t => String(t || "").toLowerCase().trim()).filter(Boolean)
+          : (clientScope.traineeType && clientScope.traineeType.toLowerCase() !== "all" 
+              ? [clientScope.traineeType.toLowerCase().trim()] 
+              : []);
+
+        if (allowedTypes.length > 0 && !allowedTypes.includes("all")) {
+          if (!allowedTypes.includes(type.toLowerCase())) {
+            return false;
+          }
         }
-        // Support department(s) filter: array or single schoolId
+
+        // 2. Department(s) filter: array or single schoolId
         const allowedDepts = Array.isArray(clientScope.departments) ? clientScope.departments : (clientScope.schoolId ? [clientScope.schoolId] : []);
         if (allowedDepts.length > 0) {
           const sName = String(r.school_name || r.team_school || "").toLowerCase().trim();
           const dName = String(r.department_name || "").toLowerCase().trim();
           const sId = String(r.school_id || "").toLowerCase().trim();
           const dId = String(r.department_id || "").toLowerCase().trim();
+
           const matched = allowedDepts.some(d => {
             const cleanD = String(d || "").toLowerCase().trim();
             if (!cleanD) return false;
-            return sId === cleanD || dId === cleanD || sName.includes(cleanD) || dName.includes(cleanD) || cleanD.includes(sName) || cleanD.includes(dName);
+
+            // Direct ID match
+            if (sId === cleanD || dId === cleanD) return true;
+
+            // Name substring match - ONLY if name is non-empty!
+            const matchSName = sName.length > 0 && (sName === cleanD || sName.includes(cleanD) || cleanD.includes(sName));
+            const matchDName = dName.length > 0 && (dName === cleanD || dName.includes(cleanD) || cleanD.includes(dName));
+
+            return matchSName || matchDName;
           });
+
           if (!matched) return false;
         }
       }
